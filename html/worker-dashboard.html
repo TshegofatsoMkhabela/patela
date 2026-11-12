@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Worker Overview</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-force-role="worker" data-page="overview" data-breadcrumb="Overview">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content" id="worker-dashboard-root">
+        <!-- A. Welcome Header (One Primary Action) -->
+        <section class="welcome-header" aria-label="Welcome">
+          <div>
+            <h1 class="page-title">Welcome back, Jordan</h1>
+            <p class="page-subtitle">Your work, progress, and earnings at a glance.</p>
+          </div>
+          <div class="welcome-actions">
+            <a href="analytics.html" class="btn btn-secondary">Earnings analytics</a>
+            <a href="marketplace.html" class="btn btn-primary">Explore jobs</a>
+          </div>
+        </section>
+
+        <!-- B. Earnings Summary (4 Clean Metric Cards) -->
+        <section class="metrics-grid" aria-label="Earnings summary">
+          <div class="metric-card" data-detail-type="metric" data-detail-id="worker-active">
+            <span class="metric-label">Active projects</span>
+            <div class="metric-value tabular" data-count-target="3">3</div>
+            <span class="metric-foot">9 completed · Click to expand ↗</span>
+          </div>
+
+          <div class="metric-card gold-accent" data-detail-type="metric" data-detail-id="worker-escrow">
+            <span class="metric-label">Funds secured in escrow</span>
+            <div class="metric-value tabular" data-count-target="1850" data-count-prefix="$" data-count-unit="USDC">$1,850<span class="metric-unit">USDC</span></div>
+            <span class="metric-foot">Contract-locked · Click to expand ↗</span>
+          </div>
+
+          <div class="metric-card" data-detail-type="metric" data-detail-id="worker-pending">
+            <span class="metric-label">Pending payouts</span>
+            <div class="metric-value tabular" data-count-target="620" data-count-prefix="$" data-count-unit="USDC">$620<span class="metric-unit">USDC</span></div>
+            <span class="metric-foot">Approved · Click to expand ↗</span>
+          </div>
+
+          <div class="metric-card" data-detail-type="metric" data-detail-id="worker-earned">
+            <span class="metric-label">Total earned</span>
+            <div class="metric-value tabular" data-count-target="5420" data-count-prefix="$" data-count-unit="USDC">$5,420<span class="metric-unit">USDC</span></div>
+            <span class="metric-foot">3,180.00 USDC available · Click to expand ↗</span>
+          </div>
+        </section>
+
+        <!-- C. Needs Attention -->
+        <section class="section-block" aria-labelledby="worker-action-heading">
+          <div class="section-header-bar">
+            <h2 class="section-title" id="worker-action-heading">Needs attention</h2>
+          </div>
+          <div class="attention-container">
+            <div class="action-list">
+              <div class="action-item" data-detail-type="milestone" data-project-id="PRJ-203" data-milestone-id="M2">
+                <div class="action-item-left">
+                  <span class="action-dot"></span>
+                  <div>
+                    <div class="action-title">Mobile Banking UI</div>
+                    <div class="action-desc">Revision requested on Milestone 2 — attach exported SVG icon archive</div>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm" data-detail-type="milestone" data-project-id="PRJ-203" data-milestone-id="M2">Submit revision</button>
+              </div>
+
+              <div class="action-item" data-detail-type="milestone" data-project-id="PRJ-205" data-milestone-id="M3">
+                <div class="action-item-left">
+                  <span class="action-dot" style="background:var(--blue);"></span>
+                  <div>
+                    <div class="action-title">DeFi Treasury Analytics Portal</div>
+                    <div class="action-desc">Upcoming submission for Milestone 3: Export &amp; Audit Views ($300 USDC)</div>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" data-detail-type="milestone" data-project-id="PRJ-205" data-milestone-id="M3">Open milestone</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- D. Active Projects (Clean List: Project, Client, Current Milestone, Deadline, Status) -->
+        <section class="section-block" aria-labelledby="worker-projects-heading">
+          <div class="section-header-bar">
+            <h2 class="section-title" id="worker-projects-heading">Active projects</h2>
+            <a href="projects.html" class="meta-text" style="color:var(--gold-light);">View all projects →</a>
+          </div>
+          <div class="card-flush">
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Project</th>
+                    <th>Client</th>
+                    <th>Current milestone</th>
+                    <th>Deadline</th>
+                    <th>Status</th>
+                    <th class="right"></th>
+                  </tr>
+                </thead>
+                <tbody id="worker-overview-projects-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- E. Recommended Opportunities (Max 3) -->
+        <section class="section-block" style="margin-bottom:0;" aria-labelledby="worker-rec-heading">
+          <div class="section-header-bar">
+            <h2 class="section-title" id="worker-rec-heading">Recommended opportunities</h2>
+            <a href="marketplace.html" class="meta-text" style="color:var(--gold-light);">Explore all jobs →</a>
+          </div>
+          <div class="three-col-grid" id="worker-recommended-jobs-grid" style="margin-bottom:0;"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/interactions.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/worker.js"></script>
+</body>
+</html>

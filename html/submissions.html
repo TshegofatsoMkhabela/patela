@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Submissions</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-page="submissions" data-breadcrumb="Submissions">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content" id="submissions-page-root">
+        <section class="welcome-header">
+          <div>
+            <h1 class="page-title">Submissions &amp; Verification</h1>
+            <p class="page-subtitle">Review milestone deliverables, version history, and deterministic AI verification reports.</p>
+          </div>
+          <div class="welcome-actions">
+            <span class="badge badge-gold">2 pending review</span>
+          </div>
+        </section>
+
+        <div class="filter-toolbar">
+          <div class="tabs" role="tablist" aria-label="Filter submissions">
+            <button type="button" class="tab-btn active" data-sub-filter="all">All (4)</button>
+            <button type="button" class="tab-btn" data-sub-filter="review">Awaiting review (2)</button>
+            <button type="button" class="tab-btn" data-sub-filter="revision">Revision requested (1)</button>
+            <button type="button" class="tab-btn" data-sub-filter="approved">Approved (1)</button>
+          </div>
+          <span class="meta-text">AI verification is advisory (demo) — final approval rests with the client</span>
+        </div>
+
+        <section class="card-flush">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Project</th>
+                  <th>Milestone &amp; Version</th>
+                  <th>Freelancer</th>
+                  <th>Submitted</th>
+                  <th>AI Verification</th>
+                  <th class="right">Escrow Amount</th>
+                  <th class="right"></th>
+                </tr>
+              </thead>
+              <tbody id="submissions-table-tbody">
+                <tr data-sub-status="review" data-detail-type="milestone" data-project-id="PRJ-201" data-milestone-id="M2" style="cursor:pointer;">
+                  <td>
+                    <span class="cell-title" style="color:var(--gold-light);">E-commerce Website Redesign</span>
+                    <span class="cell-sub">Click to open full-screen submission &amp; AI verification workspace</span>
+                  </td>
+                  <td style="color:var(--text-secondary);">M2: UI Design <span class="meta-text">(v1.2)</span></td>
+                  <td style="color:var(--text-secondary);">Jordan Blake</td>
+                  <td class="meta-text">Today, 09:42 UTC</td>
+                  <td><span class="badge badge-success">Verified · 4/4 checks (98%)</span></td>
+                  <td class="right"><span class="cell-amount">400.00 USDC</span></td>
+                  <td class="right"><button type="button" class="btn btn-primary btn-sm" data-detail-type="milestone" data-project-id="PRJ-201" data-milestone-id="M2">Review</button></td>
+                </tr>
+
+                <tr data-sub-status="review" data-detail-type="milestone" data-project-id="PRJ-204" data-milestone-id="M2" style="cursor:pointer;">
+                  <td>
+                    <span class="cell-title" style="color:var(--gold-light);">React Dashboard Development</span>
+                    <span class="cell-sub">Click to open full-screen submission &amp; AI verification workspace</span>
+                  </td>
+                  <td style="color:var(--text-secondary);">M2: Escrow State Feed <span class="meta-text">(v1.0)</span></td>
+                  <td style="color:var(--text-secondary);">Chris Wilson</td>
+                  <td class="meta-text">42 mins ago</td>
+                  <td><span class="badge badge-blue">In AI review · 3/4 checks</span></td>
+                  <td class="right"><span class="cell-amount">400.00 USDC</span></td>
+                  <td class="right"><button type="button" class="btn btn-ghost btn-sm" data-detail-type="milestone" data-project-id="PRJ-204" data-milestone-id="M2">View →</button></td>
+                </tr>
+
+                <tr data-sub-status="revision" data-detail-type="milestone" data-project-id="PRJ-203" data-milestone-id="M2" style="cursor:pointer;">
+                  <td>
+                    <span class="cell-title" style="color:var(--gold-light);">Mobile Banking UI</span>
+                    <span class="cell-sub">Click to open full-screen submission &amp; AI verification workspace</span>
+                  </td>
+                  <td style="color:var(--text-secondary);">M2: Biometric Transfer Flow <span class="meta-text">(v1.0)</span></td>
+                  <td style="color:var(--text-secondary);">Jordan Blake</td>
+                  <td class="meta-text">Yesterday, 17:15</td>
+                  <td><span class="badge badge-warning">Revision · 3/4 checks (75%)</span></td>
+                  <td class="right"><span class="cell-amount">600.00 USDC</span></td>
+                  <td class="right"><button type="button" class="btn btn-ghost btn-sm" data-detail-type="milestone" data-project-id="PRJ-203" data-milestone-id="M2">View →</button></td>
+                </tr>
+
+                <tr data-sub-status="approved" data-detail-type="milestone" data-project-id="PRJ-205" data-milestone-id="M2" style="cursor:pointer;">
+                  <td>
+                    <span class="cell-title" style="color:var(--gold-light);">DeFi Treasury Analytics Portal</span>
+                    <span class="cell-sub">Click to open full-screen submission &amp; AI verification workspace</span>
+                  </td>
+                  <td style="color:var(--text-secondary);">M2: Token Flow Views <span class="meta-text">(v1.0)</span></td>
+                  <td style="color:var(--text-secondary);">Jordan Blake</td>
+                  <td class="meta-text">06 Nov 2026</td>
+                  <td><span class="badge badge-gold">Approved · 3/3 checks (100%)</span></td>
+                  <td class="right"><span class="cell-amount">620.00 USDC</span></td>
+                  <td class="right"><button type="button" class="btn btn-ghost btn-sm" data-detail-type="milestone" data-project-id="PRJ-205" data-milestone-id="M2">View →</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/interactions.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

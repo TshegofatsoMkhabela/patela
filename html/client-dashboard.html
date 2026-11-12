@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Client Overview</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-force-role="client" data-page="overview" data-breadcrumb="Overview">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content" id="client-dashboard-root">
+        <!-- A. Welcome Header (One Primary Action) -->
+        <section class="welcome-header" aria-label="Welcome">
+          <div>
+            <h1 class="page-title">Good morning, Alex</h1>
+            <p class="page-subtitle">Here's what's happening with your projects.</p>
+          </div>
+          <div class="welcome-actions">
+            <a href="analytics.html" class="btn btn-secondary">View analytics</a>
+            <a href="post-job.html" class="btn btn-primary">+ Post a job</a>
+          </div>
+        </section>
+
+        <!-- B. Financial Summary (Maximum 4 Metric Cards, Clean & Spacious) -->
+        <section class="metrics-grid" aria-label="Financial summary">
+          <div class="metric-card" data-detail-type="metric" data-detail-id="client-active">
+            <span class="metric-label">Active projects</span>
+            <div class="metric-value tabular" id="metric-client-active">4</div>
+            <span class="metric-foot">3 completed · Click to expand ↗</span>
+          </div>
+
+          <div class="metric-card gold-accent" data-detail-type="metric" data-detail-id="client-escrow">
+            <span class="metric-label">Total funds in escrow</span>
+            <div class="metric-value tabular" id="metric-client-escrow">$2,450<span class="metric-unit">USDC</span></div>
+            <span class="metric-foot">2,050.00 active · 400.00 in review ↗</span>
+          </div>
+
+          <div class="metric-card" data-detail-type="metric" data-detail-id="client-review">
+            <span class="metric-label">Awaiting review</span>
+            <div class="metric-value tabular" id="metric-client-review">2</div>
+            <span class="metric-foot">1 AI-verified · Click to expand ↗</span>
+          </div>
+
+          <div class="metric-card" data-detail-type="metric" data-detail-id="client-paid">
+            <span class="metric-label">Total paid</span>
+            <div class="metric-value tabular" id="metric-client-paid">$8,320<span class="metric-unit">USDC</span></div>
+            <span class="metric-foot">Across 17 released milestones ↗</span>
+          </div>
+        </section>
+
+        <!-- C. Needs Attention -->
+        <section class="section-block" aria-labelledby="client-action-heading">
+          <div class="section-header-bar">
+            <h2 class="section-title" id="client-action-heading">Needs attention</h2>
+            <button type="button" class="btn-ghost btn-sm meta-text" id="toggle-client-empty-attention" style="height:24px;padding:0 8px;">
+              Preview empty state
+            </button>
+          </div>
+          <div class="attention-container">
+            <div class="action-list" id="client-action-required-list"></div>
+          </div>
+        </section>
+
+        <!-- D. Active Projects (Clean 5-Column List, Max 5 Rows) -->
+        <section class="section-block" aria-labelledby="client-projects-heading">
+          <div class="section-header-bar">
+            <h2 class="section-title" id="client-projects-heading">Active projects</h2>
+            <a href="projects.html" class="meta-text" style="color:var(--gold-light);">View all projects →</a>
+          </div>
+          <div class="card-flush">
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Project</th>
+                    <th>Freelancer</th>
+                    <th>Current milestone</th>
+                    <th>Status</th>
+                    <th class="right"></th>
+                  </tr>
+                </thead>
+                <tbody id="client-overview-projects-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- E. Recent Financial Activity (Max 5 Events with Icon, Description, Date & Amount) -->
+        <section class="section-block" style="margin-bottom:0;" aria-labelledby="client-act-heading">
+          <div class="section-header-bar">
+            <h2 class="section-title" id="client-act-heading">Recent financial activity</h2>
+            <a href="payments.html" class="meta-text" style="color:var(--gold-light);">Full transaction history →</a>
+          </div>
+          <div class="card" style="padding:18px 22px;">
+            <div class="activity-list">
+              <div class="activity-row" data-detail-type="milestone" data-project-id="PRJ-201" data-milestone-id="M2">
+                <div class="activity-left">
+                  <span class="activity-icon-pill gold" title="Milestone verified">✓</span>
+                  <div>
+                    <div class="activity-text">Milestone 2 verified by AI on <strong>E-commerce Website Redesign</strong> — ready for approval</div>
+                    <div class="meta-text">Today, 09:44 UTC · Escrow locked · Click to open full-screen view ↗</div>
+                  </div>
+                </div>
+                <span class="cell-amount tabular text-gold">400.00 USDC</span>
+              </div>
+
+              <div class="activity-row" data-detail-type="transaction" data-detail-id="TX-9039">
+                <div class="activity-left">
+                  <span class="activity-icon-pill success" title="Payment released">↗</span>
+                  <div>
+                    <div class="activity-text">Milestone approved &amp; payment released to Chris Wilson — <strong>React Dashboard Development (M1)</strong></div>
+                    <div class="meta-text">02 Nov 2026 · Base Mainnet · Click to open full-screen receipt ↗</div>
+                  </div>
+                </div>
+                <span class="cell-amount tabular text-success">500.00 USDC</span>
+              </div>
+
+              <div class="activity-row" data-detail-type="transaction" data-detail-id="TX-9035">
+                <div class="activity-left">
+                  <span class="activity-icon-pill blue" title="Escrow funded">⛨</span>
+                  <div>
+                    <div class="activity-text">Escrow funded for <strong>E-commerce Website Redesign</strong> (4 milestones locked)</div>
+                    <div class="meta-text">20 Oct 2026 · Base Mainnet · Click to open full-screen receipt ↗</div>
+                  </div>
+                </div>
+                <span class="cell-amount tabular">1,200.00 USDC</span>
+              </div>
+
+              <div class="activity-row" data-detail-type="project" data-detail-id="PRJ-202">
+                <div class="activity-left">
+                  <span class="activity-icon-pill" title="Project created">+</span>
+                  <div>
+                    <div class="activity-text">Project created &amp; agreement accepted — <strong>Smart Contract Integration</strong></div>
+                    <div class="meta-text">22 Oct 2026 · Sam Carter · Click to open full-screen workspace ↗</div>
+                  </div>
+                </div>
+                <span class="meta-text tabular">1,400.00 USDC budget</span>
+              </div>
+
+              <div class="activity-row" data-detail-type="transaction" data-detail-id="TX-9032">
+                <div class="activity-left">
+                  <span class="activity-icon-pill gold" title="Refund processed">↩</span>
+                  <div>
+                    <div class="activity-text">Unused scope refund processed to wallet — <strong>Marketing Scope Adjustment</strong></div>
+                    <div class="meta-text">24 Sep 2026 · Base Mainnet · Click to open full-screen receipt ↗</div>
+                  </div>
+                </div>
+                <span class="cell-amount tabular">200.00 USDC</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/interactions.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/client.js"></script>
+</body>
+</html>

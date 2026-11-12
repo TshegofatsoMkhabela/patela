@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Settings</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-page="settings" data-breadcrumb="Settings">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content" style="max-width:920px;">
+        <section class="welcome-header">
+          <div>
+            <h1 class="page-title">Settings</h1>
+            <p class="page-subtitle">Account profile and connected wallet preferences.</p>
+          </div>
+          <div class="welcome-actions">
+            <button type="button" class="btn btn-secondary btn-sm" id="settings-reset-demo-btn">Reset demo data</button>
+            <button type="button" class="btn btn-primary" id="settings-save-btn">Save changes</button>
+          </div>
+        </section>
+
+        <div style="display:flex;flex-direction:column;gap:24px;">
+          <section class="card">
+            <div class="card-header">
+              <h2 class="section-title">Profile</h2>
+              <span class="badge badge-neutral" id="settings-role-badge">Client</span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="settings-name-input">Full name</label>
+                <input type="text" id="settings-name-input" class="input" value="Alex Morgan" />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="settings-email-input">Email</label>
+                <input type="email" id="settings-email-input" class="input" value="alex.morgan@patela-demo.io" />
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label" for="settings-title-input">Headline</label>
+              <input type="text" id="settings-title-input" class="input" value="Product & Engineering Lead · FinTech Studio" />
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="section-title">Wallet &amp; settlement preferences</h2>
+                <p class="section-subtitle">Configure default settlement asset and network for new escrow agreements</p>
+              </div>
+              <span class="badge badge-success" id="settings-wallet-badge">Connected</span>
+            </div>
+
+            <div class="kv-list" style="margin-bottom:18px;">
+              <div class="kv-row">
+                <span class="kv-label">Connected address</span>
+                <span class="kv-value mono" id="settings-wallet-addr">0x71C4b8209F31d8E44019cA2B5580e91124009A2E</span>
+              </div>
+              <div class="kv-row">
+                <span class="kv-label">Available wallet balances (Demo)</span>
+                <span class="kv-value tabular" id="settings-wallet-balances">6,450.00 USDC · 1,200.00 USDT</span>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" for="settings-asset-select">Preferred payment asset</label>
+                <select id="settings-asset-select" class="select">
+                  <option value="USDC">USDC (USD Coin)</option>
+                  <option value="USDT">USDT (Tether USD)</option>
+                </select>
+              </div>
+
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" for="settings-network-select">Preferred settlement network</label>
+                <select id="settings-network-select" class="select">
+                  <option value="Base Mainnet">Base Mainnet (Demo)</option>
+                  <option value="Arbitrum One">Arbitrum One (Demo)</option>
+                  <option value="Ethereum Mainnet">Ethereum Mainnet (Demo)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="card-footer" style="justify-content:flex-start;">
+              <button type="button" class="btn btn-secondary btn-sm" id="settings-copy-wallet-btn">Copy wallet address</button>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="section-title">Notification preferences</h2>
+                <p class="section-subtitle">Choose which contract and milestone events trigger alerts</p>
+              </div>
+            </div>
+
+            <div class="kv-list">
+              <label class="kv-row" style="cursor:pointer;">
+                <span class="kv-label">Escrow deposit &amp; funding confirmations</span>
+                <input type="checkbox" id="pref-escrow" checked style="width:16px;height:16px;accent-color:var(--gold);" />
+              </label>
+              <label class="kv-row" style="cursor:pointer;">
+                <span class="kv-label">AI delivery verification reports</span>
+                <input type="checkbox" id="pref-ai" checked style="width:16px;height:16px;accent-color:var(--gold);" />
+              </label>
+              <label class="kv-row" style="cursor:pointer;">
+                <span class="kv-label">Milestone approvals &amp; payout settlements</span>
+                <input type="checkbox" id="pref-approvals" checked style="width:16px;height:16px;accent-color:var(--gold);" />
+              </label>
+              <label class="kv-row" style="cursor:pointer;">
+                <span class="kv-label">Upcoming milestone deadline reminders (48h prior)</span>
+                <input type="checkbox" id="pref-deadlines" checked style="width:16px;height:16px;accent-color:var(--gold);" />
+              </label>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-header" style="margin-bottom:10px;">
+              <h2 class="section-title">Recent account activity</h2>
+              <span class="meta-text">Session audit log</span>
+            </div>
+            <div class="activity-list">
+              <div class="activity-row">
+                <div class="activity-left">
+                  <span class="activity-bullet"></span>
+                  <span class="activity-text">Wallet session verified on <strong>Base Mainnet (Demo)</strong></span>
+                </div>
+                <span class="activity-sub">Today, 09:30 UTC</span>
+              </div>
+              <div class="activity-row">
+                <div class="activity-left">
+                  <span class="activity-bullet"></span>
+                  <span class="activity-text">Preferred settlement asset confirmed as <strong>USDC</strong></span>
+                </div>
+                <span class="activity-sub">05 Nov 2026</span>
+              </div>
+              <div class="activity-row">
+                <div class="activity-left">
+                  <span class="activity-bullet"></span>
+                  <span class="activity-text">Multi-milestone escrow notifications enabled</span>
+                </div>
+                <span class="activity-sub">20 Oct 2026</span>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/interactions.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var st = window.PatelaStore.getState();
+      var role = window.PatelaStore.getRole();
+      var prof = st.profiles[role];
+
+      document.getElementById('settings-role-badge').textContent = role === 'worker' ? 'Worker' : 'Client';
+      document.getElementById('settings-name-input').value = prof.name;
+      document.getElementById('settings-email-input').value = prof.email;
+      document.getElementById('settings-title-input').value = prof.title;
+      document.getElementById('settings-wallet-addr').textContent = prof.walletFull;
+      if (prof.availableBalances) {
+        document.getElementById('settings-wallet-balances').textContent =
+          prof.availableBalances.USDC.toLocaleString('en-US', { minimumFractionDigits: 2 }) + ' USDC · ' +
+          prof.availableBalances.USDT.toLocaleString('en-US', { minimumFractionDigits: 2 }) + ' USDT';
+      }
+      if (prof.preferredAsset) document.getElementById('settings-asset-select').value = prof.preferredAsset;
+      if (prof.preferredNetwork) document.getElementById('settings-network-select').value = prof.preferredNetwork;
+
+      document.getElementById('settings-save-btn').addEventListener('click', function () {
+        var nextState = window.PatelaStore.getState();
+        var p = nextState.profiles[role];
+        p.name = document.getElementById('settings-name-input').value.trim() || p.name;
+        p.email = document.getElementById('settings-email-input').value.trim() || p.email;
+        p.title = document.getElementById('settings-title-input').value.trim() || p.title;
+        p.preferredAsset = document.getElementById('settings-asset-select').value;
+        p.preferredNetwork = document.getElementById('settings-network-select').value;
+        window.PatelaStore.saveState(nextState);
+        window.PatelaNav.renderShell();
+        window.PatelaUI.toast('Settings Saved', 'Updated profile & settlement preferences (' + p.preferredAsset + ' on ' + p.preferredNetwork + ').');
+      });
+
+      document.getElementById('settings-copy-wallet-btn').addEventListener('click', function () {
+        window.PatelaUI.toast('Address Copied', prof.walletFull);
+      });
+
+      document.getElementById('settings-reset-demo-btn').addEventListener('click', function () {
+        window.PatelaStore.resetState();
+        window.PatelaUI.toast('Demo Data Reset', 'Restored default balances and projects.');
+        setTimeout(function () { window.location.reload(); }, 400);
+      });
+    });
+  </script>
+</body>
+</html>

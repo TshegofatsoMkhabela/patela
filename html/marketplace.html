@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Marketplace</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-page="marketplace" data-breadcrumb="Find Work">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content" id="marketplace-root">
+        <section class="welcome-header" aria-label="Marketplace Header">
+          <div>
+            <h1 class="page-title">Find work</h1>
+            <p class="page-subtitle">Pre-funded escrow opportunities with defined milestones and deliverables.</p>
+          </div>
+          <span class="meta-text" id="mp-results-count">5 opportunities</span>
+        </section>
+
+        <!-- Clean Filter Toolbar (No unnecessary outer card wrapper) -->
+        <div class="filter-toolbar" style="margin-bottom:24px;">
+          <div class="search-box" style="flex:1;min-width:220px;">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input type="search" id="mp-search-input" class="input" placeholder="Search by title, skill, or client…" aria-label="Search marketplace jobs" />
+          </div>
+
+          <div class="filter-group">
+            <select id="mp-category-filter" class="select" style="width:auto;" aria-label="Category">
+              <option value="all">All categories</option>
+              <option value="Product Design">Product Design</option>
+              <option value="UI/UX & Frontend">UI/UX &amp; Frontend</option>
+              <option value="Frontend Engineering">Frontend Engineering</option>
+              <option value="Web3 & Solidity">Web3 &amp; Solidity</option>
+              <option value="Backend & Data">Backend &amp; Data</option>
+            </select>
+
+            <select id="mp-budget-filter" class="select" style="width:auto;" aria-label="Budget">
+              <option value="all">Any budget</option>
+              <option value="under-1500">Under $1,500</option>
+              <option value="1500-2500">$1,500 – $2,500</option>
+              <option value="over-2500">Over $2,500</option>
+            </select>
+
+            <select id="mp-asset-filter" class="select" style="width:auto;" aria-label="Asset">
+              <option value="all">All assets</option>
+              <option value="USDC">USDC</option>
+              <option value="USDT">USDT</option>
+            </select>
+
+            <select id="mp-exp-filter" class="select" style="width:auto;" aria-label="Experience">
+              <option value="all">Any level</option>
+              <option value="Intermediate">Intermediate</option>
+              <option value="Senior">Senior</option>
+              <option value="Expert">Expert</option>
+            </select>
+
+            <select id="mp-sort-select" class="select" style="width:auto;" aria-label="Sort">
+              <option value="newest">Newest</option>
+              <option value="budget-high">Budget: High to low</option>
+              <option value="budget-low">Budget: Low to high</option>
+              <option value="proposals">Fewest proposals</option>
+            </select>
+
+            <button type="button" class="btn btn-ghost btn-sm" id="mp-reset-filters-btn">Reset</button>
+          </div>
+        </div>
+
+        <!-- Job Cards Grid -->
+        <section class="dashboard-equal" id="mp-jobs-grid" style="margin-bottom:0;" aria-label="Job Listings"></section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Job Detail & Proposal Modal -->
+  <div class="modal-backdrop" id="job-detail-modal">
+    <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="job-detail-modal-title">
+      <div class="modal-header">
+        <h2 class="modal-title" id="job-detail-modal-title">Job Details</h2>
+        <button type="button" class="icon-btn" data-modal-close aria-label="Close modal">✕</button>
+      </div>
+      <div class="modal-body" id="job-detail-modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+        <button type="button" class="btn btn-primary" id="job-modal-submit-proposal-btn">Submit Proposal</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/interactions.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/worker.js"></script>
+</body>
+</html>

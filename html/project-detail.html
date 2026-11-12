@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Project Details</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-page="projects" data-breadcrumb="Project Details">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content" id="project-detail-root">
+        <!-- Project Header -->
+        <section class="welcome-header" id="pd-header-container"></section>
+
+        <!-- Section 4: Project Analytics (Milestone Progress, Financial Progress & 7-Stage Lifecycle Timeline) -->
+        <section class="section-block" id="pd-project-analytics-section" aria-label="Project progress and lifecycle"></section>
+
+        <!-- Main Two-Column Workspace -->
+        <div class="workspace-grid">
+          <!-- Left Column: Current Milestone Action + Expandable Milestones -->
+          <div style="display:flex;flex-direction:column;gap:28px;">
+            <section class="card card-gold" id="pd-role-submission-panel" aria-label="Current Milestone Action"></section>
+
+            <section aria-labelledby="pd-milestones-heading">
+              <div class="section-header-bar">
+                <h2 class="section-title" id="pd-milestones-heading">Milestones</h2>
+                <span class="meta-text">Click any milestone to expand details</span>
+              </div>
+              <div class="milestone-timeline" id="pd-milestones-list"></div>
+            </section>
+          </div>
+
+          <!-- Right Column: Escrow Custody + AI Verification + Compact Activity -->
+          <div style="display:flex;flex-direction:column;gap:24px;">
+            <section class="card" id="pd-escrow-panel" aria-label="Escrow Custody"></section>
+
+            <section class="card" id="pd-ai-verification-panel" aria-label="AI Verification"></section>
+
+            <section class="card" aria-labelledby="pd-activity-heading">
+              <div class="card-header" style="margin-bottom:10px;">
+                <h2 class="section-title" id="pd-activity-heading">Activity</h2>
+              </div>
+              <div class="activity-list" id="pd-activity-timeline"></div>
+            </section>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Request Revision Modal -->
+  <div class="modal-backdrop" id="request-revision-modal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="req-rev-title">
+      <div class="modal-header">
+        <h3 class="modal-title" id="req-rev-title">Request revision</h3>
+        <button type="button" class="icon-btn" data-modal-close aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" for="revision-feedback-textarea">Revision notes for freelancer</label>
+          <textarea id="revision-feedback-textarea" class="textarea">Please include the standalone exported SVG icon archive (32 icons) alongside the updated mobile checkout frame.</textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+        <button type="button" class="btn btn-primary" id="confirm-revision-submit-btn">Send request</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/interactions.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

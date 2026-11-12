@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Workspace Prototype</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body>
+  <video class="patela-bgv" autoplay muted loop playsinline aria-hidden="true">
+    <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104303_0c6d60b2-9353-408e-9449-585108a22fb5.mp4" type="video/mp4" />
+  </video>
+  <div class="patela-frost" aria-hidden="true"></div>
+
+  <div class="entry-shell">
+    <!-- Top Header -->
+    <header style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:6px 0;">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <a href="/" data-site-path="/" class="brand-link" title="Back to Patela Landing Page">
+          <svg viewBox="0 0 23 17" aria-hidden="true">
+            <path d="M8.15 0.9 L4.55 0.9 L0.5 9.3 L4.1 9.3 Z" />
+            <path d="M17.0 0 L13.4 0 L6.15 16.4 L9.75 16.4 Z" />
+            <path d="M22.9 0 L19.3 0 L15.0 7.6 L18.6 7.6 Z" />
+            <path d="M22.6 6.9 L19.0 6.9 L14.05 16.4 L17.65 16.4 Z" />
+          </svg>
+          <span class="brand-wordmark">PATELA</span>
+        </a>
+        <nav aria-label="Site Navigation" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <a href="/" data-site-path="/" class="topbar-site-pill">← Home</a>
+          <a href="/how-it-works" data-site-path="/how-it-works" class="topbar-site-pill">How it works</a>
+          <a href="/marketplace" data-site-path="/marketplace" class="topbar-site-pill">Public Marketplace</a>
+          <a href="/post-job" data-site-path="/post-job" class="topbar-site-pill">Quick Post Job</a>
+        </nav>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="badge badge-neutral">Unified Demo Workspace</span>
+        <button type="button" class="btn btn-secondary btn-sm" id="entry-reset-btn">Reset demo state</button>
+      </div>
+    </header>
+
+    <!-- Main Role Selection -->
+    <main>
+      <div class="entry-hero">
+        <div class="section-label" style="margin-bottom:10px;color:var(--accent-gold);">MILESTONE ESCROW &amp; AI VERIFICATION CONSOLE</div>
+        <h1 class="page-title" style="font-size:clamp(1.85rem, 3.2vw, 2.5rem);">
+          Select your Patela workspace
+        </h1>
+        <p class="page-subtitle" style="max-width:52ch;margin:10px auto 0;">
+          Seamlessly connected with the Patela marketplace. Choose a role below to manage escrows, inspect AI verification reports, or submit milestone deliverables.
+        </p>
+      </div>
+
+      <!-- Two Role Cards -->
+      <div class="entry-role-grid">
+        <section class="role-choice-card" aria-labelledby="role-client-heading">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+              <span class="badge badge-gold">Client Workspace</span>
+              <span class="meta-text" id="entry-client-escrow">$2,450 USDC in escrow</span>
+            </div>
+            <h2 id="role-client-heading" style="font-family:var(--font-display);font-size:1.3rem;font-weight:500;margin-bottom:6px;">Alex Morgan</h2>
+            <p style="color:var(--text-secondary);font-size:0.84375rem;margin-bottom:18px;">
+              Post jobs, fund smart-contract escrows, review advisory AI verification reports, and approve completed milestones.
+            </p>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+              <a href="post-job.html" class="topbar-site-pill" data-role-jump="client">5-Step Job Wizard</a>
+              <a href="projects.html" class="topbar-site-pill" data-role-jump="client">My Projects</a>
+              <a href="submissions.html" class="topbar-site-pill" data-role-jump="client">AI Review Queue</a>
+              <a href="analytics.html" class="topbar-site-pill" data-role-jump="client">Analytics</a>
+            </div>
+          </div>
+          <a href="client-dashboard.html" class="btn btn-primary btn-lg" id="enter-client-btn" style="width:100%;">
+            Enter Client Dashboard →
+          </a>
+        </section>
+
+        <section class="role-choice-card" aria-labelledby="role-worker-heading">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+              <span class="badge badge-blue">Worker Workspace</span>
+              <span class="meta-text" id="entry-worker-escrow">$1,850 USDC secured</span>
+            </div>
+            <h2 id="role-worker-heading" style="font-family:var(--font-display);font-size:1.3rem;font-weight:500;margin-bottom:6px;">Jordan Blake</h2>
+            <p style="color:var(--text-secondary);font-size:0.84375rem;margin-bottom:18px;">
+              Discover pre-funded jobs, submit proposals, upload deliverables for AI verification, and receive instant on-chain payouts.
+            </p>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+              <a href="marketplace.html" class="topbar-site-pill" data-role-jump="worker">Find Work Console</a>
+              <a href="Active-work.html" class="topbar-site-pill" data-role-jump="worker">Active Milestones</a>
+              <a href="submissions.html" class="topbar-site-pill" data-role-jump="worker">Submit Deliverable</a>
+              <a href="payments.html" class="topbar-site-pill" data-role-jump="worker">Wallet &amp; Payouts</a>
+            </div>
+          </div>
+          <a href="worker-dashboard.html" class="btn btn-secondary btn-lg" id="enter-worker-btn" style="width:100%;">
+            Enter Worker Dashboard →
+          </a>
+        </section>
+      </div>
+    </main>
+
+    <footer style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;" class="meta-text">
+      <span>Patela Workspace · Simulated Escrow &amp; Advisory AI Verification (Base Sepolia Demo)</span>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <a href="/" data-site-path="/" style="color:var(--text-secondary);">Landing Page</a>
+        <a href="/marketplace" data-site-path="/marketplace" style="color:var(--text-secondary);">Public Marketplace</a>
+        <a href="/security" data-site-path="/security" style="color:var(--text-secondary);">Security</a>
+      </div>
+    </footer>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/interactions.js"></script>
+  <script>
+    (function () {
+      function resolveHref(sitePath) {
+        if (window.location.protocol === 'file:') {
+          return '../public/index.html';
+        }
+        return sitePath;
+      }
+
+      document.querySelectorAll('[data-site-path]').forEach(function (link) {
+        var p = link.getAttribute('data-site-path');
+        if (p) link.setAttribute('href', resolveHref(p));
+      });
+
+      function refreshLiveMetrics() {
+        if (!window.PatelaStore) return;
+        var st = window.PatelaStore.getState();
+        if (st && st.balances) {
+          var cEl = document.getElementById('entry-client-escrow');
+          var wEl = document.getElementById('entry-worker-escrow');
+          if (cEl && st.balances.client) {
+            cEl.textContent = '$' + Number(st.balances.client.inEscrow || 2450).toLocaleString() + ' USDC in escrow';
+          }
+          if (wEl && st.balances.worker) {
+            wEl.textContent = '$' + Number(st.balances.worker.activeEscrow || 1850).toLocaleString() + ' USDC secured';
+          }
+        }
+      }
+      refreshLiveMetrics();
+
+      function navigateFluid(href, role) {
+        if (role && window.PatelaStore) {
+          window.PatelaStore.setRole(role);
+        }
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          window.location.href = href;
+          return;
+        }
+        document.body.classList.add('ios-page-leaving');
+        setTimeout(function () {
+          window.location.href = href;
+        }, 170);
+      }
+
+      document.getElementById('enter-client-btn').addEventListener('click', function (e) {
+        e.preventDefault();
+        navigateFluid('client-dashboard.html', 'client');
+      });
+      document.getElementById('enter-worker-btn').addEventListener('click', function (e) {
+        e.preventDefault();
+        navigateFluid('worker-dashboard.html', 'worker');
+      });
+      document.querySelectorAll('[data-role-jump]').forEach(function (link) {
+        link.addEventListener('click', function (e) {
+          e.preventDefault();
+          navigateFluid(link.getAttribute('href'), link.getAttribute('data-role-jump'));
+        });
+      });
+      document.getElementById('entry-reset-btn').addEventListener('click', function () {
+        window.PatelaStore.resetState();
+        refreshLiveMetrics();
+        window.PatelaUI.toast('Demo State Reset', 'Default balances and projects restored.');
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Payments &amp; Earnings</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-page="payments" data-breadcrumb="Payments">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content" id="payments-page-root">
+        <section class="welcome-header">
+          <div>
+            <h1 class="page-title" id="payments-page-title">Payments &amp; Escrow</h1>
+            <p class="page-subtitle" id="payments-page-subtitle">Escrow deposits, released milestone payments, and transaction history.</p>
+          </div>
+          <div class="welcome-actions">
+            <a href="analytics.html" class="btn btn-secondary btn-sm">Open financial analytics →</a>
+          </div>
+        </section>
+
+        <!-- Role-Specific 4 Metric Cards -->
+        <section class="metrics-grid" id="payments-role-metrics" aria-label="Financial Summary" style="margin-bottom:20px;"></section>
+
+        <!-- Multi-Asset Balance & Custody Strip -->
+        <section class="card section-block" id="payments-multi-asset-strip" style="padding:16px 22px;" aria-label="Multi-asset wallet balances"></section>
+
+        <!-- Section 5: Interactive Financial Flow Diagram -->
+        <section class="card section-block" aria-labelledby="flow-diagram-heading">
+          <div class="card-header" style="margin-bottom:14px;">
+            <div>
+              <h2 class="section-title" id="flow-diagram-heading">How money moves through Patela</h2>
+              <p class="section-subtitle">Click any stage below to inspect how funds are protected in the simulated smart-contract workflow</p>
+            </div>
+            <span class="badge badge-neutral">Simulated Escrow Workflow</span>
+          </div>
+
+          <div class="flow-diagram-grid" id="patela-flow-nodes"></div>
+          <div class="flow-inspector" id="patela-flow-inspector"></div>
+        </section>
+
+        <!-- Filter Toolbar (Type, Status, Asset, Network, Date Range) -->
+        <div class="filter-toolbar">
+          <div class="search-box" style="flex:1;min-width:200px;">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input type="search" id="tx-search-input" class="input" placeholder="Search description, project, hash…" aria-label="Search transactions" />
+          </div>
+
+          <div class="filter-group">
+            <select id="tx-type-filter" class="select" style="width:auto;" aria-label="Transaction type">
+              <option value="all">All types</option>
+              <option value="Escrow Deposit">Escrow Deposit</option>
+              <option value="Milestone Release">Milestone Release</option>
+              <option value="Payout Queued">Payout Queued</option>
+              <option value="Refund Processed">Refund Processed</option>
+              <option value="Payout Retry">Payout Retry</option>
+            </select>
+
+            <select id="tx-status-filter" class="select" style="width:auto;" aria-label="Status">
+              <option value="all">All statuses</option>
+              <option value="Completed">Completed</option>
+              <option value="Pending">Pending</option>
+              <option value="Refunded">Refunded</option>
+              <option value="Failed">Failed</option>
+            </select>
+
+            <select id="tx-asset-filter" class="select" style="width:auto;" aria-label="Asset">
+              <option value="all">All assets</option>
+              <option value="USDC">USDC</option>
+              <option value="USDT">USDT</option>
+            </select>
+
+            <select id="tx-network-filter" class="select" style="width:auto;" aria-label="Network">
+              <option value="all">All networks</option>
+              <option value="Base Mainnet">Base Mainnet</option>
+              <option value="Arbitrum One">Arbitrum One</option>
+              <option value="Ethereum Mainnet">Ethereum Mainnet</option>
+            </select>
+
+            <select id="tx-date-filter" class="select" style="width:auto;" aria-label="Date range">
+              <option value="all">All time</option>
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+              <option value="90d">Last 3 months</option>
+            </select>
+
+            <button type="button" class="btn btn-ghost btn-sm" id="tx-reset-btn">Reset</button>
+          </div>
+        </div>
+
+        <!-- Clean Transaction Table -->
+        <section class="card-flush" aria-label="Transaction History">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th>Related Project</th>
+                  <th>Date</th>
+                  <th>Asset</th>
+                  <th>Network</th>
+                  <th>Status</th>
+                  <th class="right">Amount</th>
+                  <th class="right"></th>
+                </tr>
+              </thead>
+              <tbody id="tx-table-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/interactions.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

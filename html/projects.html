@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — My Projects</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-page="projects" data-breadcrumb="My Projects">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content" id="projects-page-root">
+        <section class="welcome-header">
+          <div>
+            <h1 class="page-title">My projects</h1>
+            <p class="page-subtitle" id="projects-role-subtitle">Manage your active projects and milestone progress.</p>
+          </div>
+          <div class="welcome-actions" id="projects-header-cta"></div>
+        </section>
+
+        <div class="filter-toolbar">
+          <div class="tabs" role="tablist" aria-label="Filter projects by status">
+            <button type="button" class="tab-btn active" data-proj-tab="all">All</button>
+            <button type="button" class="tab-btn" data-proj-tab="active">Active</button>
+            <button type="button" class="tab-btn" data-proj-tab="review">Awaiting review</button>
+            <button type="button" class="tab-btn" data-proj-tab="revision">Revision</button>
+            <button type="button" class="tab-btn" data-proj-tab="completed">Completed</button>
+          </div>
+
+          <div class="filter-group">
+            <div class="search-box" style="width:220px;">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              <input type="search" id="projects-search-input" class="input" placeholder="Search projects…" aria-label="Search projects" />
+            </div>
+
+            <select id="projects-sort-select" class="select" style="width:auto;" aria-label="Sort projects">
+              <option value="recent">Recent activity</option>
+              <option value="budget-high">Budget: High to low</option>
+              <option value="escrow-high">Escrow: High to low</option>
+            </select>
+
+            <button type="button" class="btn btn-ghost btn-sm" id="projects-reset-btn">Reset</button>
+          </div>
+        </div>
+
+        <section class="card-flush">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr id="projects-table-thead-row"></tr>
+              </thead>
+              <tbody id="projects-table-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/interactions.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

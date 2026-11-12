@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Post a Job</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-force-role="client" data-page="post-job" data-breadcrumb="Post a Job">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content" id="post-job-wizard-root" style="max-width:960px;">
+        <section class="welcome-header">
+          <div>
+            <h1 class="page-title">Post a job</h1>
+            <p class="page-subtitle">Define deliverables, milestones, and smart-contract escrow terms.</p>
+          </div>
+          <div class="welcome-actions">
+            <a href="client-dashboard.html" class="btn btn-ghost">Cancel</a>
+          </div>
+        </section>
+
+        <!-- 5-Step Progress Bar -->
+        <nav class="wizard-steps" aria-label="Job creation steps">
+          <button type="button" class="wizard-step-pill active" data-wizard-pill="1">
+            <span class="step-index">1</span>
+            <span>Details</span>
+          </button>
+          <button type="button" class="wizard-step-pill" data-wizard-pill="2">
+            <span class="step-index">2</span>
+            <span>Deliverables</span>
+          </button>
+          <button type="button" class="wizard-step-pill" data-wizard-pill="3">
+            <span class="step-index">3</span>
+            <span>Milestones</span>
+          </button>
+          <button type="button" class="wizard-step-pill" data-wizard-pill="4">
+            <span class="step-index">4</span>
+            <span>Payment</span>
+          </button>
+          <button type="button" class="wizard-step-pill" data-wizard-pill="5">
+            <span class="step-index">5</span>
+            <span>Review</span>
+          </button>
+        </nav>
+
+        <!-- Published Confirmation State -->
+        <section class="card card-gold" id="wizard-published-confirmation" style="display:none;text-align:center;padding:42px 24px;">
+          <h2 class="section-title" style="font-size:1.25rem;">Job published</h2>
+          <p class="page-subtitle" style="max-width:44ch;margin:8px auto 20px;">
+            <strong id="published-job-id" class="text-gold"></strong> is now live in the Marketplace.
+          </p>
+          <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
+            <a href="marketplace.html" class="btn btn-primary">View in Marketplace →</a>
+            <a href="client-dashboard.html" class="btn btn-secondary">Back to overview</a>
+          </div>
+        </section>
+
+        <!-- Multi-Step Form Card -->
+        <div class="card" id="wizard-form-card">
+          <!-- STEP 1: Job Details -->
+          <section data-wizard-panel="1" aria-label="Step 1: Job Details">
+            <div class="card-header">
+              <h2 class="section-title">Job details</h2>
+              <span class="meta-text">Step 1 of 5</span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="job-title-input">Job title</label>
+                <input type="text" id="job-title-input" class="input" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="job-category-input">Category</label>
+                <select id="job-category-input" class="select">
+                  <option value="UI/UX & Frontend">UI/UX &amp; Frontend</option>
+                  <option value="Product Design">Product Design</option>
+                  <option value="Frontend Engineering">Frontend Engineering</option>
+                  <option value="Web3 & Solidity">Web3 &amp; Solidity</option>
+                  <option value="Backend & Data">Backend &amp; Data</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="job-desc-input">Description</label>
+              <textarea id="job-desc-input" class="textarea" required></textarea>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" for="job-skills-input">Required skills</label>
+                <input type="text" id="job-skills-input" class="input" required />
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" for="job-deadline-input">Target deadline</label>
+                <input type="date" id="job-deadline-input" class="input" value="2026-12-10" />
+              </div>
+            </div>
+
+            <div class="card-footer" style="justify-content:flex-end;">
+              <button type="button" class="btn btn-primary" data-wizard-next>Continue →</button>
+            </div>
+          </section>
+
+          <!-- STEP 2: Deliverables -->
+          <section data-wizard-panel="2" style="display:none;" aria-label="Step 2: Deliverables">
+            <div class="card-header">
+              <h2 class="section-title">Deliverables</h2>
+              <button type="button" class="btn btn-secondary btn-sm" id="add-deliverable-btn">+ Add deliverable</button>
+            </div>
+
+            <div id="wizard-deliverables-list"></div>
+
+            <div class="form-row" style="margin-top:14px;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" for="job-subreq-input">Submission format</label>
+                <input type="text" id="job-subreq-input" class="input" />
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" for="job-revexp-input">Review expectations</label>
+                <input type="text" id="job-revexp-input" class="input" />
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <button type="button" class="btn btn-secondary" data-wizard-prev>← Back</button>
+              <button type="button" class="btn btn-primary" data-wizard-next>Continue →</button>
+            </div>
+          </section>
+
+          <!-- STEP 3: Milestones and Budget -->
+          <section data-wizard-panel="3" style="display:none;" aria-label="Step 3: Milestones and Budget">
+            <div class="card-header">
+              <h2 class="section-title">Milestones &amp; budget</h2>
+              <div style="display:flex;gap:8px;">
+                <button type="button" class="btn btn-ghost btn-sm" id="auto-balance-budget-btn">Match budget to sum</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="add-milestone-btn">+ Add milestone</button>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="job-budget-input">Total budget (USD)</label>
+                <input type="number" id="job-budget-input" class="input tabular" min="50" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Allocation check</label>
+                <div class="card-elevated" id="wizard-ms-sum-banner" style="padding:7px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;"></div>
+              </div>
+            </div>
+
+            <div id="wizard-milestones-list"></div>
+
+            <div class="card-footer">
+              <button type="button" class="btn btn-secondary" data-wizard-prev>← Back</button>
+              <button type="button" class="btn btn-primary" data-wizard-next>Continue →</button>
+            </div>
+          </section>
+
+          <!-- STEP 4: Payment Configuration -->
+          <section data-wizard-panel="4" style="display:none;" aria-label="Step 4: Payment Configuration">
+            <div class="card-header">
+              <h2 class="section-title">Payment configuration</h2>
+              <span class="meta-text">Step 4 of 5</span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" for="job-asset-input">Payment asset</label>
+                <select id="job-asset-input" class="select">
+                  <option value="USDC">USDC</option>
+                  <option value="USDT">USDT</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" for="job-network-input">Network</label>
+                <select id="job-network-input" class="select">
+                  <option value="Base Mainnet">Base Mainnet</option>
+                  <option value="Arbitrum One">Arbitrum One</option>
+                  <option value="Ethereum Mainnet">Ethereum Mainnet</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <button type="button" class="btn btn-secondary" data-wizard-prev>← Back</button>
+              <button type="button" class="btn btn-primary" data-wizard-next>Continue →</button>
+            </div>
+          </section>
+
+          <!-- STEP 5: Review & Publish -->
+          <section data-wizard-panel="5" style="display:none;" aria-label="Step 5: Review and Publish">
+            <div class="card-header">
+              <h2 class="section-title">Review &amp; publish</h2>
+              <span class="badge badge-success">Ready</span>
+            </div>
+
+            <div class="card-elevated" id="wizard-review-summary"></div>
+
+            <div class="card-footer">
+              <button type="button" class="btn btn-secondary" data-wizard-prev>← Back</button>
+              <button type="button" class="btn btn-primary" id="publish-job-final-btn">Publish job</button>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/interactions.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/client.js"></script>
+</body>
+</html>

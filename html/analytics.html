@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Financial &amp; Project Analytics</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-page="analytics" data-breadcrumb="Analytics">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content" id="analytics-page-root">
+        <section class="welcome-header">
+          <div>
+            <h1 class="page-title" id="analytics-page-title">Financial &amp; Project Analytics</h1>
+            <p class="page-subtitle" id="analytics-page-subtitle">Monitor spending, escrow custody, and milestone velocity.</p>
+          </div>
+          <div class="welcome-actions">
+            <a href="payments.html" class="btn btn-secondary btn-sm">Open transaction ledger →</a>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             CLIENT ANALYTICS VIEW
+             ================================================================ -->
+        <div id="client-analytics-view">
+          <div class="filter-toolbar" style="margin-bottom:24px;">
+            <div class="tabs" role="tablist" aria-label="Client analytics sections">
+              <button type="button" class="tab-btn active" data-client-analytics-tab="all">All insights</button>
+              <button type="button" class="tab-btn" data-client-analytics-tab="spending">Spending &amp; escrow</button>
+              <button type="button" class="tab-btn" data-client-analytics-tab="projects">Projects &amp; activity</button>
+            </div>
+            <span class="meta-text">Hover over any chart point or bar for detailed comparisons</span>
+          </div>
+
+          <!-- PANEL 1: SPENDING & ESCROW -->
+          <div data-client-analytics-panel="spending">
+            <!-- A. Financial Performance Chart -->
+            <section class="card section-block" aria-labelledby="client-perf-heading">
+              <div class="card-header">
+                <div>
+                  <h2 class="section-title" id="client-perf-heading">Financial performance &amp; spending over time</h2>
+                  <p class="section-subtitle">Settled milestone releases and period-over-period spending trends</p>
+                </div>
+                <div class="chart-header-controls">
+                  <div class="time-filter-bar" role="group" aria-label="Chart type">
+                    <button type="button" class="time-pill active" data-client-chart-mode="line">Line</button>
+                    <button type="button" class="time-pill" data-client-chart-mode="bar">Bar</button>
+                  </div>
+                  <div class="time-filter-bar" role="group" aria-label="Time range">
+                    <button type="button" class="time-pill" data-client-range="7d">7d</button>
+                    <button type="button" class="time-pill" data-client-range="30d">30d</button>
+                    <button type="button" class="time-pill" data-client-range="3m">3m</button>
+                    <button type="button" class="time-pill active" data-client-range="6m">6m</button>
+                    <button type="button" class="time-pill" data-client-range="12m">12m</button>
+                    <button type="button" class="time-pill" data-client-range="all">All time</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="chart-summary-strip">
+                <div class="chart-summary-item">
+                  <span class="meta-text">Period spending (released)</span>
+                  <span class="chart-summary-val text-gold" id="client-chart-period-total">8,320.00 USDC</span>
+                </div>
+                <div class="chart-summary-item">
+                  <span class="meta-text">Monthly average</span>
+                  <span class="chart-summary-val" id="client-chart-monthly-avg">1,386.67 USDC</span>
+                </div>
+                <div class="chart-summary-item">
+                  <span class="meta-text">Currently secured in escrow</span>
+                  <span class="chart-summary-val">2,450.00 USDC</span>
+                </div>
+                <div class="chart-summary-item">
+                  <span class="meta-text">Period comparison</span>
+                  <span class="badge badge-success" id="client-chart-comparison" style="margin-top:4px;">+31.4% vs prior 6m</span>
+                </div>
+              </div>
+
+              <div class="svg-chart-wrap" id="client-spending-svg-wrap"></div>
+            </section>
+
+            <!-- C. Escrow Allocation (Non-Overlapping Horizontal Stacked Bar) -->
+            <section class="card section-block" aria-labelledby="client-escrow-alloc-heading">
+              <div class="card-header">
+                <div>
+                  <h2 class="section-title" id="client-escrow-alloc-heading">Escrow fund allocation</h2>
+                  <p class="section-subtitle">Non-overlapping breakdown of 10,970.00 USDC total deposited across all contracts (no double-counting)</p>
+                </div>
+                <span class="badge badge-gold">Total deposited: 10,970.00 USDC</span>
+              </div>
+
+              <div class="stacked-bar-track" aria-label="Escrow allocation bar">
+                <div class="stacked-bar-seg"
+                     style="width:75.84%;background:var(--success);"
+                     data-escrow-seg
+                     data-escrow-title="Released to workers (Settled)"
+                     data-escrow-val="8,320.00 USDC (75.8%)"
+                     data-escrow-desc="17 milestones approved and settled to freelancer wallets"></div>
+                <div class="stacked-bar-seg"
+                     style="width:18.69%;background:var(--gold);"
+                     data-escrow-seg
+                     data-escrow-title="Locked in escrow (Active work)"
+                     data-escrow-val="2,050.00 USDC (18.7%)"
+                     data-escrow-desc="Secured in smart contracts for active milestones in progress"></div>
+                <div class="stacked-bar-seg"
+                     style="width:3.65%;background:var(--blue);"
+                     data-escrow-seg
+                     data-escrow-title="Locked in escrow (Awaiting approval)"
+                     data-escrow-val="400.00 USDC (3.6%)"
+                     data-escrow-desc="PRJ-201 Milestone 2 verified by AI and awaiting your release decision"></div>
+                <div class="stacked-bar-seg"
+                     style="width:1.82%;background:#647084;"
+                     data-escrow-seg
+                     data-escrow-title="Refunds processed"
+                     data-escrow-val="200.00 USDC (1.8%)"
+                     data-escrow-desc="Unused scope returned to your wallet (TX-9015)"></div>
+              </div>
+
+              <div class="stacked-legend-grid">
+                <div class="stacked-legend-card">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="legend-swatch" style="background:var(--success);"></span>
+                    <span class="meta-text">Released to workers</span>
+                  </div>
+                  <div class="cell-amount tabular" style="font-size:1.05rem;">8,320.00 USDC</div>
+                  <span class="meta-text">75.8% · Already settled</span>
+                </div>
+
+                <div class="stacked-legend-card" style="border-color:var(--border-gold);">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="legend-swatch" style="background:var(--gold);"></span>
+                    <span class="meta-text">Locked (In progress)</span>
+                  </div>
+                  <div class="cell-amount tabular text-gold" style="font-size:1.05rem;">2,050.00 USDC</div>
+                  <span class="meta-text">18.7% · Secured in escrow</span>
+                </div>
+
+                <div class="stacked-legend-card">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="legend-swatch" style="background:var(--blue);"></span>
+                    <span class="meta-text">Locked (Awaiting approval)</span>
+                  </div>
+                  <div class="cell-amount tabular text-blue" style="font-size:1.05rem;">400.00 USDC</div>
+                  <span class="meta-text">3.6% · Ready for your review</span>
+                </div>
+
+                <div class="stacked-legend-card">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="legend-swatch" style="background:#647084;"></span>
+                    <span class="meta-text">Refunded to wallet</span>
+                  </div>
+                  <div class="cell-amount tabular" style="font-size:1.05rem;">200.00 USDC</div>
+                  <span class="meta-text">1.8% · Scope adjustment</span>
+                </div>
+              </div>
+            </section>
+
+            <!-- B. Spending Breakdown by Category (Interactive Donut) -->
+            <section class="card section-block" aria-labelledby="client-cat-heading">
+              <div class="card-header">
+                <div>
+                  <h2 class="section-title" id="client-cat-heading">Spending breakdown by category</h2>
+                  <p class="section-subtitle">Click any category slice or row to reveal the allocated projects</p>
+                </div>
+                <span class="meta-text tabular">Total allocated: 10,770.00 USDC</span>
+              </div>
+
+              <div class="donut-layout">
+                <div class="donut-svg-box" id="client-donut-svg"></div>
+                <div>
+                  <div class="donut-legend" id="client-donut-legend"></div>
+                  <div id="client-donut-drilldown"></div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- PANEL 2: PROJECTS & MONTHLY SUMMARY -->
+          <div data-client-analytics-panel="projects">
+            <div class="dashboard-equal">
+              <!-- D. Project Performance Overview -->
+              <section class="card" aria-labelledby="client-proj-perf-heading">
+                <div class="card-header">
+                  <div>
+                    <h2 class="section-title" id="client-proj-perf-heading">Project portfolio status</h2>
+                    <p class="section-subtitle">7 total engagements across active and completed contracts</p>
+                  </div>
+                </div>
+
+                <div class="kv-list" style="margin-bottom:18px;">
+                  <div class="kv-row">
+                    <span class="kv-label">Active projects</span>
+                    <span class="kv-value tabular">4 projects (2,450.00 USDC in escrow)</span>
+                  </div>
+                  <div class="kv-row">
+                    <span class="kv-label">Completed projects</span>
+                    <span class="kv-value tabular text-success">3 projects (6,570.00 USDC settled)</span>
+                  </div>
+                  <div class="kv-row">
+                    <span class="kv-label">Projects awaiting review</span>
+                    <span class="kv-value tabular text-gold">2 (PRJ-201 M2 · PRJ-204 M2)</span>
+                  </div>
+                  <div class="kv-row">
+                    <span class="kv-label">Projects requiring attention</span>
+                    <span class="kv-value tabular text-warning">2 (PRJ-202 M3 funding · PRJ-203 revision)</span>
+                  </div>
+                </div>
+
+                <div>
+                  <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                    <span class="meta-text">Overall milestone completion rate</span>
+                    <span class="meta-text text-gold tabular">81% (17 of 21 milestones)</span>
+                  </div>
+                  <div class="progress-track">
+                    <div class="progress-fill" style="width:81%;"></div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Project Spending Comparison -->
+              <section class="card" aria-labelledby="client-proj-comp-heading">
+                <div class="card-header">
+                  <div>
+                    <h2 class="section-title" id="client-proj-comp-heading">Project spending comparison</h2>
+                    <p class="section-subtitle">Released vs remaining locked escrow per active contract</p>
+                  </div>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:14px;">
+                  <div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.8125rem;margin-bottom:4px;">
+                      <a href="project-detail.html?id=PRJ-201" class="cell-title">E-commerce Website Redesign</a>
+                      <span class="tabular text-secondary">250.00 released / <strong class="text-gold">950.00 locked</strong> (USDC)</span>
+                    </div>
+                    <div class="stacked-bar-track" style="height:8px;padding:0;">
+                      <div class="stacked-bar-seg" style="width:20.8%;background:var(--success);"></div>
+                      <div class="stacked-bar-seg" style="width:79.2%;background:var(--gold);"></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.8125rem;margin-bottom:4px;">
+                      <a href="project-detail.html?id=PRJ-202" class="cell-title">Smart Contract Integration</a>
+                      <span class="tabular text-secondary">500.00 released / <strong class="text-gold">500.00 locked</strong> (USDC)</span>
+                    </div>
+                    <div class="stacked-bar-track" style="height:8px;padding:0;">
+                      <div class="stacked-bar-seg" style="width:35.7%;background:var(--success);"></div>
+                      <div class="stacked-bar-seg" style="width:35.7%;background:var(--gold);"></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.8125rem;margin-bottom:4px;">
+                      <a href="project-detail.html?id=PRJ-203" class="cell-title">Mobile Banking UI</a>
+                      <span class="tabular text-secondary">500.00 released / <strong class="text-gold">600.00 locked</strong> (USDC)</span>
+                    </div>
+                    <div class="stacked-bar-track" style="height:8px;padding:0;">
+                      <div class="stacked-bar-seg" style="width:45.5%;background:var(--success);"></div>
+                      <div class="stacked-bar-seg" style="width:54.5%;background:var(--gold);"></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.8125rem;margin-bottom:4px;">
+                      <a href="project-detail.html?id=PRJ-204" class="cell-title">React Dashboard Development</a>
+                      <span class="tabular text-secondary">500.00 released / <strong class="text-gold">400.00 locked</strong> (USDC)</span>
+                    </div>
+                    <div class="stacked-bar-track" style="height:8px;padding:0;">
+                      <div class="stacked-bar-seg" style="width:55.5%;background:var(--success);"></div>
+                      <div class="stacked-bar-seg" style="width:44.5%;background:var(--gold);"></div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <!-- Monthly Spending Summary & Recent Financial Activity -->
+            <div class="dashboard-equal" style="margin-bottom:0;">
+              <section class="card-flush" aria-labelledby="client-monthly-table-heading">
+                <div style="padding:20px 22px 12px;display:flex;justify-content:space-between;align-items:center;">
+                  <h2 class="section-title" id="client-monthly-table-heading">Monthly spending summary</h2>
+                  <span class="meta-text">All figures in USDC</span>
+                </div>
+                <div class="table-container">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Month</th>
+                        <th>Milestones</th>
+                        <th class="right">Released</th>
+                        <th class="right">Vs prior</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>August 2026</td>
+                        <td class="text-secondary">3 settled</td>
+                        <td class="right cell-amount">1,600.00 USDC</td>
+                        <td class="right"><span class="badge badge-success">+88.2%</span></td>
+                      </tr>
+                      <tr>
+                        <td>September 2026</td>
+                        <td class="text-secondary">3 settled</td>
+                        <td class="right cell-amount">1,850.00 USDC</td>
+                        <td class="right"><span class="badge badge-success">+15.6%</span></td>
+                      </tr>
+                      <tr>
+                        <td>October 2026</td>
+                        <td class="text-secondary">6 settled</td>
+                        <td class="right cell-amount">2,870.00 USDC</td>
+                        <td class="right"><span class="badge badge-success">+55.1%</span></td>
+                      </tr>
+                      <tr>
+                        <td>November 2026 (MTD)</td>
+                        <td class="text-secondary">1 settled · 2 in review</td>
+                        <td class="right cell-amount text-gold">500.00 USDC</td>
+                        <td class="right"><span class="badge badge-gold">2,450.00 in escrow</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section class="card" aria-labelledby="client-fin-act-heading">
+                <div class="card-header" style="margin-bottom:12px;">
+                  <h2 class="section-title" id="client-fin-act-heading">Recent financial activity</h2>
+                  <a href="payments.html" class="meta-text" style="color:var(--gold-light);">Full ledger →</a>
+                </div>
+                <div class="activity-list">
+                  <div class="activity-row">
+                    <div class="activity-left">
+                      <span class="activity-icon-pill success">✓</span>
+                      <div>
+                        <div class="activity-text">Milestone approved &amp; released — <strong>React Dashboard (M1)</strong></div>
+                        <div class="meta-text">02 Nov 2026 · Base Mainnet</div>
+                      </div>
+                    </div>
+                    <span class="cell-amount tabular text-success">500.00 USDC</span>
+                  </div>
+                  <div class="activity-row">
+                    <div class="activity-left">
+                      <span class="activity-icon-pill success">✓</span>
+                      <div>
+                        <div class="activity-text">Milestone approved &amp; released — <strong>Smart Contract Integration (M1)</strong></div>
+                        <div class="meta-text">31 Oct 2026 · Base Mainnet</div>
+                      </div>
+                    </div>
+                    <span class="cell-amount tabular text-success">500.00 USDC</span>
+                  </div>
+                  <div class="activity-row">
+                    <div class="activity-left">
+                      <span class="activity-icon-pill blue">⛨</span>
+                      <div>
+                        <div class="activity-text">Escrow funded — <strong>E-commerce Website Redesign</strong></div>
+                        <div class="meta-text">20 Oct 2026 · 4 milestones locked</div>
+                      </div>
+                    </div>
+                    <span class="cell-amount tabular text-gold">1,200.00 USDC</span>
+                  </div>
+                  <div class="activity-row">
+                    <div class="activity-left">
+                      <span class="activity-icon-pill gold">↩</span>
+                      <div>
+                        <div class="activity-text">Unused scope refund processed — <strong>Marketing Scope Adjustment</strong></div>
+                        <div class="meta-text">24 Sep 2026 · Returned to wallet</div>
+                      </div>
+                    </div>
+                    <span class="cell-amount tabular">200.00 USDC</span>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================================================================
+             WORKER ANALYTICS VIEW
+             ================================================================ -->
+        <div id="worker-analytics-view" style="display:none;">
+          <div class="filter-toolbar" style="margin-bottom:24px;">
+            <div class="tabs" role="tablist" aria-label="Worker analytics sections">
+              <button type="button" class="tab-btn active" data-worker-analytics-tab="all">All insights</button>
+              <button type="button" class="tab-btn" data-worker-analytics-tab="earnings">Earnings &amp; balance</button>
+              <button type="button" class="tab-btn" data-worker-analytics-tab="payouts">Payouts &amp; performance</button>
+            </div>
+            <span class="meta-text">Hover over any data point to inspect exact earnings and milestone payouts</span>
+          </div>
+
+          <!-- PANEL 1: EARNINGS OVER TIME & BREAKDOWN -->
+          <div data-worker-analytics-panel="earnings">
+            <!-- A. Earnings Over Time Chart -->
+            <section class="card section-block" aria-labelledby="worker-earnings-chart-heading">
+              <div class="card-header">
+                <div>
+                  <h2 class="section-title" id="worker-earnings-chart-heading">Earnings over time</h2>
+                  <p class="section-subtitle">Settled milestone payouts across daily, weekly, and monthly views</p>
+                </div>
+                <div class="chart-header-controls">
+                  <div class="time-filter-bar" role="group" aria-label="Granularity">
+                    <button type="button" class="time-pill" data-worker-granularity="daily">Daily</button>
+                    <button type="button" class="time-pill" data-worker-granularity="weekly">Weekly</button>
+                    <button type="button" class="time-pill active" data-worker-granularity="monthly">Monthly</button>
+                  </div>
+                  <div class="time-filter-bar" role="group" aria-label="Time range">
+                    <button type="button" class="time-pill" data-worker-range="7d">7d</button>
+                    <button type="button" class="time-pill" data-worker-range="30d">30d</button>
+                    <button type="button" class="time-pill" data-worker-range="3m">3m</button>
+                    <button type="button" class="time-pill active" data-worker-range="6m">6m</button>
+                    <button type="button" class="time-pill" data-worker-range="12m">12m</button>
+                    <button type="button" class="time-pill" data-worker-range="all">All time</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="chart-summary-strip">
+                <div class="chart-summary-item">
+                  <span class="meta-text">Period settled earnings</span>
+                  <span class="chart-summary-val text-gold" id="worker-chart-period-total">5,420.00 USDC</span>
+                </div>
+                <div class="chart-summary-item">
+                  <span class="meta-text">November 2026 (MTD)</span>
+                  <span class="chart-summary-val">1,200.00 USDC</span>
+                </div>
+                <div class="chart-summary-item">
+                  <span class="meta-text">Secured in active escrow</span>
+                  <span class="chart-summary-val">1,850.00 USDC</span>
+                </div>
+                <div class="chart-summary-item">
+                  <span class="meta-text">Trend</span>
+                  <span class="badge badge-success" id="worker-chart-comparison" style="margin-top:4px;">+34.5% avg monthly growth</span>
+                </div>
+              </div>
+
+              <div class="svg-chart-wrap" id="worker-earnings-svg-wrap"></div>
+            </section>
+
+            <!-- B. Earnings & Custody Breakdown (Escrow vs Available Balance) -->
+            <section class="card section-block" aria-labelledby="worker-breakdown-heading">
+              <div class="card-header">
+                <div>
+                  <h2 class="section-title" id="worker-breakdown-heading">Earnings breakdown &amp; custody status</h2>
+                  <p class="section-subtitle">Funds in escrow (1,850.00 USDC) are contract-secured for active work and are not yet withdrawable</p>
+                </div>
+                <span class="badge badge-blue">Available to withdraw: 3,180.00 USDC</span>
+              </div>
+
+              <div class="stacked-bar-track" aria-label="Worker earnings breakdown">
+                <div class="stacked-bar-seg"
+                     style="width:68.6%;background:var(--success);"
+                     data-worker-seg
+                     data-worker-title="Total Earned & Settled"
+                     data-worker-val="5,420.00 USDC"
+                     data-worker-desc="Released directly to your connected wallet (3,180.00 USDC currently held in wallet)"></div>
+                <div class="stacked-bar-seg"
+                     style="width:7.8%;background:var(--gold-light);"
+                     data-worker-seg
+                     data-worker-title="Approved Pending Payout"
+                     data-worker-val="620.00 USDC"
+                     data-worker-desc="PRJ-205 Milestone 2 approved by client — settlement queued"></div>
+                <div class="stacked-bar-seg"
+                     style="width:23.6%;background:var(--blue);"
+                     data-worker-seg
+                     data-worker-title="Locked in Smart-Contract Escrow"
+                     data-worker-val="1,850.00 USDC"
+                     data-worker-desc="Secured for PRJ-201 ($950), PRJ-203 ($600), and PRJ-205 ($300) — unlocks upon milestone approval"></div>
+              </div>
+
+              <div class="stacked-legend-grid" style="grid-template-columns:repeat(5, minmax(0, 1fr));">
+                <div class="stacked-legend-card">
+                  <span class="meta-text">Total earned (settled)</span>
+                  <div class="cell-amount tabular text-success">5,420.00 USDC</div>
+                  <span class="meta-text">26 milestones paid</span>
+                </div>
+                <div class="stacked-legend-card">
+                  <span class="meta-text">Available wallet balance</span>
+                  <div class="cell-amount tabular">3,180.00 USDC</div>
+                  <span class="meta-text">+ 450.00 USDT ready</span>
+                </div>
+                <div class="stacked-legend-card" style="border-color:var(--border-gold);">
+                  <span class="meta-text">Still in escrow (secured)</span>
+                  <div class="cell-amount tabular text-gold">1,850.00 USDC</div>
+                  <span class="meta-text">Not yet withdrawable</span>
+                </div>
+                <div class="stacked-legend-card">
+                  <span class="meta-text">Pending payouts</span>
+                  <div class="cell-amount tabular text-blue">620.00 USDC</div>
+                  <span class="meta-text">Approved · Queued</span>
+                </div>
+                <div class="stacked-legend-card">
+                  <span class="meta-text">Total fees paid (1.5%)</span>
+                  <div class="cell-amount tabular">81.30 USDC</div>
+                  <span class="meta-text">Protocol settlement fee</span>
+                </div>
+              </div>
+            </section>
+
+            <!-- E. Monthly Earnings Summary & Earnings by Project -->
+            <div class="dashboard-equal">
+              <section class="card-flush" aria-labelledby="worker-monthly-heading">
+                <div style="padding:20px 22px 12px;display:flex;justify-content:space-between;align-items:center;">
+                  <h2 class="section-title" id="worker-monthly-heading">Monthly earnings comparison</h2>
+                  <span class="meta-text">Aug – Nov 2026</span>
+                </div>
+                <div class="table-container">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Month</th>
+                        <th>Milestones</th>
+                        <th class="right">Earnings</th>
+                        <th class="right">Growth</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>August</td>
+                        <td class="text-secondary">2 milestones</td>
+                        <td class="right cell-amount">$450.00 USDC</td>
+                        <td class="right"><span class="meta-text">—</span></td>
+                      </tr>
+                      <tr>
+                        <td>September</td>
+                        <td class="text-secondary">2 milestones</td>
+                        <td class="right cell-amount">$720.00 USDC</td>
+                        <td class="right"><span class="badge badge-success">+60.0%</span></td>
+                      </tr>
+                      <tr>
+                        <td>October</td>
+                        <td class="text-secondary">3 milestones</td>
+                        <td class="right cell-amount">$950.00 USDC</td>
+                        <td class="right"><span class="badge badge-success">+31.9%</span></td>
+                      </tr>
+                      <tr>
+                        <td>November</td>
+                        <td class="text-secondary">2 milestones</td>
+                        <td class="right cell-amount text-gold">$1,200.00 USDC</td>
+                        <td class="right"><span class="badge badge-gold">+26.3%</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section class="card" aria-labelledby="worker-by-proj-heading">
+                <div class="card-header">
+                  <div>
+                    <h2 class="section-title" id="worker-by-proj-heading">Earnings by project</h2>
+                    <p class="section-subtitle">Settled payouts vs remaining contract escrow</p>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:14px;">
+                  <div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.8125rem;margin-bottom:4px;">
+                      <a href="project-detail.html?id=PRJ-205" class="cell-title">DeFi Treasury Analytics Portal</a>
+                      <span class="tabular text-secondary">300.00 paid · <strong class="text-gold">620.00 queued</strong> · 300.00 escrow</span>
+                    </div>
+                    <div class="stacked-bar-track" style="height:8px;padding:0;">
+                      <div class="stacked-bar-seg" style="width:24.6%;background:var(--success);"></div>
+                      <div class="stacked-bar-seg" style="width:50.8%;background:var(--gold-light);"></div>
+                      <div class="stacked-bar-seg" style="width:24.6%;background:var(--blue);"></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.8125rem;margin-bottom:4px;">
+                      <a href="project-detail.html?id=PRJ-201" class="cell-title">E-commerce Website Redesign</a>
+                      <span class="tabular text-secondary">250.00 paid · <strong class="text-gold">950.00 in escrow</strong> (USDC)</span>
+                    </div>
+                    <div class="stacked-bar-track" style="height:8px;padding:0;">
+                      <div class="stacked-bar-seg" style="width:20.8%;background:var(--success);"></div>
+                      <div class="stacked-bar-seg" style="width:79.2%;background:var(--blue);"></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.8125rem;margin-bottom:4px;">
+                      <a href="project-detail.html?id=PRJ-203" class="cell-title">Mobile Banking UI</a>
+                      <span class="tabular text-secondary">500.00 paid · <strong class="text-gold">600.00 in escrow</strong> (USDC)</span>
+                    </div>
+                    <div class="stacked-bar-track" style="height:8px;padding:0;">
+                      <div class="stacked-bar-seg" style="width:45.5%;background:var(--success);"></div>
+                      <div class="stacked-bar-seg" style="width:54.5%;background:var(--blue);"></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.8125rem;margin-bottom:4px;">
+                      <span class="cell-title">Design System Audit &amp; Governance UI (Completed)</span>
+                      <span class="tabular text-success">4,370.00 USDC settled (100%)</span>
+                    </div>
+                    <div class="stacked-bar-track" style="height:8px;padding:0;">
+                      <div class="stacked-bar-seg" style="width:100%;background:var(--success);"></div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <!-- PANEL 2: PAYOUT HISTORY & WORK PERFORMANCE -->
+          <div data-worker-analytics-panel="payouts">
+            <!-- D. Work Performance Section -->
+            <section class="card section-block" aria-labelledby="worker-perf-heading">
+              <div class="card-header">
+                <div>
+                  <h2 class="section-title" id="worker-perf-heading">Work &amp; delivery performance</h2>
+                  <p class="section-subtitle">Objective verification and milestone completion metrics across all contracts</p>
+                </div>
+              </div>
+
+              <div class="three-col-grid" style="margin-bottom:0;">
+                <div class="card-elevated">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+                    <span class="meta-text">Project completion</span>
+                    <span class="cell-amount tabular">9 completed · 3 active</span>
+                  </div>
+                  <div class="progress-track">
+                    <div class="progress-fill success" style="width:75%;"></div>
+                  </div>
+                  <div class="meta-text" style="margin-top:6px;">26 milestones approved · 1 revision in progress</div>
+                </div>
+
+                <div class="card-elevated">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+                    <span class="meta-text">Average AI verification score</span>
+                    <span class="cell-amount tabular text-gold">96.4%</span>
+                  </div>
+                  <div class="progress-track">
+                    <div class="progress-fill" style="width:96.4%;"></div>
+                  </div>
+                  <div class="meta-text" style="margin-top:6px;">Based on 28 automated deliverable inspections</div>
+                </div>
+
+                <div class="card-elevated">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+                    <span class="meta-text">On-time delivery rate</span>
+                    <span class="cell-amount tabular text-blue">96.2%</span>
+                  </div>
+                  <div class="progress-track">
+                    <div class="progress-fill blue" style="width:96.2%;"></div>
+                  </div>
+                  <div class="meta-text" style="margin-top:6px;">25 of 26 milestones submitted prior to deadline</div>
+                </div>
+              </div>
+            </section>
+
+            <!-- C. Payout History Visualisation & Chronological Ledger -->
+            <section class="card-flush" aria-labelledby="worker-payout-history-heading">
+              <div style="padding:22px 24px 16px;border-bottom:1px solid var(--border-subtle);">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
+                  <div>
+                    <h2 class="section-title" id="worker-payout-history-heading">Payout history &amp; settlement status</h2>
+                    <p class="section-subtitle">Click any payout row to inspect transaction reference and fee breakdown</p>
+                  </div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <span class="badge badge-success">14 Successful (5,420.00 USDC)</span>
+                    <span class="badge badge-gold">1 Pending (620.00 USDC)</span>
+                    <span class="badge badge-error">1 Failed / Retried (150.00 USDT)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="table-container">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Milestone &amp; Project</th>
+                      <th>Amount</th>
+                      <th>Asset</th>
+                      <th>Network</th>
+                      <th>Status</th>
+                      <th class="right">Reference</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr data-payout-tx="TX-9040" style="cursor:pointer;">
+                      <td>Today, 10:15</td>
+                      <td class="cell-title">DeFi Treasury Analytics Portal (M2)</td>
+                      <td class="cell-amount text-gold">620.00 USDC</td>
+                      <td>USDC</td>
+                      <td class="text-secondary">Base Mainnet</td>
+                      <td><span class="badge badge-gold">Pending</span></td>
+                      <td class="right mono">0x6b29…03e2 ↗</td>
+                    </tr>
+                    <tr data-payout-tx="TX-9039" style="cursor:pointer;">
+                      <td>05 Nov 2026</td>
+                      <td class="cell-title">Design System Audit &amp; Tokens (Final)</td>
+                      <td class="cell-amount">1,200.00 USDC</td>
+                      <td>USDC</td>
+                      <td class="text-secondary">Base Mainnet</td>
+                      <td><span class="badge badge-success">Successful</span></td>
+                      <td class="right mono">0x71e4…0a19 ↗</td>
+                    </tr>
+                    <tr data-payout-tx="TX-9032" style="cursor:pointer;">
+                      <td>29 Oct 2026</td>
+                      <td class="cell-title">Mobile Banking UI (M1: Core Flows)</td>
+                      <td class="cell-amount">500.00 USDC</td>
+                      <td>USDC</td>
+                      <td class="text-secondary">Arbitrum One</td>
+                      <td><span class="badge badge-success">Successful</span></td>
+                      <td class="right mono">0x5f12…44c1 ↗</td>
+                    </tr>
+                    <tr data-payout-tx="TX-9041" style="cursor:pointer;">
+                      <td>28 Oct 2026</td>
+                      <td class="cell-title">E-commerce Website Redesign (M1)</td>
+                      <td class="cell-amount">250.00 USDC</td>
+                      <td>USDC</td>
+                      <td class="text-secondary">Base Mainnet</td>
+                      <td><span class="badge badge-success">Successful</span></td>
+                      <td class="right mono">0x8a41…10b8 ↗</td>
+                    </tr>
+                    <tr data-payout-tx="TX-9030" style="cursor:pointer;">
+                      <td>26 Oct 2026</td>
+                      <td class="cell-title">DeFi Treasury Analytics Portal (M1)</td>
+                      <td class="cell-amount">200.00 USDC</td>
+                      <td>USDC</td>
+                      <td class="text-secondary">Base Mainnet</td>
+                      <td><span class="badge badge-success">Successful</span></td>
+                      <td class="right mono">0x2c81…d04e ↗</td>
+                    </tr>
+                    <tr data-payout-tx="TX-9012" style="cursor:pointer;">
+                      <td>14 Sep 2026</td>
+                      <td class="cell-title">Protocol Governance UI (M2)</td>
+                      <td class="cell-amount">720.00 USDT</td>
+                      <td>USDT</td>
+                      <td class="text-secondary">Ethereum Mainnet</td>
+                      <td><span class="badge badge-success">Successful</span></td>
+                      <td class="right mono">0x90b1…e88a ↗</td>
+                    </tr>
+                    <tr data-payout-tx="TX-9008" style="cursor:pointer;">
+                      <td>19 Aug 2026</td>
+                      <td class="cell-title">L2 Bridge Widget (Initial RPC Attempt)</td>
+                      <td class="cell-amount text-muted">150.00 USDT</td>
+                      <td>USDT</td>
+                      <td class="text-secondary">Arbitrum One</td>
+                      <td><span class="badge badge-error">Failed (Re-settled)</span></td>
+                      <td class="right mono">0x11c9…b4e2 ↗</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/interactions.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/analytics.js"></script>
+</body>
+</html>
+

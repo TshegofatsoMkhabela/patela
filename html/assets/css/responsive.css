@@ -1,0 +1,339 @@
+/* ==========================================================================
+   PATELA — RESPONSIVE ADAPTATION (responsive.css)
+   Desktop (1440px) · Laptop (1280px) · Tablet (768px) · Mobile (390px/360px)
+   ========================================================================== */
+
+.sidebar-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 6, 12, 0.68);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  z-index: 35;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 220ms var(--ease-out), visibility 220ms var(--ease-out);
+}
+
+.sidebar-scrim.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Laptop (1280px and below) */
+@media (max-width: 1280px) {
+  :root {
+    --content-pad-x: 28px;
+    --content-pad-y: 28px;
+  }
+
+  .dashboard-split,
+  .workspace-grid,
+  .fs-workspace-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .three-col-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lifecycle-stepper,
+  .flow-diagram-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Tablet & Mobile Navigation Drawer (992px and below) */
+@media (max-width: 992px) {
+  .sidebar {
+    width: 276px;
+    max-width: 86vw;
+    transform: translateX(-100%);
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .sidebar-collapse-btn,
+  .topbar-sidebar-toggle {
+    display: none !important;
+  }
+
+  .sidebar-mobile-close {
+    display: inline-flex;
+  }
+
+  .main-wrapper {
+    margin-left: 0 !important;
+  }
+
+  .mobile-menu-trigger {
+    display: inline-flex;
+  }
+
+  .metrics-grid,
+  .stacked-legend-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-equal,
+  .donut-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .wizard-steps,
+  .lifecycle-stepper,
+  .flow-diagram-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Tablet & Phone Adaptation (768px and below) */
+@media (max-width: 768px) {
+  :root {
+    --content-pad-x: 16px;
+    --content-pad-y: 20px;
+  }
+
+  .main-content {
+    padding-bottom: 96px;
+  }
+
+  .mobile-bottom-nav {
+    display: flex;
+  }
+
+  .entry-shell {
+    padding: 24px 16px 40px;
+  }
+
+  .entry-hero {
+    margin: 24px auto 28px;
+  }
+
+  .role-choice-card {
+    padding: 22px 18px;
+  }
+
+  .entry-role-grid,
+  .three-col-grid,
+  .form-row,
+  .tx-custody-flow {
+    grid-template-columns: 1fr;
+  }
+
+  .tx-custody-arrow {
+    transform: rotate(90deg);
+    text-align: center;
+  }
+
+  /* Filter Toolbar & Horizontal Scrollable Tabs on Mobile */
+  .filter-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .filter-group {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-wrap,
+  .filter-toolbar .select,
+  .filter-group .select,
+  .filter-group .btn {
+    width: 100%;
+    max-width: none !important;
+  }
+
+  .tabs,
+  .time-filter-bar {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+  }
+
+  .tabs::-webkit-scrollbar,
+  .time-filter-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-btn,
+  .time-pill {
+    flex-shrink: 0;
+  }
+
+  /* Charts & Summary Strips on Mobile */
+  .chart-header-controls {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .chart-summary-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  /* Full-Screen Detail Workspace on Mobile */
+  .fs-detail-topbar {
+    height: 58px;
+    padding: 0 14px;
+  }
+
+  .fs-detail-crumb {
+    display: none;
+  }
+
+  .fs-kbd-pill {
+    display: none;
+  }
+
+  .fs-detail-container {
+    padding: 20px 14px 88px;
+  }
+
+  .fs-hero {
+    padding: 20px 18px;
+    margin-bottom: 20px;
+  }
+
+  .fs-hero-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .fs-hero-actions {
+    width: 100%;
+  }
+
+  .fs-hero-actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .welcome-header {
+    align-items: flex-start;
+    margin-bottom: 22px;
+  }
+
+  .action-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .action-item .btn {
+    width: 100%;
+  }
+
+  .activity-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  /* Responsive Table-to-Card Stacking on Mobile */
+  .data-table thead {
+    display: none;
+  }
+
+  .data-table,
+  .data-table tbody,
+  .data-table tr,
+  .data-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .data-table tbody tr {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-neutral);
+  }
+
+  .data-table td {
+    padding: 4px 0;
+    border-bottom: none;
+    text-align: left !important;
+  }
+
+  .data-table td.right {
+    margin-top: 8px;
+  }
+
+  .data-table td.right .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .popover-menu {
+    width: min(310px, calc(100vw - 28px));
+    right: -6px;
+  }
+}
+
+/* Small Mobile (480px and below) */
+@media (max-width: 480px) {
+  .metrics-grid,
+  .wizard-steps,
+  .stacked-legend-grid,
+  .lifecycle-stepper,
+  .flow-diagram-grid,
+  .chart-summary-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .breadcrumbs .crumb-sep,
+  .breadcrumbs a {
+    display: none;
+  }
+
+  .role-switcher .role-switch-btn {
+    padding: 4px 8px;
+    font-size: 0.7rem;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .metric-card {
+    padding: 16px 18px;
+  }
+
+  .welcome-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .welcome-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .kv-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+}

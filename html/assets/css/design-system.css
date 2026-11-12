@@ -1,0 +1,323 @@
+/* ==========================================================================
+   PATELA — DESIGN SYSTEM TOKENS & TYPOGRAPHY (design-system.css)
+   Calm, Minimal, Spacious Fintech Aesthetics · Deep Navy & Champagne Gold
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* Core Surfaces — Unified with Landing Page Deep Navy (#02060f) & Frosted Glass */
+  --bg-main: #02060f;
+  --bg-sidebar: rgba(6, 11, 21, 0.78);
+  --surface-primary: rgba(12, 19, 32, 0.74);
+  --surface-elevated: rgba(19, 28, 45, 0.85);
+  --surface-hover: rgba(26, 38, 59, 0.92);
+  --surface-subtle: rgba(255, 255, 255, 0.028);
+
+  /* Typography Hierarchy — Primary, Secondary, Tertiary */
+  --text-primary: #FBFDFE;
+  --text-secondary: #A2A9B8;
+  --text-muted: #6C778B;
+  --text-inverse: #02060F;
+
+  /* Champagne Gold Brand Accents (Matched to Landing Page #ffe2b2 / #d9c39a) */
+  --gold: #D9C39A;
+  --gold-light: #FFE2B2;
+  --gold-subtle: rgba(255, 226, 178, 0.09);
+  --gold-subtle-hover: rgba(255, 226, 178, 0.16);
+  --border-gold: rgba(255, 228, 182, 0.25);
+  --border-gold-strong: rgba(255, 228, 182, 0.45);
+
+  /* Ice Blue Secondary Highlight (Matched to Landing Page #96c4f4 / #cfe4fa) */
+  --blue: #96C4F4;
+  --blue-subtle: rgba(150, 196, 244, 0.1);
+  --border-blue: rgba(150, 196, 244, 0.24);
+
+  /* Semantic Status Colours */
+  --success: #6EE7A8;
+  --success-subtle: rgba(110, 231, 168, 0.1);
+  --border-success: rgba(110, 231, 168, 0.24);
+
+  --warning: #FFD79A;
+  --warning-subtle: rgba(255, 215, 154, 0.1);
+  --border-warning: rgba(255, 215, 154, 0.24);
+
+  --error: #E47E83;
+  --error-subtle: rgba(228, 126, 131, 0.1);
+  --border-error: rgba(228, 126, 131, 0.22);
+
+  /* Understated Glass Borders & Hairlines */
+  --border-neutral: rgba(196, 214, 232, 0.12);
+  --border-subtle: rgba(196, 214, 232, 0.07);
+  --border-hover: rgba(255, 228, 182, 0.28);
+
+  /* Soft Shadows & Specular Highlights */
+  --shadow-sm: 0 4px 16px -4px rgba(2, 6, 14, 0.38), inset 0 1px 0 rgba(255, 251, 242, 0.06);
+  --shadow-md: 0 16px 40px -12px rgba(2, 6, 14, 0.56), inset 0 1px 0 rgba(255, 251, 242, 0.08);
+  --shadow-lg: 0 28px 70px -16px rgba(2, 6, 14, 0.72), inset 0 1px 0 rgba(255, 251, 242, 0.12);
+  --shadow-gold: 0 18px 48px -16px rgba(150, 196, 244, 0.24), 0 4px 24px rgba(255, 224, 176, 0.14);
+
+  /* Spacious Layout Dimensions */
+  --sidebar-width: 242px;
+  --sidebar-collapsed-width: 72px;
+  --topbar-height: 64px;
+  --content-max-width: 1320px;
+  --content-pad-x: 40px;
+  --content-pad-y: 36px;
+
+  /* Consistent Rounded Corners (iOS-like Continuous Curvature Feel) */
+  --radius-xs: 8px;
+  --radius-sm: 11px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+
+  /* Fonts */
+  --font-sans: 'Sora', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Sora', 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Apple iOS Fluid Spring Easing & Timing */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-ios-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  --transition-base: 360ms cubic-bezier(0.22, 1, 0.36, 1);
+  --transition-slow: 480ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg-main);
+  background-image:
+    radial-gradient(1100px 540px at 78% -10%, rgba(255, 226, 178, 0.085), transparent 65%),
+    radial-gradient(960px 480px at 16% -8%, rgba(150, 196, 244, 0.075), transparent 62%);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.875rem; /* 14px */
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Shared Ambient Background Video & Frosted Glass Veil (Continuity with Landing Page) */
+.patela-bgv {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  pointer-events: none;
+  background: #02060f;
+  opacity: 0.46;
+}
+
+.patela-frost {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(80% 60% at 75% 0%, rgba(255, 226, 178, 0.055), transparent 65%),
+    radial-gradient(70% 55% at 15% 10%, rgba(150, 196, 244, 0.055), transparent 65%),
+    linear-gradient(180deg, rgba(2, 6, 15, 0.72) 0%, rgba(2, 6, 15, 0.88) 45%, rgba(2, 6, 15, 0.93) 100%);
+  -webkit-backdrop-filter: blur(22px) saturate(0.95);
+  backdrop-filter: blur(22px) saturate(0.95);
+}
+
+.app-shell,
+.entry-shell {
+  position: relative;
+  z-index: 1;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color var(--transition-fast), opacity var(--transition-fast);
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Keyboard Focus Ring */
+:focus-visible {
+  outline: 2px solid rgba(159, 224, 255, 0.8);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   CLEAR 3-TIER INFORMATION HIERARCHY
+   -------------------------------------------------------------------------- */
+/* Primary Headings */
+.page-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2.1vw, 1.92rem);
+  font-weight: 400;
+  font-variation-settings: "wght" 450;
+  letter-spacing: -0.022em;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+.page-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  font-weight: 400;
+}
+
+/* Understated Section Headings */
+.section-title {
+  font-size: 0.9375rem; /* 15px */
+  font-weight: 500;
+  font-variation-settings: "wght" 540;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+
+.section-subtitle {
+  font-size: 0.8125rem; /* 13px */
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.card-title {
+  font-size: 0.9375rem; /* 15px */
+  font-weight: 500;
+  font-variation-settings: "wght" 530;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+/* Tertiary Metadata */
+.meta-text {
+  font-size: 0.75rem; /* 12px */
+  color: var(--text-muted);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.text-gold { color: var(--gold-light); }
+.text-blue { color: var(--blue); }
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.text-error { color: var(--error); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+
+/* --------------------------------------------------------------------------
+   FLUID iOS-LIKE SPRING PAGE & SECTION ENTRANCE ANIMATIONS
+   -------------------------------------------------------------------------- */
+@keyframes patelaFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.992);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes patelaCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.988);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.main-content {
+  animation: patelaFadeUp 460ms var(--ease-out) both;
+  transition:
+    opacity 160ms var(--ease-ios-sheet),
+    transform 160ms var(--ease-ios-sheet),
+    filter 160ms var(--ease-ios-sheet);
+}
+
+body.ios-page-leaving .main-content,
+body.ios-page-leaving .entry-shell {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.994);
+  filter: blur(3px);
+}
+
+.welcome-header {
+  animation: patelaCardIn 420ms 15ms var(--ease-out) both;
+}
+
+.metrics-grid > *:nth-child(1) { animation: patelaCardIn 440ms 35ms var(--ease-out) both; }
+.metrics-grid > *:nth-child(2) { animation: patelaCardIn 440ms 65ms var(--ease-out) both; }
+.metrics-grid > *:nth-child(3) { animation: patelaCardIn 440ms 95ms var(--ease-out) both; }
+.metrics-grid > *:nth-child(4) { animation: patelaCardIn 440ms 125ms var(--ease-out) both; }
+
+.section-block:nth-of-type(1) { animation: patelaCardIn 480ms 80ms var(--ease-out) both; }
+.section-block:nth-of-type(2) { animation: patelaCardIn 480ms 120ms var(--ease-out) both; }
+.section-block:nth-of-type(3) { animation: patelaCardIn 480ms 160ms var(--ease-out) both; }
+.section-block:nth-of-type(4) { animation: patelaCardIn 480ms 200ms var(--ease-out) both; }
+
+/* Respect Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
