@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { InfoPage, Cards } from "@/components/InfoPage";
 
 export const metadata: Metadata = {
-  title: "About — Patela",
+  title: "About — Patella",
   description:
-    "Patela is building a crypto marketplace where work is escrowed by smart contracts and verified by AI before payment.",
+    "Patella is building the B2B order, custody and payment coordination platform for multi-hop supply chains and logistics in South Africa.",
   openGraph: {
-    title: "About — Patela",
+    title: "About — Patella",
     description:
-      "Patela is building a crypto marketplace where work is escrowed by smart contracts and verified by AI before payment.",
+      "Patella is building the B2B order, custody and payment coordination platform for multi-hop supply chains and logistics in South Africa.",
     type: "website",
   },
   twitter: {
@@ -20,8 +20,8 @@ export default function AboutPage() {
   return (
     <InfoPage
       eyebrow="About"
-      title="Work should be paid on proof, not promises."
-      lead="Patela started from a simple problem: clients worry about paying for work that never arrives, and workers worry about never getting paid. Smart contracts and AI let us remove that risk for both sides."
+      title="Every handoff accounted for. Every payment governed by agreed rules."
+      lead="Patella was founded to solve a pervasive structural challenge across African logistics: freight carriers worry about delayed payment and non-payment, while commercial buyers worry about missing, damaged, or delayed cargo. By connecting multi-hop route custody directly to declarative smart-contract escrow, we replace manual chasing with cryptographic coordination."
       cta={true}
     >
       <Cards
@@ -29,15 +29,15 @@ export default function AboutPage() {
         items={[
           {
             t: "Our mission",
-            p: "Make it safe for anyone, anywhere, to hire and get hired, with money that moves only when work is proven.",
+            p: "Make complex supply chains accountable and predictable through route-agnostic custody tracking and rule-governed escrow settlement.",
           },
           {
-            t: "What we believe",
-            p: "Trust should come from transparent rules and clear evidence, not from a middleman holding your funds.",
+            t: "Our approach",
+            p: "Honest trust boundaries, zero barrier to entry for frontline drivers, and strict conservation of money across every transaction.",
           },
           {
-            t: "Where we're going",
-            p: "A global marketplace where every payout is backed by verified delivery.",
+            t: "Where we operate",
+            p: "South African mining, industrial manufacturing, agricultural export, and commercial freight corridors connecting mines, depots, and deep-water ports.",
           },
         ]}
       />

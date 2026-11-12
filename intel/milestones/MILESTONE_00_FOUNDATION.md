@@ -17,7 +17,7 @@ Establish a stable engineering foundation, audit the existing Patela repository 
 - [x] `FND-002`: Current architecture documentation ([`03_DESIGN_LANGUAGE.md`](../03_DESIGN_LANGUAGE.md), [`06_CODEBASE_STRUCTURE.md`](../06_CODEBASE_STRUCTURE.md)).
 - [x] `FND-003`: Target architecture definition ([`04_TECH_STACK.md`](../04_TECH_STACK.md), [`05_SYSTEM_ARCHITECTURE.md`](../05_SYSTEM_ARCHITECTURE.md), [`07`–`10`](../07_DATABASE_ARCHITECTURE.md)).
 - [x] `FND-004`: Development conventions & mandatory workflow ([`17_DEVELOPMENT_RULES.md`](../17_DEVELOPMENT_RULES.md)).
-- [ ] `FND-005`: Environment configuration (`.env.example`) and local Docker Compose (`infrastructure/docker-compose.yml`).
+- [x] `FND-005`: Environment configuration (`.env.example`) and local Docker Compose (`infrastructure/docker-compose.yml`).
 - [ ] `FND-006`: Testing infrastructure expansion for monorepo packages and API integration tests.
 - [ ] `FND-007`: Shared packages (`packages/shared-types`, `packages/validation`) with exact `BigInt` base-unit helpers.
 - [x] `FND-008`: Complete `intel/` documentation system.

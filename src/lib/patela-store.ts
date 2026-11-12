@@ -1,6 +1,6 @@
 import { useEffect, useSyncExternalStore } from "react";
 
-export const STABLECOINS = ["USDC", "USDT", "DAI", "PYUSD", "EURC"] as const;
+export const STABLECOINS = ["ZARP", "USDC", "USDT", "DAI", "PYUSD", "EURC"] as const;
 export type Coin = (typeof STABLECOINS)[number];
 
 export type MilestoneStatus = "pending" | "submitted" | "reviewing" | "approved" | "changes";
@@ -90,6 +90,52 @@ function seed(): State {
   return {
     wallet: null,
     jobs: [
+      {
+        id: "ORD-2026-8941",
+        title: "Bulk Industrial Bauxite Delivery (Johannesburg to Richards Bay Terminal)",
+        scope:
+          "Multi-hop road and terminal logistics for 12,000 MT metallurgical grade bauxite. Requires two-party custody handoffs at origin mine, City Deep cross-dock, and final Richards Bay terminal discharge.",
+        deliverables: [
+          "Consignment Bill of Lading & Weighbridge Slips",
+          "Driver Two-Party Custody Handover Signatures",
+          "Richards Bay Acceptance & Assayer Certificate",
+        ],
+        milestones: [
+          {
+            id: "tranche-1",
+            title: "Tranche 1: Dispatch Advance & Gate Exit",
+            amount: 97000,
+            status: "approved",
+            review:
+              "Origin dispatch verified; driver and mine manager dual signatures recorded on-chain.",
+          },
+          {
+            id: "tranche-2",
+            title: "Tranche 2: City Deep Cross-Dock Inspection",
+            amount: 145500,
+            status: "approved",
+            review:
+              "Arrival and seal inspection verified at City Deep hub. Net weight 12,000 MT intact.",
+          },
+          {
+            id: "tranche-3",
+            title: "Tranche 3: Richards Bay Terminal Inbound Gate",
+            amount: 145500,
+            status: "pending",
+          },
+          {
+            id: "tranche-4",
+            title: "Tranche 4: Final Assayer Certificate & Discharge",
+            amount: 97000,
+            status: "pending",
+          },
+        ],
+        budget: 485000,
+        coins: ["ZARP"],
+        createdAt: 1793000000000,
+        funded: true,
+        txHash: "0x3f9e4b7a1c8d2054",
+      },
       {
         id: "landing-page-redesign",
         title: "Landing page redesign for a DeFi wallet",

@@ -1,136 +1,130 @@
-# 09 — Blockchain & Smart-Contract Escrow Architecture
+# 09 — Blockchain & Escrow Architecture: Patella
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-11-09  
-**Target Network:** Base Sepolia Testnet (`Chain ID: 84532`)  
-**Current Implementation Status:** `PLANNED` (Scheduled for [Milestone 04](./milestones/MILESTONE_04_WALLET_AND_ESCROW.md); current repo only simulates hashes in `src/lib/patela-store.ts`).
-
----
-
-## 1. Network & Token Configuration
-
-| Parameter | Specification |
-|---|---|
-| **Blockchain** | Base (Ethereum L2 OP Stack) |
-| **Initial Target Network** | Base Sepolia Testnet |
-| **Chain ID** | `84532` (Hex: `0x14a34`) |
-| **Payment Asset (MVP)** | Single dedicated test ERC-20 token: **`PatelaTestUSD` (`pUSD`, 6 decimals)** |
-| **Contract Framework** | Solidity `0.8.24+` compiled and tested with **Foundry** (`forge`) |
-| **Frontend Integration** | `wagmi` + `viem` |
-
-> **Critical Token Rule:** `PatelaTestUSD` (`pUSD`) is a self-deployed test ERC-20 contract on Base Sepolia with a controlled testnet faucet/mint function for onboarding test users. It must **never** be labeled or represented as official Circle `USDC`.
+**Document Version:** 1.1 (Updated for Technical Architecture v0.3)  
+**Last Updated:** 2026-11-13  
+**Status:** Approved Architectural Baseline
 
 ---
 
-## 2. Conceptual Smart-Contract Architecture (`PatelaEscrow.sol`)
+## 1. Blockchain Architecture Overview
 
-### 2.1 Core Data Structures
+Patella deploys its on-chain custody and audit layer on **Base Sepolia (Chain ID 84532)**. All value is denominated in **South African Rand (ZAR)** using the **ZARP** rand-pegged stablecoin.
 
-```solidity
-enum MilestoneState {
-    NotFunded,          // 0: Agreement registered, awaiting ERC-20 deposit
-    Funded,             // 1: Funds locked in contract custody
-    Submitted,          // 2: Deliverable hash/version recorded on-chain (optional) or off-chain
-    RevisionRequested,  // 3: Client requested changes; funds remain locked
-    Disputed,           // 4: Frozen against ordinary approval/refund; awaits arbitrator
-    Released,           // 5: Terminal state — net payout sent to freelancer + fee to treasury
-    Refunded,           // 6: Terminal state — full milestone balance returned to client
-    SplitSettled        // 7: Terminal state — arbitrator split payout between freelancer & client
-}
+The on-chain layer consists of two core smart contracts written in **Solidity `0.8.24+`** using OpenZeppelin `5.x`:
 
-struct Milestone {
-    uint256 amount;         // Exact base units (6 decimals for pUSD)
-    uint256 fundedAmount;   // Actual base units deposited
-    uint256 releasedAmount; // Base units released (gross)
-    uint256 refundedAmount; // Base units refunded
-    MilestoneState state;
-}
+1. **`EscrowVault.sol`**: Multi-tranche, rule-governed stablecoin escrow vault.
+2. **`AnchorRegistry.sol`**: Append-only cryptographic digest and Merkle root registry for forensic auditability.
 
-struct ProjectEscrow {
-    bytes32 projectId;
-    address client;
-    address freelancer;
-    address token;          // Must be whitelisted PatelaTestUSD on testnet
-    uint16 protocolFeeBps;  // Locked at project creation (e.g., 150 = 1.5%, max cap 1000 = 10%)
-    bool exists;
-}
 ```
-
-### 2.2 Conceptual Contract Functions
-
-```solidity
-function createProject(
-    bytes32 projectId,
-    address freelancer,
-    address token,
-    uint256[] calldata milestoneAmounts,
-    bytes32 agreementHash
-) external;
-
-function fundMilestone(bytes32 projectId, uint256 milestoneIndex) external nonReentrant;
-
-function submitMilestone(bytes32 projectId, uint256 milestoneIndex, bytes32 submissionHash) external;
-
-function approveMilestone(bytes32 projectId, uint256 milestoneIndex) external nonReentrant;
-
-function requestRevision(bytes32 projectId, uint256 milestoneIndex, bytes32 reasonHash) external;
-
-function raiseDispute(bytes32 projectId, uint256 milestoneIndex, bytes32 reasonHash) external;
-
-function resolveDispute(
-    bytes32 projectId,
-    uint256 milestoneIndex,
-    uint256 freelancerAward,
-    uint256 clientRefund,
-    bytes32 resolutionHash
-) external nonReentrant onlyRole(ARBITRATOR_ROLE);
-
-function refundMilestone(bytes32 projectId, uint256 milestoneIndex) external nonReentrant;
+┌────────────────────────────────────────────────────────────────────────┐
+│                        BASE SEPOLIA (CHAIN ID 84532)                   │
+├───────────────────────────────────┬────────────────────────────────────┤
+│         EscrowVault.sol           │         AnchorRegistry.sol         │
+│  • Holds ZARP (Rand Stablecoin)   │  • Append-only event hashes        │
+│  • Enforces conservation of money │  • Canonical agreement SHA-256     │
+│  • Verifies Release Authority sigs│  • Handoff dual signature roots    │
+│  • Isolated parcel tranche holds  │  • Read-only auditor verifier      │
+└─────────────────▲─────────────────┴──────────────────▲─────────────────┘
+                  │                                    │
+       EIP-712 Signed Release               Batch Anchor Digests
+                  │                                    │
+┌─────────────────┴────────────────────────────────────┴─────────────────┐
+│                  AWS KMS / CLOUD HSM RELEASE AUTHORITY                 │
+│  • Isolated private key (secp256k1)                                    │
+│  • Signs release instructions only when domain rule engine checks pass │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 3. Mandatory Smart-Contract Security Invariants
+## 2. Core Smart Contracts
 
-Every implementation of `PatelaEscrow.sol` must satisfy and prove the following 9 invariants via Foundry unit, fuzz, and invariant tests:
+### 2.1 `EscrowVault.sol`
+- **Deposit & Tranche Registration:**
+  ```solidity
+  function fundOrder(
+      bytes32 orderId,
+      uint256 totalAmount,
+      bytes32[] calldata trancheIds,
+      uint256[] calldata trancheAmounts
+  ) external nonReentrant whenNotPaused;
+  ```
+  - *Conservation Invariant Check:* Reverts immediately if:
+    $$\sum_{i} \text{trancheAmounts}[i] \ne \text{totalAmount}$$
+- **Rule-Triggered Release Execution:**
+  ```solidity
+  function releaseTranche(
+      bytes32 orderId,
+      bytes32 trancheId,
+      address payable recipient,
+      uint256 amount,
+      uint256 nonce,
+      bytes calldata releaseAuthoritySignature
+  ) external nonReentrant whenNotPaused;
+  ```
+  - *Release Authority Verification:* Validates that `releaseAuthoritySignature` recovers to the designated KMS Release Authority address under EIP-712 structured data hashing.
+- **Isolated Dispute Hold:**
+  ```solidity
+  function holdTrancheInDispute(
+      bytes32 orderId,
+      bytes32 trancheId
+  ) external onlyRole(DISPUTE_MANAGER_ROLE);
+  ```
+  - Freezes only the designated tranche. Unaffected tranches on the same order can still be released.
+- **Emergency Circuit Breaker:**
+  - `pause()` and `unpause()` protected by a 2-of-3 multi-signature governance role.
 
-1. **No Unauthorized Fund Movement (`INV-01`):**
-   - Only `client` can call `approveMilestone`.
-   - Only `freelancer` (or `ARBITRATOR_ROLE`) can authorize `refundMilestone` once a milestone is `Funded`.
-   - Only an address holding `ARBITRATOR_ROLE` can call `resolveDispute`, and only when `state == MilestoneState.Disputed`.
-2. **Conservation of Milestone Value (`INV-02`):**
-   - For every milestone $i$: $\text{releasedAmount}_i + \text{refundedAmount}_i \le \text{fundedAmount}_i$.
-   - No milestone can ever release or refund more than its `fundedAmount`.
-3. **Single Settlement / No Double Payment (`INV-03`):**
-   - Once a milestone enters `Released`, `Refunded`, or `SplitSettled`, its state is terminal; any subsequent call to `approveMilestone`, `refundMilestone`, or `resolveDispute` reverts with `InvalidMilestoneState()`.
-4. **Dispute Freeze Guarantee (`INV-04`):**
-   - When `state == MilestoneState.Disputed`, calling `approveMilestone` or `refundMilestone` **must revert**. Funds remain locked until `resolveDispute` is executed by `ARBITRATOR_ROLE`.
-5. **Revision Requests Never Move Funds (`INV-05`):**
-   - `requestRevision` transitions state from `Funded` or `Submitted` to `RevisionRequested` and emits `RevisionRequested`, with **zero ERC-20 transfers**.
-6. **Global Solvency Invariant (`INV-06`):**
-   - `IERC20(token).balanceOf(address(escrowContract)) >= sum(all active milestones' locked balances)`.
-7. **Complete Event Traceability (`INV-07`):**
-   - Every state-changing function emits a strongly-typed Solidity event (`ProjectCreated`, `MilestoneFunded`, `MilestoneSubmitted`, `RevisionRequested`, `MilestoneReleased`, `MilestoneRefunded`, `DisputeRaised`, `DisputeResolved`) containing `indexed bytes32 projectId` and `uint256 milestoneIndex`.
-8. **Reentrancy & Safe Token Handling (`INV-08`):**
-   - All functions performing external ERC-20 calls use OpenZeppelin `ReentrancyGuard` (`nonReentrant`), `SafeERC20` (`safeTransfer`, `safeTransferFrom`), and strict **Checks-Effects-Interactions (CEI)** ordering.
-9. **Zero AI Signing Authority (`INV-09`):**
-   - There is no `AI_ROLE` in the smart contract. AI verification happens off-chain as advisory evidence for the client and human arbitrator.
+### 2.2 `AnchorRegistry.sol`
+- **Merkle & Digest Registration:**
+  ```solidity
+  function anchorEventDigest(
+      bytes32 streamId,
+      bytes32 digestHash,
+      uint256 eventCount
+  ) external onlyRole(ANCHOR_INDEXER_ROLE);
+  ```
+- **Auditor On-Chain Proof:**
+  - Anyone can query `verifyAnchor(bytes32 streamId, bytes32 digestHash)` without gas fees (`view` function) to confirm that a document, signed waybill, or custody event occurred at or before that block height.
 
 ---
 
-## 4. Release Rules, Timeouts & Reconciliation Lifecycle
+## 3. The Release Authority Security Model
 
-### 4.1 Explicit Release & Refund Rules
-- **Ordinary Release:** Requires `msg.sender == project.client` and `state` in `{Funded, Submitted, RevisionRequested}`. Calculates `fee = (fundedAmount * protocolFeeBps) / 10_000` and `netPayout = fundedAmount - fee`. Transfers `netPayout` to `project.freelancer` and `fee` to `feeRecipient`.
-- **Unresponsive Counterparty Handling:** If a client becomes unresponsive after deliverable submission and AI review, the freelancer calls `raiseDispute(projectId, milestoneIndex)` to freeze the milestone and escalate to an authorized human arbitrator (`ARBITRATOR_ROLE`), who can verify the submission and AI report and execute `resolveDispute`.
+A central vulnerability of naive Web3 escrow is allowing application servers to submit unsigned or loosely authorized release transactions.
 
-### 4.2 Transaction Tracking & Reconciliation States
-Never mark a database record as `FUNDED` or `RELEASED` merely because the browser submitted a transaction hash. Every transaction progresses through:
-- `SUBMITTED`: Frontend sent `txHash` to `POST /api/v1/transactions/track`.
-- `PENDING`: Transaction observed in mempool / awaiting receipt.
-- `CONFIRMED`: Receipt returned `status == 1` at block $B$; awaiting confirmation depth ($N = 2$ blocks on Base Sepolia).
-- `RECONCILED`: Canonical block hash verified at $B + N$, event log decoded, and `Escrow` / `EscrowMilestone` / `Milestone` tables atomically updated.
-- `FAILED` / `REVERTED`: Receipt returned `status == 0` or pre-broadcast failure.
-- `REPLACED` / `DROPPED`: Nonce superseded or evicted from mempool.
-- `REORGED`: Previously indexed `blockHash` no longer matches canonical chain; indexer rolls back derived state and re-applies canonical logs.
+Patella eliminates this vulnerability via an **isolated Release Authority**:
+1. **Application Server Evaluates Rules:** The NestJS domain service monitors custody events and evaluates declarative JSON rules.
+2. **Invariant & Ledger Verification:** The money engine checks that the internal double-entry ledger is balanced and no active dispute holds exist for the parcel.
+3. **KMS Signature Request:** The backend sends a structured authorization request to AWS KMS / Cloud HSM.
+4. **Hardware Signature:** KMS signs the EIP-712 typed release payload using its isolated private key.
+5. **Contract Verification:** `EscrowVault.sol` verifies the signature on-chain before executing `IERC20(zarp).safeTransfer(recipient, amount)`.
 
+---
+
+## 4. Foundry Invariant Test Suite
+
+The contract test suite enforces four non-negotiable mathematical invariants using Foundry (`forge test`):
+
+```solidity
+// Invariant 1: Vault solvency (vault balance must always >= sum of active tranches)
+function invariant_vault_solvency() public view {
+    assertGe(zarp.balanceOf(address(vault)), totalActiveTrancheSum);
+}
+
+// Invariant 2: Conservation of money (no order can be registered if tranches != total)
+function invariant_conservation_of_money(uint256 total, uint256[] memory tranches) public {
+    // Fuzz test verifying revert on any sum discrepancy
+}
+
+// Invariant 3: Zero release without Release Authority signature
+function test_revert_unauthorized_release() public {
+    vm.expectRevert("InvalidReleaseAuthoritySignature()");
+    vault.releaseTranche(orderId, tId, recipient, amount, nonce, fakeSig);
+}
+
+// Invariant 4: Blast radius isolation (holding tranche A never prevents release of tranche B)
+function test_isolated_dispute_holding() public {
+    vault.holdTrancheInDispute(orderId, trancheB);
+    vault.releaseTranche(orderId, trancheA, supplier, amountA, nonce, validSig); // Succeeds
+}
+```

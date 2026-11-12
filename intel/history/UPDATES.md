@@ -1,7 +1,49 @@
 # Master Chronological Updates Log
 
 > **Classification:** Development History Ledger  
-> **Last Updated:** 2026-11-12  
+> **Last Updated:** 2026-11-13  
+
+---
+
+## [2026-11-13] - Next.js Application Supply Chain Alignment, Environment Infra & Technical Architecture v0.3 Documentation
+
+### Summary
+Aligned the entire Next.js application codebase (`src/`), local infrastructure, and architectural documentation (`intel/`) with *Patella: Technical Architecture v0.3* (@Thabiso) and *Patella: Product, Page Architecture & UX Blueprint* (v1.0):
+1. **Next.js Core & Marketing Pages:** Aligned `src/app/page.tsx`, `PatelaSections.tsx`, `HeroBar.tsx`, `SolutionsMenu.tsx`, `SiteFooter.tsx`, `InfoPage.tsx`, `how-it-works/page.tsx`, `for-clients/page.tsx`, `for-workers/page.tsx`, `security/page.tsx`, `about/page.tsx`, and `faq/page.tsx` with Patella's B2B supply chain mission, honest trust boundary disclosures, 8-stage order-to-settlement lifecycle, and Base Sepolia `EscrowVault` architecture.
+2. **Client Store & Conservation Tests:** Added `ZARP` (Rand stablecoin) to `STABLECOINS` in `src/lib/patela-store.ts`, seeded primary demo industrial bauxite order `ORD-2026-8941` (R 485,000, 4 tranches), and expanded `src/test/patela-rules.test.ts` with 9 passing unit tests covering money conservation and ZARP support.
+3. **Environment & Local Infrastructure (`FND-005`):** Created `.env.example` with Base Sepolia (`84532`), Standard Bank South Africa trust account, MinIO private evidence vault, and KMS Release Authority variables. Created `infrastructure/docker-compose.yml` provisioning PostgreSQL 16, Redis 7, MinIO S3, and automatic bucket initialization.
+4. **Technical Architecture Documentation:** Completely updated `intel/00_PROJECT_OVERVIEW.md`, `intel/04_TECH_STACK.md`, `intel/05_SYSTEM_ARCHITECTURE.md`, `intel/07_DATABASE_ARCHITECTURE.md` (28 core entities), `intel/08_API_DOCUMENTATION.md`, and `intel/09_BLOCKCHAIN_AND_ESCROW.md` to establish Technical Architecture v0.3 as the approved project baseline.
+
+### Type
+Feature / Architecture / Infrastructure / Documentation / Unit Tests
+
+### Related Milestone
+[MILESTONE_00_FOUNDATION.md](../milestones/MILESTONE_00_FOUNDATION.md) — Completed `FND-005`
+
+### Files Created
+- `.env.example` — Complete environment variables template for PostgreSQL 16, Redis 7, MinIO, Base Sepolia (84532), Standard Bank, and KMS Release Authority.
+- `infrastructure/docker-compose.yml` — Local backing services (PostgreSQL 16, Redis 7 AOF, MinIO S3 API/Console, automatic bucket init).
+
+### Files Modified
+- `src/app/page.tsx` — Hero headline ("Every handoff accounted for. Every payment governed by agreed rules."), subtitle, feature pills, active orders and Blueprint Hub CTAs.
+- `src/components/PatelaSections.tsx` — Supply chain "How it Works" steps, "The Coordination Platform" features, Buyer & Carrier solutions, stats, and network chips.
+- `src/components/HeroBar.tsx` — Navigation links ("How it works", "Orders & Custody", "Guest Handoff", "Create Order").
+- `src/components/SolutionsMenu.tsx` — Solutions dropdown targeting supply chain workflows.
+- `src/components/SiteFooter.tsx` — Product and platform links reflecting supply chain screens.
+- `src/components/InfoPage.tsx` — Unified CTA cards for order creation, guest mobile handoff, and blueprint hub.
+- `src/app/how-it-works/page.tsx` — 8-stage order-to-settlement journey, route graphs, declarative rules, and honest trust disclosures.
+- `src/app/for-clients/page.tsx` — Buyer & consignor solutions: licensed bank trust accounts, split consignments, and isolated dispute holding.
+- `src/app/for-workers/page.tsx` — Supplier & carrier solutions: escrowed Rand, zero-app guest handoffs, and rule-triggered tranche payouts.
+- `src/app/security/page.tsx` — Honest trust disclosures (what a scan proves vs. does not prove), Base Sepolia `EscrowVault`, and KMS Release Authority.
+- `src/app/about/page.tsx` & `src/app/faq/page.tsx` — Patella supply chain mission and FAQ updates.
+- `src/lib/patela-store.ts` — Added `ZARP` stablecoin and primary bauxite order `ORD-2026-8941`.
+- `src/test/patela-rules.test.ts` — Added unit test coverage for ZARP and money conservation rule.
+- `intel/00_PROJECT_OVERVIEW.md`, `intel/04_TECH_STACK.md`, `intel/05_SYSTEM_ARCHITECTURE.md`, `intel/07_DATABASE_ARCHITECTURE.md`, `intel/08_API_DOCUMENTATION.md`, `intel/09_BLOCKCHAIN_AND_ESCROW.md`, `intel/15_IMPLEMENTATION_BACKLOG.md`, `intel/milestones/MILESTONE_00_FOUNDATION.md`.
+
+### Testing Performed
+- Vitest unit test suite executed (`npm test`): 9/9 tests passing cleanly.
+- ESLint checks executed (`npm run lint`): 0 errors, 0 warnings.
+- Next.js production build (`npm run build`): successfully generated all routes with zero errors.
 
 ---
 

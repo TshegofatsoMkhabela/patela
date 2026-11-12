@@ -1,0 +1,71 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: patella-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: patela
+      POSTGRES_PASSWORD: patela_dev_password
+      POSTGRES_DB: patela_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - patela_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U patela -d patela_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: patella-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - patela_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: patella-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: patela_minio_admin
+      MINIO_ROOT_PASSWORD: patela_minio_secret_key
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - patela_miniodata:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: patella-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set local http://minio:9000 patela_minio_admin patela_minio_secret_key;
+      /usr/bin/mc mb local/patella-evidence-vault --ignore-existing;
+      /usr/bin/mc anonymous set none local/patella-evidence-vault;
+      exit 0;
+      "
+
+volumes:
+  patela_pgdata:
+  patela_redisdata:
+  patela_miniodata:

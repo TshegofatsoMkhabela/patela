@@ -25,11 +25,12 @@ export function PatelaSections() {
             className="pt-h2"
             style={{ textAlign: "center", marginInline: "auto", maxWidth: "24ch" }}
           >
-            From brief to payout, without the trust problem.
+            From order to settlement, without the custody trust problem.
           </h2>
           <p className="pt-lead" style={{ marginInline: "auto" }}>
-            Patela replaces the middleman with a smart contract and an AI reviewer, so clients only
-            pay for work that's done and workers always get paid for work they deliver.
+            Patella coordinates multi-hop freight logistics with smart-contract escrow on Base
+            Sepolia. Buyers deposit Rand in trust, handoffs are verified via short-lived mobile
+            links, and declarative payment tranches release automatically.
           </p>
         </Reveal>
         <div className="pt-grid pt-g4">
@@ -45,10 +46,11 @@ export function PatelaSections() {
 
       <section className="pt-sec" id="features">
         <Reveal>
-          <span className="pt-eyebrow">The marketplace</span>
-          <h2 className="pt-h2">Built for work that gets paid on proof.</h2>
+          <span className="pt-eyebrow">The Coordination Platform</span>
+          <h2 className="pt-h2">Built for supply chains that move on proof.</h2>
           <p className="pt-lead">
-            Everything you need to hire and get hired globally, settled on-chain.
+            Everything you need to orchestrate multi-party routes, enforce payment rules, and
+            isolate dispute risk across South Africa.
           </p>
         </Reveal>
         <div className="pt-grid pt-g3">
@@ -65,7 +67,7 @@ export function PatelaSections() {
       <section className="pt-sec" id="who">
         <Reveal>
           <span className="pt-eyebrow">Solutions</span>
-          <h2 className="pt-h2">One contract. Two sides protected.</h2>
+          <h2 className="pt-h2">Two sides protected across every corridor.</h2>
         </Reveal>
         <div className="pt-grid pt-g2">
           <div
@@ -73,18 +75,18 @@ export function PatelaSections() {
             style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}
           >
             <div>
-              <span className="pt-num">FOR CLIENTS</span>
-              <h3>Only pay for work that meets the brief.</h3>
+              <span className="pt-num">FOR BUYERS & CONSIGNORS</span>
+              <h3>Deposit Rand with bank-grade peace of mind.</h3>
               <ul className="pt-list">
-                <li>Funds never leave escrow until deliverables pass</li>
-                <li>Clear AI reports on every submission</li>
-                <li>Hire talent anywhere, with no banks in the way</li>
-                <li>Full refund if the job is cancelled before delivery</li>
+                <li>Funds held in client trust account with a licensed South African bank</li>
+                <li>Release payment tranches only upon verified handoff milestones</li>
+                <li>Split consignments across multi-destination logistics corridors</li>
+                <li>Isolated dispute holding keeps unaffected cargo and tranches moving</li>
               </ul>
             </div>
             <div style={{ marginTop: 24 }}>
-              <Link href="/html/client-dashboard.html" className="pt-btn sm">
-                <span>Open Client Dashboard</span>
+              <Link href="/html/orders.html" className="pt-btn sm">
+                <span>Open Order Tracking</span>
                 <span aria-hidden="true">→</span>
               </Link>
             </div>
@@ -94,18 +96,18 @@ export function PatelaSections() {
             style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}
           >
             <div>
-              <span className="pt-num">FOR WORKERS</span>
-              <h3>Know the money is there before you start.</h3>
+              <span className="pt-num">FOR SUPPLIERS & CARRIERS</span>
+              <h3>Know payment is guaranteed before wheels roll.</h3>
               <ul className="pt-list">
-                <li>See locked funds on-chain before accepting</li>
-                <li>Get paid instantly when work is approved</li>
-                <li>No chargebacks, no unpaid invoices</li>
-                <li>Build a verifiable on-chain work history</li>
+                <li>EscrowVault locks full funds before goods leave the warehouse</li>
+                <li>Drivers sign custody handoffs from any smartphone without an app</li>
+                <li>Rule-triggered payouts release straight to your bank account in ZAR</li>
+                <li>Build a verifiable CIPC-linked track record of on-time delivery</li>
               </ul>
             </div>
             <div style={{ marginTop: 24 }}>
-              <Link href="/html/worker-dashboard.html" className="pt-btn ghost sm">
-                <span>Open Worker Dashboard</span>
+              <Link href="/html/partner-directory.html" className="pt-btn ghost sm">
+                <span>Open Partner Directory</span>
                 <span aria-hidden="true">→</span>
               </Link>
             </div>
@@ -113,46 +115,43 @@ export function PatelaSections() {
         </div>
         <div className="pt-stats">
           <div className="pt-stat">
-            <b>0%</b>
-            <span>chance of chargebacks</span>
+            <b>R 0</b>
+            <span>unauthorised fund leakage</span>
           </div>
           <div className="pt-stat">
             <b>&lt;60s</b>
-            <span>payout after approval</span>
-          </div>
-          <div className="pt-stat">
-            <b>24/7</b>
-            <span>AI review, any timezone</span>
+            <span>rule-triggered release upon handoff</span>
           </div>
           <div className="pt-stat">
             <b>100%</b>
-            <span>funds held on-chain</span>
+            <span>isolated dispute protection</span>
+          </div>
+          <div className="pt-stat">
+            <b>2-Party</b>
+            <span>verified custody signatures</span>
           </div>
         </div>
       </section>
 
       <section className="pt-sec">
         <Reveal>
-          <span className="pt-eyebrow">Supported assets</span>
-          <h2 className="pt-h2">Pay in the crypto you already hold.</h2>
+          <span className="pt-eyebrow">Financial & Custody Infrastructure</span>
+          <h2 className="pt-h2">Rand in, Rand out. Governed by code.</h2>
           <p className="pt-lead">
-            Lock funds in stablecoins for a fixed price, or use major tokens across leading
-            networks.
+            Transact natively in South African Rand (ZAR), backed by licensed banking partners and
+            anchored on Base Sepolia.
           </p>
         </Reveal>
         <div className="pt-chips">
           {[
-            "USDC",
-            "USDT",
-            "DAI",
-            "ETH",
-            "SOL",
-            "BTC (wrapped)",
-            "Ethereum",
-            "Base",
-            "Arbitrum",
-            "Polygon",
-            "Solana",
+            "ZAR (South African Rand)",
+            "ZARP (Rand Stablecoin)",
+            "Base Sepolia EVM",
+            "Standard Bank Escrow Trust",
+            "Two-Party Cryptographic Signatures",
+            "CIPC Verified Profiles",
+            "KMS Release Authority",
+            "ISO 20022 Ready",
           ].map((c) => (
             <span className="pt-chip" key={c}>
               {c}
@@ -179,38 +178,37 @@ export function PatelaSections() {
       <section className="pt-sec" id="start">
         <Reveal className="pt-cta-big">
           <span className="pt-eyebrow">Get started</span>
-          <h2 className="pt-h2">Lock the deal. Ship the work. Get paid.</h2>
+          <h2 className="pt-h2">Coordinate custody. Release on verified rules.</h2>
           <p className="pt-lead">
-            Join the marketplace where every job is backed by escrow and every payout is backed by
-            proof.
+            Join commercial buyers, freight operators, and terminals orchestrating South African
+            supply chains with Patella.
           </p>
           <div
             className="pt-cta-cards"
             style={{ maxWidth: 1020, gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}
           >
-            <Link href="/post-job" className="pt-cta-card">
+            <Link href="/html/create-order.html" className="pt-cta-card">
               <b>
-                Post a job <span className="ar">→</span>
+                Create Order & Route <span className="ar">→</span>
               </b>
               <span>
-                Define deliverables and milestones, choose stablecoins, and lock your budget.
+                Configure multi-hop corridors, split parcels, and declarative payment tranches.
               </span>
             </Link>
-            <Link href="/marketplace" className="pt-cta-card">
+            <Link href="/html/guest-handoff.html" className="pt-cta-card">
               <b>
-                Explore the marketplace <span className="ar">→</span>
+                Guest Mobile Handoff <span className="ar">→</span>
               </b>
               <span>
-                Browse funded jobs, deliver great work, and get paid the moment AI approves.
+                Simulate two-party custody handoff verification with zero mobile app required.
               </span>
             </Link>
             <Link href="/html/index.html" className="pt-cta-card">
               <b>
-                Launch Workspace <span className="ar">→</span>
+                Master Blueprint Hub <span className="ar">→</span>
               </b>
               <span>
-                Enter the full Client or Worker dashboard to track escrows, AI reviews, and
-                analytics.
+                Explore all 28 enterprise supply-chain screens, demo narrative, and auditor console.
               </span>
             </Link>
           </div>

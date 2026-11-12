@@ -49,7 +49,7 @@ export function HeroBar() {
           <path d="M22.9 0 L19.3 0 L15.0 7.6 L18.6 7.6 Z" />
           <path d="M22.6 6.9 L19.0 6.9 L14.05 16.4 L17.65 16.4 Z" />
         </svg>
-        <span id="word">PATELA</span>
+        <span id="word">PATELLA</span>
       </Link>
       <input
         ref={toggle}
@@ -71,22 +71,28 @@ export function HeroBar() {
           <Link href="/how-it-works" className={pathname === "/how-it-works" ? "on" : ""}>
             <span>How it works</span>
           </Link>
-          <Link href="/marketplace" className={pathname === "/marketplace" ? "on" : ""}>
-            <span>Marketplace</span>
+          <Link href="/html/orders.html" className={pathname === "/html/orders.html" ? "on" : ""}>
+            <span>Orders & Custody</span>
           </Link>
-          <Link href="/html/index.html" className={pathname?.startsWith("/html") ? "on" : ""}>
-            <span>Dashboard</span>
+          <Link
+            href="/html/guest-handoff.html"
+            className={pathname === "/html/guest-handoff.html" ? "on" : ""}
+          >
+            <span>Guest Handoff</span>
           </Link>
           <SolutionsMenu />
         </nav>
         <Link className="login" href="/html/index.html">
-          <span>Open workspace</span>
+          <span>Workspace</span>
           <svg className="navarrow" viewBox="0 0 10 9" aria-hidden="true">
             <path d="M0 4.5 H9.1 M5.4 0.9 L9.2 4.5 L5.4 8.1" />
           </svg>
         </Link>
-        <Link className={`pill ${pathname === "/post-job" ? "on" : ""}`} href="/post-job">
-          <span>Post a job</span>
+        <Link
+          className={`pill ${pathname === "/html/create-order.html" ? "on" : ""}`}
+          href="/html/create-order.html"
+        >
+          <span>Create Order</span>
         </Link>
       </div>
     </header>

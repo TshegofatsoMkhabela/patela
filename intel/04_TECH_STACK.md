@@ -1,36 +1,70 @@
-# 04 — Technology Stack & Migration Plan
+# 04 — Technology Stack: Patella
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-11-09  
+**Document Version:** 1.1 (Updated for Technical Architecture v0.3)  
+**Last Updated:** 2026-11-13  
+**Status:** Approved Architectural Baseline
 
 ---
 
-## 1. Current Repository Stack vs. Target Testnet MVP Stack
+## 1. 4-Tier System Architecture Overview
 
-| Layer | Current Repository State (Inspected `2026-11-09`) | Target Testnet MVP Stack | Status & Gap |
+According to *Patella Technical Architecture v0.3* (@Thabiso), Patella is structured across four clean architectural tiers:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        TIER 1: CLIENTS & PORTALS                       │
+│  Next.js 15 SPA (src/)  │  Guest Mobile Web (GST)  │  Operations Console│
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ HTTPS / REST / JSON
+┌───────────────────────────────────▼────────────────────────────────────┐
+│                      TIER 2: API GATEWAY & BFF                         │
+│   NestJS + Fastify  │  Session & Rate Limiting  │  Twilio SMS/WhatsApp │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ Internal Event Bus & DI
+┌───────────────────────────────────▼────────────────────────────────────┐
+│                    TIER 3: DOMAIN SERVICES & WORKERS                   │
+│  • Order & RFQ Service        • Route Graph & Custody Engine           │
+│  • Declarative Rules Engine   • Double-Entry Money Engine & Ledger     │
+│  • Isolated Dispute Manager   • BullMQ Event Bus (Redis 7)             │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ Async Jobs, Signatures & RPC
+┌───────────────────────────────────▼────────────────────────────────────┐
+│            TIER 4: CHAIN LAYER & EXTERNAL INFRASTRUCTURE               │
+│  • Base Sepolia (84532)       • EscrowVault & AnchorRegistry (Solidity)│
+│  • ZARP Rand Stablecoin       • AWS KMS / Cloud HSM Release Authority  │
+│  • Standard Bank Trust API    • MinIO / S3 Evidence Vault              │
+│  • PostgreSQL 16 (28 Entities)• Google Gemini 2.5 Flash (Advisory OCR) │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 2. Component Technology Details
+
+| Tier / Subsystem | Technology | Version / Specification | Rationale & Responsibility |
 |---|---|---|---|
-| **Frontend Framework** | Next.js `15.2.0` (App Router) + React `19.2.0` + TypeScript `5.8.3` in `src/`, plus standalone vanilla HTML/CSS/JS prototype in `html/` | Next.js `15.x` (App Router) + TypeScript `5.8.x` unifying the marketing site and the role-aware dashboards from `html/` | **Frontend Installed**; dashboard views in `html/` need porting into Next.js routes |
-| **Styling** | Custom CSS (`src/styles/patela*.css`, `html/assets/css/*.css`) + Tailwind CSS `4.2.1` | Preserve custom Patela CSS design tokens + Tailwind CSS utilities | **Implemented** |
-| **Backend API** | None (client-side `localStorage` only) | **NestJS + Fastify (`@nestjs/platform-fastify`) + TypeScript** modular monolith serving `/api/v1` | **Not Installed / Planned (`M01`)** |
-| **Database** | None (`localStorage` keys `patela-demo-v1` and `patela_proto_state_v3`) | **PostgreSQL 16+** | **Not Installed / Planned (`M01`)** |
-| **ORM & Migrations** | None | **Prisma ORM** (`prisma/schema.prisma` + `prisma migrate`) | **Not Installed / Planned (`M01`)** |
-| **Authentication** | None | Server-managed HTTP-only session cookies + Argon2id password hashing + EIP-191/SIWE wallet signature verification | **Not Installed / Planned (`M01`)** |
-| **Validation** | `zod` `^3.25.76` + `react-hook-form` `^7.71.2` installed in `package.json` | Shared **Zod** schemas (`packages/validation`) used by both Next.js frontend and NestJS backend | **Zod Installed**; shared package planned |
-| **Background Jobs & Queues** | `setTimeout(..., 2800)` in browser | **Redis 7+ & BullMQ** (`apps/worker`) for AI deliverable reviews, Base Sepolia event indexing, and notifications | **Not Installed / Planned (`M04`, `M05`)** |
-| **Smart Contracts** | None | **Solidity `0.8.24+`** (`PatelaEscrow.sol`, `PatelaTestUSD.sol`) with OpenZeppelin `5.x` (`SafeERC20`, `ReentrancyGuard`, `AccessControl`) | **Not Installed / Planned (`M04`)** |
-| **Contract Tooling** | None | **Foundry** (`forge`, `cast`, `anvil`) for compilation, unit/fuzz/invariant testing, and deployment scripts | **Not Installed / Planned (`M04`)** |
-| **Blockchain Network** | Hardcoded Ethereum Sepolia (`0xaa36a7` / `11155111`) in `src/lib/patela-store.ts` | **Base Sepolia Testnet** (`Chain ID: 84532` / hex `0x14a34`) | **Needs Migration (`M04`)** |
-| **Payment Token** | Simulated multi-coin array (`USDC`, `USDT`, `DAI`, `PYUSD`, `EURC`) | **Single Dedicated Test ERC-20 Token** (`Patela Test USD` / `pUSD`, 6 decimals) deployed on Base Sepolia | **Planned (`M04`)** |
-| **Wallet Integration** | Raw `window.ethereum.request` with fake `0xDEMO...` fallback | **`wagmi` + `viem` + `@tanstack/react-query`** configured for Base Sepolia (`84532`) | `@tanstack/react-query` installed; `wagmi` & `viem` planned (`M04`) |
-| **File Storage** | None (reads `File.name` and `File.size` in memory only) | **Private S3-Compatible Object Storage** (MinIO locally / Cloudflare R2 or AWS S3 in cloud) with pre-signed URLs | **Not Installed / Planned (`M03`)** |
-| **AI Review System** | 15-character note heuristic (`demoReview`) | Dedicated backend worker module (`apps/worker/src/ai-review`) with structured JSON schema validation and criteria versioning | **Not Installed / Planned (`M05`)** |
-| **Testing** | Vitest `3.0.0` (1 file, 6 unit tests) | Vitest (unit/integration), Supertest (API), Playwright (E2E), Foundry `forge test` (unit/fuzz/invariant) | **Vitest Installed**; expansion planned |
+| **Tier 1: Web App** | Next.js + React | `15.x` / `19.x` + TypeScript `5.8` | App Router for marketing pages, authenticated buyer/supplier portals, and interactive supply-chain views. |
+| **Tier 1: Mobile Guest Web** | Vanilla HTML5 / ES6 WebCrypto | Native Mobile Browser | Zero-app, zero-wallet single-use guest handoffs (`GST-01`, `GST-02`) on iOS & Android. |
+| **Tier 1: Enterprise Hub** | Standalone HTML Prototype | `html/` directory (18 screens) | Authoritative reference UI for route graphs, dual signatures, and auditor consoles. |
+| **Tier 2: API Gateway** | NestJS + `@nestjs/platform-fastify` | `10.x` / Fastify `4.x` | High-throughput async REST API serving `/api/v1/*` with strict Zod validation. |
+| **Tier 2: Messaging Gateway** | Twilio SMS & WhatsApp API | Official Node SDK | Ephemeral guest handoff link dispatch to South African mobile numbers (+27). |
+| **Tier 3: Database** | PostgreSQL | `16-alpine` | Relational source of truth supporting the 28 core domain entities and ACID transactions. |
+| **Tier 3: In-Memory / Bus** | Redis & BullMQ | Redis `7-alpine` / BullMQ `5.x` | Pub/sub event bus, queue worker scheduling, and rate limiting. |
+| **Tier 3: Rules Engine** | JSON Logic / Declarative Engine | Deterministic Evaluator | Evaluates versioned payment triggers against verified custody events. |
+| **Tier 3: Ledger Engine** | Double-Entry Accounting | Internal Cents/Integer Engine | Mathematically guarantees money conservation: $\sum \text{tranches} = \text{total escrowed}$. |
+| **Tier 4: Blockchain Network** | Base Sepolia | Chain ID `84532` (`0x14a34`) | High-speed, low-gas EVM Layer 2 for smart contract custody and event anchor registry. |
+| **Tier 4: Smart Contracts** | Solidity + Foundry | Solidity `0.8.24+` / OpenZeppelin `5.x` | `EscrowVault.sol` (funds custody) and `AnchorRegistry.sol` (SHA-256 byte anchors). |
+| **Tier 4: Settlement Token** | ZARP (Rand Stablecoin) | ERC-20 (18 decimals / 1:1 ZAR) | Enables programmable on-chain escrow denominated directly in South African Rand. |
+| **Tier 4: Release Authority** | AWS KMS / Cloud HSM | `secp256k1` / EIP-712 | Signs authorized release transactions only after domain service invariant checks pass. |
+| **Tier 4: Banking Partner** | Standard Bank South Africa | Corporate Host-to-Host / API | Ring-fenced client trust accounts holding fiat ZAR deposits with daily bank reconciliation. |
+| **Tier 4: Private Storage** | MinIO (Dev) / Cloudflare R2 / S3 | S3-Compatible API | Secure vault for signed PODs, weighbridge slips, and assayer certificates. |
+| **Tier 4: Advisory OCR** | Google Gemini API | `gemini-2.5-flash` | Extracts structured metadata (invoice number, vat, net weight) from uploaded delivery slips. |
 
 ---
 
-## 2. Base Sepolia Network & Token Configuration (`Chain ID 84532`)
+## 3. Base Sepolia Network & Contract Configuration (`84532`)
 
-All blockchain interactions for the Testnet MVP target **Base Sepolia** exclusively:
+All blockchain interactions target **Base Sepolia** testnet:
 
 | Parameter | Value |
 |---|---|
@@ -38,29 +72,20 @@ All blockchain interactions for the Testnet MVP target **Base Sepolia** exclusiv
 | **Chain ID (Decimal)** | `84532` |
 | **Chain ID (Hex)** | `0x14a34` |
 | **Native Gas Currency** | Sepolia ETH (`ETH`, 18 decimals) |
-| **Default Public RPC** | `https://sepolia.base.org` (Alchemy/Infura/QuickNode RPC configured via env in backend/indexer) |
+| **Default Public RPC** | `https://sepolia.base.org` |
 | **Block Explorer** | `https://sepolia.basescan.org` |
-| **Test Payment Token** | `PatelaTestUSD` (`pUSD`, 6 decimals, standard ERC-20 deployed by Patela on Base Sepolia) |
-
-> **Strict Representation Rule:** The self-deployed test ERC-20 token must be labeled `pUSD (Testnet)` or `Patela Test USD` in the UI and documentation. It must **never** be represented as official Circle `USDC`.
+| **Escrow Vault Contract** | `EscrowVault.sol` (Multi-tranche, rule-governed ZARP lock) |
+| **Anchor Registry Contract**| `AnchorRegistry.sol` (Merkle/SHA-256 event anchoring) |
+| **Settlement Currency** | South African Rand (`ZAR` fiat) / `ZARP` stablecoin |
 
 ---
 
-## 3. Incremental Migration Strategy (From Prototype to Testnet MVP)
+## 4. Migration & Integration Strategy
 
-Rather than discarding the working repository or performing a destructive rewrite, Patela will evolve incrementally across Milestones `00`–`08`:
-
-1. **Preserve the Isolated `html/` Prototype Reference:**
-   - Keep `html/` intact as the interactive UI/UX reference specification for all Client and Worker dashboard screens, full-screen detail views, and responsive collapsible sidebar behavior.
-2. **Evolve the Repository into a Clean Workspace Structure (`M00`–`M01`):**
-   - Introduce `apps/api` (NestJS + Fastify), `apps/worker` (BullMQ workers), `packages/shared-types`, `packages/validation` (Zod), `database/prisma`, and `contracts/` (Foundry) while keeping the existing Next.js application working cleanly.
-3. **Replace Client-Side `localStorage` Domain by Domain (`M01`–`M05`):**
-   - **M01:** Add PostgreSQL + Prisma + Session Auth (`/api/v1/auth/*`, `/api/v1/users/*`).
-   - **M02:** Replace `localStorage` jobs in `/marketplace` and `/post-job` with `/api/v1/jobs` and `/api/v1/applications`.
-   - **M03:** Port the dashboard & project workspaces from `html/` into authenticated Next.js routes backed by `/api/v1/projects`, `/api/v1/milestones`, and private S3 file uploads.
-   - **M04:** Replace `connectWallet()` and `actions.fund()` in `src/lib/patela-store.ts` with `wagmi` + `viem` on Base Sepolia (`84532`), real `PatelaEscrow.sol` contract calls, and the BullMQ blockchain event indexer.
-   - **M05:** Replace `demoReview()` with the asynchronous BullMQ AI Review Worker.
-   - **M06–M07:** Add human dispute resolution (`resolveDispute`) and reconciled financial analytics.
-4. **Cleanup & Deprecation:**
-   - Prune unused `@radix-ui/*` wrappers (`ISS-005`) once the Next.js dashboard components are finalized, and retire `src/lib/patela-store.ts` once all views read from `/api/v1` (while keeping any remaining sandbox preview explicitly labeled `demo` per `AGENTS.md`).
-
+1. **Standalone HTML Prototype (`html/`) as Live UX Reference:**
+   - The 18 screens and JavaScript modules in `html/` serve as the functional reference for graph rendering, guest signature workflows, and ledger reconciliation.
+2. **Next.js Frontend Integration (`src/`):**
+   - Marketing, documentation, and client portals route cleanly between Next.js pages and the `/html/` prototype via `src/app/html/[[...slug]]/route.ts`.
+3. **Backend & Contract Provisioning (`apps/api`, `contracts/`):**
+   - Standalone infrastructure provisioned via `infrastructure/docker-compose.yml` (`postgres`, `redis`, `minio`).
+   - Foundry smart-contract workspace in `contracts/` with invariant tests for conservation of money.

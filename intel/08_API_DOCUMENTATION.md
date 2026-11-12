@@ -1,113 +1,72 @@
-# 08 — API Documentation (`/api/v1`)
+# 08 — API Documentation: Patella
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-11-09  
-**Base URL Prefix:** `/api/v1`  
-**Current Implementation Status:** `PLANNED` (No backend API endpoints exist in the repository yet; scheduled across Milestones `01`–`07`).
-
----
-
-## 1. Global API Conventions
-
-1. **Transport & Format:** JSON over HTTPS (`Content-Type: application/json`). All monetary values are serialized as **integer base-unit strings** (e.g., `"amountBaseUnits": "400000000"`, `"decimals": 6`, `"symbol": "pUSD"`) to prevent IEEE 754 precision loss in JSON parsers.
-2. **Authentication:** Server-managed `HttpOnly; Secure; SameSite=Lax` cookie (`patela_sid`) plus `X-CSRF-Token` header on all state-changing (`POST`, `PATCH`, `PUT`, `DELETE`) requests.
-3. **Idempotency:** All financial, job-creation, application, submission, and dispute-mutation `POST`/`PATCH` endpoints require an `Idempotency-Key: <uuid-v4>` header.
-4. **Standard Response Envelope:**
-   ```json
-   {
-     "data": { ... },
-     "meta": { "requestId": "req_01J...", "timestamp": "2026-11-09T00:00:00Z" }
-   }
-   ```
-5. **Standard Error Envelope:**
-   ```json
-   {
-     "error": {
-       "code": "ESCROW_INSUFFICIENT_LOCKED_BALANCE",
-       "message": "Milestone cannot be approved before on-chain funding is reconciled.",
-       "details": [{ "field": "milestoneId", "issue": "Current status is NOT_FUNDED" }],
-       "requestId": "req_01J..."
-     }
-   }
-   ```
+**Document Version:** 1.1 (Updated for Technical Architecture v0.3)  
+**Last Updated:** 2026-11-13  
+**Status:** Approved Architectural Baseline
 
 ---
 
-## 2. Proposed Endpoint Catalog (`/api/v1`)
+## 1. REST API Overview
 
-### 2.1 Authentication & Sessions (`auth`) — *Status: `PLANNED` (`M01`)*
+The Patella API is served via NestJS + Fastify at `/api/v1/*`. All financial values are communicated as integer cents in ZAR (`amount_cents`). All date/times are ISO 8601 UTC.
 
-| Method | Path | Auth / Permission | Purpose | Idempotent |
-|---|---|---|---|---|
-| `POST` | `/api/v1/auth/register` | Public (Rate-limited) | Register user account + create initial profile & session. | Yes (`Idempotency-Key`) |
-| `POST` | `/api/v1/auth/login` | Public (Rate-limited) | Authenticate email/password and set `patela_sid` cookie. | No |
-| `POST` | `/api/v1/auth/logout` | Authenticated | Revoke current `AuthSession` and clear cookie. | Yes |
-| `GET` | `/api/v1/auth/me` | Authenticated | Return current user, profile, linked wallets, and active persona. | Yes |
-| `POST` | `/api/v1/auth/verify-email` | Public | Verify email token (`{ token }`). | Yes |
-| `POST` | `/api/v1/auth/password-reset/request` | Public (Rate-limited) | Issue password reset token. | Yes |
-| `POST` | `/api/v1/auth/password-reset/confirm` | Public (Rate-limited) | Set new Argon2id password and revoke old sessions. | Yes |
+Standard response envelope:
+```json
+{
+  "success": true,
+  "data": { ... },
+  "error": null,
+  "meta": { "timestamp": "2026-11-13T00:00:00Z", "requestId": "req_8941" }
+}
+```
 
-### 2.2 Users, Profiles & Wallets (`users`, `wallets`) — *Status: `PLANNED` (`M01`, `M04`)*
+---
 
-| Method | Path | Auth / Permission | Purpose | Idempotent |
-|---|---|---|---|---|
-| `GET` | `/api/v1/users/profile` | Authenticated | Fetch authenticated user's profile and trust stats. | Yes |
-| `PATCH` | `/api/v1/users/profile` | Authenticated | Update displayName, handle, bio, skills, activePersona. | Yes |
-| `POST` | `/api/v1/users/profile/avatar-upload-url` | Authenticated | Generate pre-signed S3 upload URL for profile image. | Yes |
-| `POST` | `/api/v1/wallets/nonce` | Authenticated | Generate single-use EIP-191/SIWE nonce for wallet address on Chain `84532`. | No |
-| `POST` | `/api/v1/wallets/verify` | Authenticated | Verify signature (`{ address, chainId: 84532, signature }`) and link `Wallet`. | Yes (`Idempotency-Key`) |
-| `DELETE` | `/api/v1/wallets/:walletId` | Authenticated (Owner) | Unlink a wallet if not bound to an active escrow agreement. | Yes |
+## 2. Core API Endpoints
 
-### 2.3 Marketplace Jobs & Applications (`jobs`, `applications`) — *Status: `PLANNED` (`M02`)*
+### 2.1 Orders & Canonical Agreements (`ORD-01`, `ORD-02`, `TEN-01`)
+- **`GET /api/v1/orders`**: List orders filtered by status (`DRAFT`, `ACTIVE`, `IN_TRANSIT`, `DISPUTED`, `COMPLETED`), role (buyer/supplier/carrier), and search queries.
+- **`POST /api/v1/orders`**: Create a new commercial order with line items, consignment parcels, and assigned participants.
+- **`GET /api/v1/orders/:id`**: Fetch full order details including canonical agreement v1.0, active version hash, route graph ID, and payment plan ID.
+- **`POST /api/v1/orders/:id/sign`**: Submit cryptographic signature for canonical agreement (buyer or supplier). When both parties sign, status transitions to `PENDING_FUNDING`.
+- **`POST /api/v1/orders/:id/rfq/tender-bids`**: Submit encrypted freight tender bid for freight carriers (`TEN-01`).
+- **`POST /api/v1/orders/:id/rfq/award`**: Award RFQ tender to selected carrier, automatically mapping carrier to route edges.
 
-| Method | Path | Auth / Permission | Purpose | Idempotent |
-|---|---|---|---|---|
-| `GET` | `/api/v1/jobs` | Public / Optional Auth | List/search `OPEN` jobs (`?q=`, `?category=`, `?skill=`, `?minBudget=`, `?sort=`). | Yes |
-| `POST` | `/api/v1/jobs` | Authenticated | Create a new job draft or published job (`validateJob` enforced). | Yes (`Idempotency-Key`) |
-| `GET` | `/api/v1/jobs/:jobId` | Public / Optional Auth | Get full job details, deliverables, milestone schedule, and client trust summary. | Yes |
-| `PATCH` | `/api/v1/jobs/:jobId` | Authenticated (`job.clientId`) | Edit a `DRAFT` or `OPEN` job (if no accepted agreement exists). | Yes |
-| `POST` | `/api/v1/jobs/:jobId/publish` | Authenticated (`job.clientId`) | Transition job from `DRAFT` to `OPEN`. | Yes |
-| `POST` | `/api/v1/jobs/:jobId/archive` | Authenticated (`job.clientId`) | Archive an `OPEN` job with no funded project. | Yes |
-| `POST` | `/api/v1/jobs/:jobId/applications` | Authenticated (`userId != job.clientId`) | Submit freelancer proposal (`coverLetter`, `proposedAmountBaseUnits`, `estimatedDays`). | Yes (`Idempotency-Key`) |
-| `GET` | `/api/v1/jobs/:jobId/applications` | Authenticated (`job.clientId`) | List all applications submitted to the client's job. | Yes |
-| `POST` | `/api/v1/applications/:applicationId/accept` | Authenticated (`job.clientId`) | Accept freelancer application and instantiate `Project` + `ProjectAgreement`. | Yes (`Idempotency-Key`) |
-| `POST` | `/api/v1/applications/:applicationId/reject` | Authenticated (`job.clientId`) | Reject an application. | Yes |
-| `POST` | `/api/v1/applications/:applicationId/withdraw` | Authenticated (`application.freelancerId`) | Withdraw pending application. | Yes |
+### 2.2 Route Graph & Custody Corridor (`ROUTE-01`, `SHIP-01`)
+- **`POST /api/v1/routes`**: Create route graph template (Simple Direct, Multi-Hop Road/Rail, Split Consignment, Hub-and-Spoke).
+- **`GET /api/v1/routes/:id`**: Retrieve full directed graph topology (nodes, edges, active custody holder, proof requirements).
+- **`POST /api/v1/routes/:id/validate`**: Execute graph cycle detection, sequence connectivity, and proof-level validation.
+- **`GET /api/v1/routes/:id/active-custody`**: Query currently accountable carrier/node for each parcel.
 
-### 2.4 Projects, Milestones, Submissions & AI Reviews (`projects`, `milestones`, `submissions`, `reviews`) — *Status: `PLANNED` (`M03`, `M05`)*
+### 2.3 Declarative Payment Plans & Escrow Funding (`PAY-01`, `PAY-02`, `PAY-03`)
+- **`POST /api/v1/payments/plans`**: Submit declarative payment plan with milestone tranches and JSON Logic release rules.
+  - *Invariant Validation:* Rejects with `422 Unprocessable Entity` if $\sum \text{tranches} \ne \text{order.total\_amount\_cents}$.
+- **`POST /api/v1/escrow/fund`**: Initiate 5-stage funding pipeline: generates bank deposit reference for Standard Bank client trust account.
+- **`POST /api/v1/escrow/confirm-mint`**: Webhook from treasury service confirming ZARP minted/transferred into Base Sepolia `EscrowVault`.
+- **`GET /api/v1/payments/balances`**: Returns ZAR financial buckets: **Available**, **Locked in Escrow**, and **Payable / Releasable**.
+- **`GET /api/v1/payments/ledger`**: Query double-entry general ledger journal entries and postings for the organization.
 
-| Method | Path | Auth / Permission | Purpose | Idempotent |
-|---|---|---|---|---|
-| `GET` | `/api/v1/projects` | Authenticated (Participant) | List projects where user is `clientId` or `freelancerId` (`?role=`, `?status=`). | Yes |
-| `GET` | `/api/v1/projects/:projectId` | Authenticated (Participant / Admin) | Get full project workspace: agreement, milestones, escrow, AI reports, timeline. | Yes |
-| `POST` | `/api/v1/milestones/:milestoneId/upload-urls` | Authenticated (`project.freelancerId`) | Generate private S3 pre-signed PUT URLs for deliverable files. | Yes (`Idempotency-Key`) |
-| `POST` | `/api/v1/milestones/:milestoneId/submissions` | Authenticated (`project.freelancerId`) | Create versioned `Submission` (`files`, `externalLinks`, `deliveryNote`) & enqueue AI review. | Yes (`Idempotency-Key`) |
-| `GET` | `/api/v1/milestones/:milestoneId/submissions` | Authenticated (Participant / Arbitrator) | List submission versions and signed download URLs for a milestone. | Yes |
-| `POST` | `/api/v1/milestones/:milestoneId/request-revision` | Authenticated (`project.clientId`) | Request revision with structured feedback; keeps escrow locked. | Yes (`Idempotency-Key`) |
-| `GET` | `/api/v1/submissions/:submissionId/ai-review` | Authenticated (Participant / Arbitrator) | Retrieve structured `AiReview` report for a specific submission version. | Yes |
-| `POST` | `/api/v1/submissions/:submissionId/ai-review/retry` | Authenticated (Participant / Admin) | Re-enqueue failed/timed-out AI review job. | Yes (`Idempotency-Key`) |
+### 2.4 Guest Mobile Handoff Engine (`GST-01`, `GST-02`, `GST-03`)
+- **`POST /api/v1/handoffs/token`**: Generate single-use ephemeral token (4-hour TTL) for a designated node and phone number. Dispatches SMS/WhatsApp link.
+- **`GET /api/v1/handoffs/guest/:token`**: Resolve guest portal session: displays handover details, parcel checklist, condition notes, and signature pads without requiring login.
+- **`POST /api/v1/handoffs/guest/:token/execute`**: Submit simultaneous dual digital signatures (releasing driver + receiving dock clerk) with GPS location and attached condition photos.
+  - *Engine Execution:* Records custody transfer, permanently consumes token, appends event to audit log, and triggers rule engine evaluation.
 
-### 2.5 Escrow, Transactions & Disputes (`escrow`, `transactions`, `disputes`) — *Status: `PLANNED` (`M04`, `M06`)*
+### 2.5 Isolated Parcel Disputes & Exceptions (`DIS-01`)
+- **`POST /api/v1/disputes`**: Open commercial dispute specifying affected parcel IDs, claim amount, reason (`DAMAGE`, `SHORTAGE`, `DELAY`), and evidence attachments.
+  - *Blast Radius Enforcement:* Holds only the affected parcel's payment tranche; all unaffected parcels remain `ACTIVE`.
+- **`GET /api/v1/disputes/:id`**: Retrieve dispute triage dossier, evidence photos, assayer certificates, and timeline.
+- **`POST /api/v1/disputes/:id/ruling`**: Operations agent submits formal ruling (percentage split or full refund) and executes atomic ledger reallocations.
 
-| Method | Path | Auth / Permission | Purpose | Idempotent |
-|---|---|---|---|---|
-| `POST` | `/api/v1/projects/:projectId/escrow/prepare` | Authenticated (`project.clientId`) | Return deterministic `onChainProjectId`, contract address (`84532`), and encoded parameters for `createProject` / `fundMilestone`. | Yes |
-| `POST` | `/api/v1/transactions/track` | Authenticated (Participant) | Register a submitted `txHash` (`SUBMITTED` state) for immediate indexer polling. | Yes (`Idempotency-Key`) |
-| `GET` | `/api/v1/transactions` | Authenticated (Participant / Admin) | Filterable transaction ledger (`?type=`, `?status=`, `?projectId=`, `?from=`, `?to=`). | Yes |
-| `GET` | `/api/v1/transactions/:txId` | Authenticated (Participant / Admin) | Full transaction receipt, custody flow nodes, fee breakdown, and Base Sepolia metadata. | Yes |
-| `POST` | `/api/v1/milestones/:milestoneId/disputes` | Authenticated (`clientId` or `freelancerId`) | Open a `Dispute` record linked to on-chain `raiseDispute` transaction. | Yes (`Idempotency-Key`) |
-| `POST` | `/api/v1/disputes/:disputeId/evidence` | Authenticated (Participant) | Submit statement and private S3 evidence attachment to an open dispute. | Yes (`Idempotency-Key`) |
-| `POST` | `/api/v1/disputes/:disputeId/resolve` | Authenticated (`ARBITRATOR` / `ADMIN`) | Record arbitrator decision and track on-chain `resolveDispute` settlement transaction. | Yes (`Idempotency-Key`) |
+### 2.6 Carrier Partner Directory (`PART-01`, `PART-02`)
+- **`GET /api/v1/partners`**: Search vetted freight carriers with filters for CIPC registration, goods-in-transit insurance limits, and corridor experience.
+- **`GET /api/v1/partners/:id/rate-card`**: Fetch freight rate schedules (rate per ton-km, minimum dispatch fees).
 
-### 2.6 Messaging, Notifications, Analytics & Admin (`messages`, `notifications`, `analytics`, `admin`) — *Status: `PLANNED` (`M03`, `M07`)*
+### 2.7 Auditor Trail & Blockchain Anchors (`AUD-01`, `AUD-02`)
+- **`GET /api/v1/audit/trail/:orderId`**: Query append-only chronological custody event log with actor IDs, timestamps, and SHA-256 byte hashes.
+- **`POST /api/v1/audit/verify-document`**: Accepts file payload or hash; verifies whether exact SHA-256 matches an on-chain Base Sepolia `AnchorRegistry` entry.
 
-| Method | Path | Auth / Permission | Purpose | Idempotent |
-|---|---|---|---|---|
-| `GET` | `/api/v1/projects/:projectId/messages` | Authenticated (Participant / Arbitrator) | Fetch paginated project messages. | Yes |
-| `POST` | `/api/v1/projects/:projectId/messages` | Authenticated (Participant) | Post message in project thread. | Yes (`Idempotency-Key`) |
-| `GET` | `/api/v1/notifications` | Authenticated | List user notifications and unread count. | Yes |
-| `POST` | `/api/v1/notifications/mark-all-read` | Authenticated | Mark all unread notifications for the user as read. | Yes |
-| `GET` | `/api/v1/analytics/client` | Authenticated | Reconciled client spending time-series (`?range=7d\|30d\|3m\|6m\|12m\|all`), category breakdown, and escrow allocation. | Yes |
-| `GET` | `/api/v1/analytics/worker` | Authenticated | Reconciled freelancer earnings time-series, custody breakdown, and delivery KPIs. | Yes |
-| `GET` | `/api/v1/admin/overview` | Authenticated (`ADMIN`) | Platform-wide operational metrics, active disputes, AI review health, and fee totals. | Yes |
-
+### 2.8 Operations Console & Emergency Controls (`OPS-01` to `OPS-05`)
+- **`GET /api/v1/operations/triage`**: Triage queues for pending KYB verifications, open disputes, and unconfirmed bank deposits.
+- **`POST /api/v1/operations/pause`**: Multi-signature admin emergency pause for `EscrowVault` smart contract.
+- **`GET /api/v1/operations/reconciliation`**: Automated reconciliation matrix comparing Standard Bank trust balances, Base Sepolia `EscrowVault` balances, and PostgreSQL internal ledger totals.

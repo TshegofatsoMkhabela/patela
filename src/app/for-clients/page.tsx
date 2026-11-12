@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { InfoPage, Cards } from "@/components/InfoPage";
+import { InfoPage, Cards, Prose } from "@/components/InfoPage";
 
 export const metadata: Metadata = {
-  title: "For clients — Patela",
+  title: "For Buyers & Consignors — Patella",
   description:
-    "Hire talent worldwide and only pay for work that meets the brief. Funds stay in escrow until AI verifies delivery.",
+    "Deposit South African Rand in escrow with a licensed bank partner, enforce multi-hop custody rules, and release payment only on verified delivery.",
   openGraph: {
-    title: "For clients — Patela",
+    title: "For Buyers & Consignors — Patella",
     description:
-      "Hire talent worldwide and only pay for work that meets the brief. Funds stay in escrow until AI verifies delivery.",
+      "Commercial escrow coordination for buyers: bank-held ZAR trust accounts, split consignments, and isolated dispute protection.",
     type: "website",
   },
   twitter: {
@@ -19,37 +19,47 @@ export const metadata: Metadata = {
 export default function ForClientsPage() {
   return (
     <InfoPage
-      eyebrow="Solutions · For clients"
-      title="Only pay for work that meets the brief."
-      lead="Your budget sits in a smart contract, not in someone's pocket. It moves only when the work is checked and approved."
+      eyebrow="Solutions · For Buyers & Consignors"
+      title="Deposit Rand with bank-grade peace of mind."
+      lead="Your cargo budget is held in an independent client trust account with a licensed South African bank. Funds move only when physical custody handoffs meet your agreed rules."
       cta={true}
     >
       <Cards
         cols={3}
         items={[
           {
-            t: "Funds stay in escrow",
-            p: "Nothing leaves the contract until the deliverables pass review.",
+            t: "Licensed bank trust account",
+            p: "Deposits are held in an independent client trust account under South African banking regulations, not on an unregulated offshore exchange.",
           },
           {
-            t: "Clear AI reports",
-            p: "Every submission comes with a written check against each deliverable.",
+            t: "Split consignment routing",
+            p: "Dispatch bulk shipments and split parcels across multiple regional hubs, depots, and customer receiving bays under one order.",
           },
           {
-            t: "Pay per milestone",
-            p: "Release money step by step, so you never risk the whole budget at once.",
+            t: "Isolated parcel protection",
+            p: "If one pallet or truckload is damaged, only that affected tranche is held in dispute. Unaffected cargo continues moving and paying.",
           },
           {
-            t: "Hire anywhere",
-            p: "No banks or borders. Pay in USDC, USDT, DAI, PYUSD or EURC.",
+            t: "Dual-signed agreements",
+            p: "Both buyer and supplier sign the canonical agreement v1.0. Amendments require mutual cryptographic sign-off before rules change.",
           },
           {
-            t: "Refunds on cancellation",
-            p: "If a job is cancelled before delivery, locked funds return to you.",
+            t: "Vetted freight carriers",
+            p: "Browse verified logistics partners with active CIPC registration, goods-in-transit insurance certificates, and confirmed handoff track records.",
           },
           {
-            t: "Human backup",
-            p: "Disputes go to a human review panel before any funds move.",
+            t: "Immutable audit trail",
+            p: "Every custody handoff, milestone event, and escrow movement is cryptographically anchored on Base Sepolia for external auditors.",
+          },
+        ]}
+      />
+      <Prose
+        sections={[
+          {
+            h: "5-Stage Escrow Funding Pipeline",
+            p: [
+              "When you fund an order on Patella, money follows a transparent, regulated 5-stage pipeline: (1) Buyer Initiated (ZAR via EFT/Ozow), (2) Bank Trust Account Received (Standard Bank Client Trust), (3) Treasury ZARP Mint/Transfer, (4) EscrowVault Contract Lock (Base Sepolia), and (5) Active Escrow Confirmed. You see exact exchange rates, zero hidden conversion fees, and real-time bank transaction references.",
+            ],
           },
         ]}
       />

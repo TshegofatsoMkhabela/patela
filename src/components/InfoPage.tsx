@@ -45,7 +45,7 @@ export function InfoPage({
         {children}
         {cta && (
           <Reveal className="pt-cta-big pt-mt">
-            <h2 className="pt-h2">Lock the deal. Ship the work. Get paid.</h2>
+            <h2 className="pt-h2">Coordinate custody. Release on verified rules.</h2>
             <div
               className="pt-cta-cards"
               style={{
@@ -53,23 +53,30 @@ export function InfoPage({
                 gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
               }}
             >
-              <Link href="/post-job" className="pt-cta-card">
+              <Link href="/html/create-order.html" className="pt-cta-card">
                 <b>
-                  Post a job <span className="ar">→</span>
+                  Create Order & Route <span className="ar">→</span>
                 </b>
-                <span>Define deliverables and milestones, then lock your budget.</span>
+                <span>
+                  Configure multi-hop corridors, split parcels, and declarative payment tranches.
+                </span>
               </Link>
-              <Link href="/marketplace" className="pt-cta-card">
+              <Link href="/html/guest-handoff.html" className="pt-cta-card">
                 <b>
-                  Explore the marketplace <span className="ar">→</span>
+                  Guest Mobile Handoff <span className="ar">→</span>
                 </b>
-                <span>Browse funded jobs and get paid when AI approves.</span>
+                <span>
+                  Simulate two-party custody handoff verification with zero mobile app required.
+                </span>
               </Link>
               <Link href="/html/index.html" className="pt-cta-card">
                 <b>
-                  Open Workspace <span className="ar">→</span>
+                  Master Blueprint Hub <span className="ar">→</span>
                 </b>
-                <span>Enter the full Client or Worker dashboard with live analytics.</span>
+                <span>
+                  Explore all 28 enterprise supply-chain screens, demo narrative, and auditor
+                  console.
+                </span>
               </Link>
             </div>
           </Reveal>

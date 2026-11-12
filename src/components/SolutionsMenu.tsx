@@ -5,23 +5,41 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 export const SOLUTIONS = [
-  { to: "/for-clients", t: "For clients", d: "Hire with funds locked until work is proven." },
+  {
+    to: "/for-clients",
+    t: "For buyers & consignors",
+    d: "Deposit Rand into licensed bank trust; release on verified delivery.",
+  },
   {
     to: "/for-workers",
-    t: "For workers",
-    d: "See the money before you start. Get paid instantly.",
+    t: "For suppliers & carriers",
+    d: "Guaranteed locked funds before dispatch; zero-app mobile handoffs.",
   },
   {
-    to: "/html/client-dashboard.html",
-    t: "Client dashboard",
-    d: "Manage escrows, AI verification reports, and milestone approvals.",
+    to: "/html/orders.html",
+    t: "Orders & Agreements",
+    d: "Dual-signed canonical agreements, split parcels, and tender bidding.",
   },
   {
-    to: "/html/worker-dashboard.html",
-    t: "Worker dashboard",
-    d: "Track active contracts, submit deliverables, and monitor crypto payouts.",
+    to: "/html/shipment-overview.html",
+    t: "Multi-hop custody",
+    d: "Live route graphs, active custody holders, and parcel tracking.",
   },
-  { to: "/security", t: "Security", d: "How escrow, AI review and disputes keep funds safe." },
+  {
+    to: "/html/dispute-centre.html",
+    t: "Dispute centre",
+    d: "Isolated parcel holding and commercial exception triage.",
+  },
+  {
+    to: "/html/auditor-trail.html",
+    t: "Auditor trail",
+    d: "Read-only forensic event log and Base Sepolia block anchor verifier.",
+  },
+  {
+    to: "/security",
+    t: "Trust & security",
+    d: "Honest trust disclosures, Base Sepolia EscrowVault, and bank accounts.",
+  },
 ] as const;
 
 /**

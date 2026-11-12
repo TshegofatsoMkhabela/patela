@@ -5,13 +5,13 @@ import "@/styles/patela.css";
 import { PatelaSections } from "@/components/PatelaSections";
 
 export const metadata: Metadata = {
-  title: "Patela — Crypto Escrow for Work, Verified by AI",
+  title: "Patella — B2B Order, Custody & Escrow Coordination",
   description:
-    "Post a job, lock payment in a smart contract, and get paid in crypto once AI verifies the deliverables.",
+    "B2B supply chain coordination for multi-hop logistics across South Africa. Route-agnostic custody, guest-first mobile handoffs, and declarative Rand escrow on Base Sepolia.",
   openGraph: {
-    title: "Patela — Crypto Escrow for Work, Verified by AI",
+    title: "Patella — B2B Order, Custody & Escrow Coordination",
     description:
-      "Smart-contract escrow for freelance work. Funds release only when AI approves the deliverables.",
+      "Route-agnostic multi-hop logistics, two-party mobile handoffs, and automated Rand escrow on Base Sepolia.",
     type: "website",
   },
   twitter: {
@@ -21,10 +21,10 @@ export const metadata: Metadata = {
 
 export default function Home() {
   const feats = [
-    "Smart-contract escrow",
-    "AI-verified delivery",
-    "Stablecoin payouts",
-    "Instant release",
+    "Route-agnostic multi-hop",
+    "Guest-first mobile handoffs",
+    "Rand in, Rand out (ZARP)",
+    "Isolated dispute holding",
   ];
   return (
     <div className="pt-page">
@@ -44,19 +44,38 @@ export default function Home() {
         <HeroBar />
         <main className="hero">
           <h1 className="title">
-            <span id="h1a">Trustless Work, Paid in Crypto.</span>
-            <span id="h1b">Verified by AI, Released on Target.</span>
+            <span id="h1a">Every handoff accounted for.</span>
+            <span id="h1b">Every payment governed by agreed rules.</span>
           </h1>
           <p className="sub">
-            <span id="sub1">Funds lock in a smart contract on agreement</span>
-            <span id="sub2">and release only when AI approves the deliverables.</span>
+            <span id="sub1">Patella coordinates B2B supply chains across South Africa:</span>
+            <span id="sub2">
+              route-agnostic multi-hop logistics, two-party mobile handoffs, and automated Rand
+              escrow.
+            </span>
           </p>
-          <Link className="cta" href="/post-job">
-            <span>Post a job today</span>
-            <svg className="arrow" viewBox="0 0 16 11" aria-hidden="true">
-              <path d="M0 5.5 H14.6 M10.3 1.2 L14.9 5.5 L10.3 9.8" />
-            </svg>
-          </Link>
+          <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", justifyContent: "center" }}>
+            <Link className="cta" href="/html/orders.html">
+              <span>Explore active orders</span>
+              <svg className="arrow" viewBox="0 0 16 11" aria-hidden="true">
+                <path d="M0 5.5 H14.6 M10.3 1.2 L14.9 5.5 L10.3 9.8" />
+              </svg>
+            </Link>
+            <Link
+              className="cta"
+              href="/html/index.html"
+              style={{
+                background: "rgba(255, 255, 255, 0.08)",
+                borderColor: "rgba(217, 195, 154, 0.35)",
+                color: "#ffe2b2",
+              }}
+            >
+              <span>Launch Blueprint Hub</span>
+              <svg className="arrow" viewBox="0 0 16 11" aria-hidden="true">
+                <path d="M0 5.5 H14.6 M10.3 1.2 L14.9 5.5 L10.3 9.8" />
+              </svg>
+            </Link>
+          </div>
           <ul className="feats">
             {feats.map((f) => (
               <li key={f}>
@@ -70,7 +89,9 @@ export default function Home() {
           <span className="rule" aria-hidden="true" />
         </main>
         <footer className="foot">
-          <span id="foot1">Trusted by clients and builders across the onchain economy.</span>
+          <span id="foot1">
+            Trusted by commercial buyers, suppliers, and logistics operators across South Africa.
+          </span>
           <span id="foot2">2026</span>
         </footer>
       </div>

@@ -4,13 +4,13 @@ import { Reveal } from "@/components/Reveal";
 import { faqs } from "@/lib/patela-data";
 
 export const metadata: Metadata = {
-  title: "FAQ — Patela",
+  title: "FAQ — Patella",
   description:
-    "Answers about Patela: how AI verification works, disputes, supported stablecoins, custody of funds and fees.",
+    "Frequently asked questions about Patella: multi-hop logistics, South African Rand escrow, guest mobile handoffs, isolated disputes, and smart contracts.",
   openGraph: {
-    title: "FAQ — Patela",
+    title: "FAQ — Patella",
     description:
-      "Answers about Patela: how AI verification works, disputes, supported stablecoins, custody of funds and fees.",
+      "Answers to common questions about Patella supply chain custody, Rand-to-ZARP escrow, driver guest handoffs, and dispute resolution.",
     type: "website",
   },
   twitter: {
@@ -23,7 +23,7 @@ export default function FaqPage() {
     <InfoPage
       eyebrow="FAQ"
       title="Questions, answered."
-      lead="Everything people usually ask before posting their first job or taking on work."
+      lead="Everything buyers, suppliers, carriers, and auditors ask about Patella's supply chain custody and escrow platform."
       cta={true}
     >
       <div className="pt-faq">

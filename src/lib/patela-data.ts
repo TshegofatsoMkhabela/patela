@@ -1,74 +1,78 @@
 export const steps = [
   {
-    t: "Post the job",
-    p: "Describe the work, list the exact deliverables, set a deadline and a budget in crypto or stablecoins.",
+    t: "Agree order & custody route",
+    p: "Buyer and supplier agree commercial terms, split consignments, and configure a multi-hop custody route with any number of stops.",
   },
   {
-    t: "Agree & lock funds",
-    p: "Once you and the worker agree on terms, payment is locked in a smart contract. Nobody can touch it.",
+    t: "Fund rand escrow",
+    p: "Buyer deposits ZAR via a licensed South African bank partner. EscrowVault locks the equivalent rand-stablecoin (ZARP) in smart contract escrow.",
   },
   {
-    t: "Deliver the work",
-    p: "The worker submits files, code, links or designs straight to the contract's job page.",
+    t: "Confirm two-party handoffs",
+    p: "Carriers, drivers and warehouse teams confirm handoffs via short-lived mobile links with zero app or crypto wallet required.",
   },
   {
-    t: "AI verifies & releases",
-    p: "Patela's AI agent checks every deliverable against the brief. Approved work releases funds instantly.",
+    t: "Rule-triggered payout release",
+    p: "Declarative payment rules evaluate verified events to release payment tranches. Isolated dispute holding protects unaffected funds.",
   },
 ];
 
 export const features = [
   {
     d: "M12 3l8 4v5c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V7l8-4z",
-    t: "Smart-contract escrow",
-    p: "Funds sit in an audited on-chain contract, not in our wallet. Fully transparent and verifiable.",
+    t: "EscrowVault smart contracts",
+    p: "Funds are locked in an audited smart-contract vault on Base Sepolia. Release logic is governed by rules, not arbitrary custodian discretion.",
   },
   {
     d: "M9 12l2 2 4-4M12 3a9 9 0 100 18 9 9 0 000-18z",
-    t: "AI-verified delivery",
-    p: "Our agent reviews work against each deliverable and explains exactly why it passes or needs changes.",
+    t: "Route-agnostic multi-hop",
+    p: "From direct supplier-to-buyer deliveries to 20-stop road, rail, and bonded warehouse corridors with branching parcels.",
   },
   {
     d: "M12 2v20M17 6H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6",
-    t: "Pay your way",
-    p: "USDC, USDT, ETH, SOL and more. Lock in stablecoins to avoid price swings mid-project.",
+    t: "Rand in, rand out",
+    p: "Users see and transact in South African Rand (ZAR). Licensed banking partners handle fiat custody and stablecoin (ZARP) conversion.",
   },
   {
     d: "M13 2L4 14h7l-1 8 9-12h-7l1-8z",
-    t: "Instant payouts",
-    p: "No 14-day holds or invoice chasing. Workers get paid the moment work is approved.",
+    t: "Guest-first mobile handoffs",
+    p: "Drivers and warehouse staff sign two-party custody handoffs from a one-time link with no app installation and no wallet.",
   },
   {
     d: "M4 6h16M4 12h16M4 18h10",
-    t: "Milestone payments",
-    p: "Split big jobs into milestones, each with its own deliverables and its own release.",
+    t: "Conservation of money",
+    p: "Every tranche sums exactly to the escrowed total. Enforced in the API, the internal double-entry ledger, and the smart contract.",
   },
   {
     d: "M12 8v4l3 2M12 3a9 9 0 100 18 9 9 0 000-18z",
-    t: "Fair disputes",
-    p: "If either side disagrees with the AI, a human review panel steps in before any funds move.",
+    t: "Isolated dispute protection",
+    p: "A damaged or short parcel holds only its affected tranche. Unaffected parcels and tranches continue moving and paying without delay.",
   },
 ];
 
 export const faqs = [
   {
-    q: "How does the AI decide the work is done?",
-    a: "When the job is posted, each deliverable becomes a checklist the AI agent tests against: files, functionality, requirements and quality. It produces a written report for both sides before releasing funds.",
+    q: "What problem does Patella solve?",
+    a: "Patella is a business-to-business order, custody and payment coordination platform. It makes complex supply-chain transactions understandable and accountable: agree the order, define who handles the goods and when money may move, record verified handoffs, and resolve exceptions with an auditable trail.",
   },
   {
-    q: "What if I disagree with the AI's decision?",
-    a: "Either party can open a dispute within the review window. Funds stay locked while a human review panel looks at the brief, the work and the AI report.",
+    q: "Does Patella own vehicles or guarantee delivery?",
+    a: "No. Patella records and pays, but does not own trucks or operate warehouses. A cryptographic scan proves that two designated parties confirmed a physical handoff; it is not an independent quality inspection of goods and does not prevent hijacking.",
   },
   {
-    q: "Which currencies can I pay with?",
-    a: "Major stablecoins like USDC and USDT plus popular tokens such as ETH and SOL. Stablecoins are recommended so the job value stays fixed.",
+    q: "Do drivers and warehouse workers need crypto wallets or an app?",
+    a: "No. Partners participate as guests through short-lived, single-use one-time links from any smartphone browser. Two distinct signatures are recorded without exposing order values or full route data.",
   },
   {
-    q: "Does Patela hold my money?",
-    a: "No. Funds are held by the smart contract itself, never by Patela. The contract only releases to the worker on approval, or back to the client on cancellation.",
+    q: "How does payment work with South African Rand?",
+    a: "Rand in, Rand out. Business deposits are in ZAR, held in an independent client trust account with a licensed South African bank, and converted behind the scenes into a rand-pegged stablecoin (ZARP) locked in the EscrowVault contract.",
   },
   {
-    q: "What does it cost?",
-    a: "Posting a job is free. A small platform fee is taken from the escrowed amount only when funds are released.",
+    q: "What happens if a parcel is damaged or short?",
+    a: "Patella enforces isolated parcel holding. Only the affected tranche is held in dispute, while unaffected consignments progress under the signed plan and release on schedule.",
+  },
+  {
+    q: "Who authorises payment releases from the EscrowVault?",
+    a: "The smart contract never trusts a plain API call. Releases occur only when the rule engine verifies matching custody events and the Release Authority signs the instruction with KMS/HSM audit logging.",
   },
 ];

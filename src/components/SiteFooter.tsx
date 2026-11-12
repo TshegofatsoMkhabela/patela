@@ -4,32 +4,42 @@ export function SiteFooter() {
   return (
     <footer className="pt-footer">
       <div>
-        <h4>Patela</h4>
-        <p>The crypto marketplace where work is escrowed by smart contracts and verified by AI.</p>
+        <h4>Patella</h4>
+        <p>
+          B2B order, custody and payment coordination for multi-hop supply chains across South
+          Africa. Every handoff accounted for. Every payment governed by agreed rules.
+        </p>
       </div>
       <div>
-        <h4>Product</h4>
+        <h4>Platform & Operations</h4>
         <Link href="/how-it-works">How it works</Link>
-        <Link href="/marketplace">Marketplace</Link>
-        <Link href="/post-job">Post a job</Link>
-        <Link href="/html/client-dashboard.html">Client dashboard</Link>
-        <Link href="/html/worker-dashboard.html">Worker dashboard</Link>
-        <Link href="/html/analytics.html">Analytics</Link>
-        <Link href="/faq">FAQ</Link>
+        <Link href="/html/orders.html">Orders & RFQs</Link>
+        <Link href="/html/create-order.html">Create Order</Link>
+        <Link href="/html/route-builder.html">Route Builder</Link>
+        <Link href="/html/payment-builder.html">Payment Builder</Link>
+        <Link href="/html/guest-handoff.html">Guest Mobile Handoff</Link>
+        <Link href="/html/dispute-centre.html">Dispute Centre</Link>
+        <Link href="/html/auditor-trail.html">Auditor Trail</Link>
+        <Link href="/html/operations-console.html">Operations Console</Link>
+        <Link href="/html/index.html">Master Blueprint Hub</Link>
       </div>
       <div>
         <h4>Company</h4>
         <Link href="/about">About</Link>
         <Link href="/careers">Careers</Link>
         <Link href="/contact">Contact</Link>
+        <Link href="/faq">FAQ</Link>
       </div>
       <div>
-        <h4>Legal</h4>
-        <Link href="/terms">Terms</Link>
-        <Link href="/privacy">Privacy</Link>
-        <Link href="/security">Security</Link>
+        <h4>Trust & Legal</h4>
+        <Link href="/security">Security & Trust Boundaries</Link>
+        <Link href="/terms">Terms of Service</Link>
+        <Link href="/privacy">Privacy Notice</Link>
       </div>
-      <div className="pt-copy">© 2026 Patela. All rights reserved.</div>
+      <div className="pt-copy">
+        © 2026 Patella Technologies (Pty) Ltd. All rights reserved. Escrow settlement facilitated
+        via licensed South African banking partners.
+      </div>
     </footer>
   );
 }
