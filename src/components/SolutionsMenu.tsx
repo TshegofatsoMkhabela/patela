@@ -40,6 +40,11 @@ export const SOLUTIONS = [
     t: "Trust & security",
     d: "Honest trust disclosures, Base Sepolia EscrowVault, and bank accounts.",
   },
+  {
+    to: "/signup",
+    t: "Enterprise Onboarding",
+    d: "Progressive step-by-step registration for all 5 corridor roles.",
+  },
 ] as const;
 
 /**

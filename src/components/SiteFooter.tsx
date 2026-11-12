@@ -11,9 +11,9 @@ export function SiteFooter() {
         </p>
       </div>
       <div>
-        <h4>Platform & Operations</h4>
+        <h4>Platform &amp; Operations</h4>
         <Link href="/how-it-works">How it works</Link>
-        <Link href="/html/orders.html">Orders & RFQs</Link>
+        <Link href="/html/orders.html">Orders &amp; RFQs</Link>
         <Link href="/html/create-order.html">Create Order</Link>
         <Link href="/html/route-builder.html">Route Builder</Link>
         <Link href="/html/payment-builder.html">Payment Builder</Link>
@@ -24,15 +24,17 @@ export function SiteFooter() {
         <Link href="/html/index.html">Master Blueprint Hub</Link>
       </div>
       <div>
-        <h4>Company</h4>
+        <h4>Account &amp; Company</h4>
+        <Link href="/signin">Sign In</Link>
+        <Link href="/signup">Sign Up (Progressive)</Link>
         <Link href="/about">About</Link>
         <Link href="/careers">Careers</Link>
         <Link href="/contact">Contact</Link>
         <Link href="/faq">FAQ</Link>
       </div>
       <div>
-        <h4>Trust & Legal</h4>
-        <Link href="/security">Security & Trust Boundaries</Link>
+        <h4>Trust &amp; Legal</h4>
+        <Link href="/security">Security &amp; Trust Boundaries</Link>
         <Link href="/terms">Terms of Service</Link>
         <Link href="/privacy">Privacy Notice</Link>
       </div>

@@ -5,6 +5,37 @@
 
 ---
 
+## [2026-11-13] - Sign Up & Sign In Progressive Onboarding and html/index.html Landing Page Frosted UI Alignment
+
+### Summary
+1. **Sign Up & Sign In Flow**:
+   - Built a comprehensive Sign Up and Sign In system both in Next.js (`src/app/signup/`, `src/app/signin/`) and standalone HTML (`html/signup.html`, `html/signin.html`).
+   - Implemented a progressive one-by-one role questionnaire after initial sign-up for all 5 supply chain personas (Commercial Buyer, Freight Logistics Carrier, Commodity Supplier, Frontline Driver, Forensic Auditor), collecting customized CIPC numbers, fleet trailers, GIT insurance limits, weighbridge standards, mobile dispatch numbers, PrDP codes, or audit scopes.
+   - Built 1-click demo role login for all 5 enterprise personas in Sign In, routing directly to their specialized dashboards.
+2. **`html/index.html` Landing Page Frosted UI Alignment**:
+   - Transformed `html/index.html` to match the exact visual fidelity and typography of the main landing page, powered by a deep frosted background veil (`.frosted-bg-veil` with `backdrop-filter: blur(28px) saturate(160%)`).
+   - Integrated the landing page Top Bar (`PATELLA` wordmark, navigation links, Sign In/Sign Up actions), Hero section (`Every handoff accounted for. Every payment governed by agreed rules.`), golden frosted `.cta-primary` and `.cta-secondary` buttons with arrows, `.feats-list` with chevrons, hairline divider, and footer meta.
+   - Preserved and enhanced the 8-stage interactive demo narrative, live isolated dispute test, honest trust boundary callout, 5 user workspaces, and 28-screen blueprint directory in frosted glass panels.
+3. **Navigation Integration**:
+   - Linked Sign In (`/signin`, `signin.html`) and Sign Up (`/signup`, `signup.html`) across `src/components/HeroBar.tsx`, `SiteFooter.tsx`, `SolutionsMenu.tsx`, and `html/assets/js/navigation.js`.
+
+### Type
+Feature / UI-UX / Progressive Onboarding / Authentication
+
+### Files Created
+- `src/app/signup/page.tsx` & `src/app/signup/signup-view.tsx` — Next.js progressive multi-step sign-up and onboarding.
+- `src/app/signin/page.tsx` & `src/app/signin/signin-view.tsx` — Next.js credential login and 1-click role logins.
+- `html/signup.html` — Standalone HTML progressive sign-up and role questionnaire.
+- `html/signin.html` — Standalone HTML sign-in with 1-click role logins.
+
+### Files Modified
+- `html/index.html` — Transformed to match landing page hero layout, frosted background veil, and frosted glass blueprint cards.
+- `html/assets/css/blueprint.css` — Added landing page hero styles (`.patela-landing-hero`, `.cta-primary`, `.cta-secondary`, `.feats-list`, `.frosted-bg-veil`, `.frosted-glass-card`).
+- `html/assets/js/navigation.js` — Added Sign In and Sign Up pills to the dashboard topbar.
+- `src/components/HeroBar.tsx`, `src/components/SiteFooter.tsx`, `src/components/SolutionsMenu.tsx` — Added links to Sign In and Sign Up.
+
+---
+
 ## [2026-11-13] - Next.js Application Supply Chain Alignment, Environment Infra & Technical Architecture v0.3 Documentation
 
 ### Summary

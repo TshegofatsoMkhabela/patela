@@ -72,7 +72,7 @@ export function HeroBar() {
             <span>How it works</span>
           </Link>
           <Link href="/html/orders.html" className={pathname === "/html/orders.html" ? "on" : ""}>
-            <span>Orders & Custody</span>
+            <span>Orders &amp; Custody</span>
           </Link>
           <Link
             href="/html/guest-handoff.html"
@@ -82,6 +82,9 @@ export function HeroBar() {
           </Link>
           <SolutionsMenu />
         </nav>
+        <Link className={`login ${pathname === "/signin" ? "on" : ""}`} href="/signin">
+          <span>Sign In</span>
+        </Link>
         <Link className="login" href="/html/index.html">
           <span>Workspace</span>
           <svg className="navarrow" viewBox="0 0 10 9" aria-hidden="true">
@@ -89,10 +92,11 @@ export function HeroBar() {
           </svg>
         </Link>
         <Link
-          className={`pill ${pathname === "/html/create-order.html" ? "on" : ""}`}
-          href="/html/create-order.html"
+          className={`pill ${pathname === "/signup" ? "on" : ""}`}
+          href="/signup"
+          style={{ borderColor: "rgba(255, 228, 182, 0.6)", color: "#ffe2b2" }}
         >
-          <span>Create Order</span>
+          <span>Sign Up</span>
         </Link>
       </div>
     </header>

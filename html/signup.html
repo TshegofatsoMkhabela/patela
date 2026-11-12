@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign Up &amp; Progressive Onboarding — Patella</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/blueprint.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+  <style>
+    .role-select-card {
+      border: 1px solid rgba(196, 214, 232, 0.16);
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 14px;
+      padding: 16px 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .role-select-card:hover {
+      border-color: rgba(255, 228, 182, 0.4);
+      background: rgba(255, 226, 178, 0.04);
+      transform: translateY(-2px);
+    }
+    .role-select-card.selected {
+      border-color: rgba(255, 228, 182, 0.8);
+      background: rgba(255, 226, 178, 0.09);
+      box-shadow: 0 0 20px rgba(255, 224, 176, 0.15);
+    }
+    .step-pill-indicator {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .step-bar-track {
+      flex: 1;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .step-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ffe2b2, #96c4f4);
+      transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .multi-choice-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      border: 1px solid rgba(196, 214, 232, 0.15);
+      background: rgba(255, 255, 255, 0.02);
+      transition: all 0.2s ease;
+      margin-bottom: 8px;
+    }
+    .multi-choice-item.checked {
+      border-color: rgba(255, 228, 182, 0.6);
+      background: rgba(255, 226, 178, 0.08);
+      color: #ffe2b2;
+    }
+    .check-box-square {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      border: 1px solid rgba(196, 214, 232, 0.3);
+      display: grid;
+      place-items: center;
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: #02060f;
+    }
+    .multi-choice-item.checked .check-box-square {
+      border-color: #ffe2b2;
+      background: #ffe2b2;
+    }
+  </style>
+</head>
+<body>
+  <video class="patela-bgv" autoplay muted loop playsinline aria-hidden="true">
+    <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104303_0c6d60b2-9353-408e-9449-585108a22fb5.mp4" type="video/mp4" />
+  </video>
+  <div class="patela-frost" aria-hidden="true"></div>
+
+  <div class="entry-shell" style="max-width:920px;margin:0 auto;padding:24px 20px 80px;position:relative;z-index:2;">
+    <!-- Top Header -->
+    <header style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:12px 0 24px;border-bottom:1px solid var(--border-subtle);">
+      <a href="index.html" class="brand-link" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+        <svg viewBox="0 0 23 17" aria-hidden="true" style="width:23px;fill:#fff;">
+          <path d="M8.15 0.9 L4.55 0.9 L0.5 9.3 L4.1 9.3 Z" />
+          <path d="M17.0 0 L13.4 0 L6.15 16.4 L9.75 16.4 Z" />
+          <path d="M22.9 0 L19.3 0 L15.0 7.6 L18.6 7.6 Z" />
+          <path d="M22.6 6.9 L19.0 6.9 L14.05 16.4 L17.65 16.4 Z" />
+        </svg>
+        <span class="brand-wordmark" style="font-size:1.3rem;letter-spacing:0.18em;font-weight:600;color:#fff;">PATELLA</span>
+      </a>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <span style="font-size:0.875rem;color:var(--text-secondary);">Already registered?</span>
+        <a href="signin.html" class="btn btn-secondary btn-sm" style="border-color:rgba(255,228,182,0.4);color:#ffe2b2;">Sign In</a>
+      </div>
+    </header>
+
+    <main style="margin-top:32px;">
+      <!-- STAGE 1: Core Initial Sign Up -->
+      <section id="stage-register" class="card" style="padding:36px 32px;">
+        <div style="text-align:center;margin-bottom:32px;">
+          <div class="section-label" style="color:var(--gold);margin-bottom:8px;">ENTERPRISE SUPPLY CHAIN REGISTRATION</div>
+          <h1 style="font-size:clamp(1.7rem,3vw,2.3rem);margin:0 0 10px;font-weight:600;color:#fff;">
+            Create your Patella account
+          </h1>
+          <p style="color:var(--text-secondary);max-width:54ch;margin:0 auto;font-size:0.95rem;line-height:1.5;">
+            Select your operating role. Once your credentials are saved, you will proceed to step-by-step role profile configuration.
+          </p>
+        </div>
+
+        <form id="form-register">
+          <div style="margin-bottom:24px;">
+            <label style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--gold);display:block;margin-bottom:12px;">
+              1. Choose your role / persona in the corridor:
+            </label>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:12px;">
+              <div class="role-select-card selected" data-role="buyer" onclick="selectRole('buyer')">
+                <div style="font-size:1.25rem;margin-bottom:4px;">🏢 <strong>Commercial Buyer / Consignor</strong></div>
+                <div style="font-size:0.8rem;color:var(--text-secondary);">Procuring commodities, funding escrow, managing split shipments.</div>
+              </div>
+              <div class="role-select-card" data-role="carrier" onclick="selectRole('carrier')">
+                <div style="font-size:1.25rem;margin-bottom:4px;">🚛 <strong>Freight Carrier / Fleet Operator</strong></div>
+                <div style="font-size:0.8rem;color:var(--text-secondary);">Haulage contractor, corridor bidding, driver dispatch.</div>
+              </div>
+              <div class="role-select-card" data-role="supplier" onclick="selectRole('supplier')">
+                <div style="font-size:1.25rem;margin-bottom:4px;">🏭 <strong>Commodity Supplier / Producer</strong></div>
+                <div style="font-size:0.8rem;color:var(--text-secondary);">Mine or plant, weighbridge dispatch, milestone payouts.</div>
+              </div>
+              <div class="role-select-card" data-role="driver" onclick="selectRole('driver')">
+                <div style="font-size:1.25rem;margin-bottom:4px;">🚚 <strong>Frontline Driver / Clerk</strong></div>
+                <div style="font-size:0.8rem;color:var(--text-secondary);">Physical cargo custody, mobile links with zero app install.</div>
+              </div>
+              <div class="role-select-card" data-role="auditor" onclick="selectRole('auditor')">
+                <div style="font-size:1.25rem;margin-bottom:4px;">🔍 <strong>Forensic Auditor / Inspector</strong></div>
+                <div style="font-size:0.8rem;color:var(--text-secondary);">Compliance inspection, SHA-256 byte proofs, block verifier.</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:18px;margin-bottom:18px;">
+            <div>
+              <label class="form-label" for="reg-name">Full Legal Name / Designated Contact *</label>
+              <input type="text" id="reg-name" class="form-control" placeholder="e.g. Alex Vance" required />
+            </div>
+            <div>
+              <label class="form-label" for="reg-email">Business Email Address *</label>
+              <input type="email" id="reg-email" class="form-control" placeholder="name@company.co.za" required />
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:18px;margin-bottom:18px;">
+            <div>
+              <label class="form-label" for="reg-phone">Mobile Smartphone Number (+27 SMS/WhatsApp) *</label>
+              <input type="text" id="reg-phone" class="form-control" placeholder="+27 82 555 0192" required />
+              <div class="meta-text" style="font-size:0.75rem;margin-top:4px;">Used for two-party mobile handoff tokens and instant release notifications.</div>
+            </div>
+            <div>
+              <label class="form-label" for="reg-pw">Password *</label>
+              <input type="password" id="reg-pw" class="form-control" placeholder="At least 6 characters" required />
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:32px;flex-wrap:wrap;gap:14px;">
+            <a href="index.html" class="btn btn-secondary">← Back to Hub</a>
+            <button type="submit" class="btn btn-primary" style="padding:12px 28px;">
+              <span>Continue to Role Profile Questionnaire →</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- STAGE 2: Progressive One-By-One Questionnaire -->
+      <section id="stage-onboarding" class="card" style="display:none;padding:36px 32px;">
+        <div class="step-pill-indicator">
+          <div>
+            <div class="section-label" id="ob-role-label" style="color:var(--gold);margin:0;">BUYER PROFILE SETUP</div>
+          </div>
+          <div class="step-bar-track">
+            <div class="step-bar-fill" id="ob-progress-bar" style="width:25%;"></div>
+          </div>
+          <span class="badge badge-gold" id="ob-step-counter">Step 1 of 4</span>
+        </div>
+
+        <form id="form-onboarding">
+          <div style="margin-bottom:24px;">
+            <h2 id="ob-step-title" style="font-size:1.35rem;margin:0 0 6px;color:#fff;font-weight:600;">
+              Company &amp; CIPC Registration
+            </h2>
+            <p id="ob-step-subtitle" style="color:var(--text-secondary);font-size:0.9rem;margin:0;">
+              Provide verified South African registered business entity details.
+            </p>
+          </div>
+
+          <div id="ob-fields-container" style="display:grid;gap:18px;margin-bottom:28px;">
+            <!-- Rendered dynamically one question by one question -->
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:32px;gap:14px;">
+            <button type="button" class="btn btn-secondary" onclick="prevOnboardingStep()">← Previous Step</button>
+            <button type="submit" class="btn btn-primary" id="ob-next-btn">Save &amp; Next Step →</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- STAGE 3: Completed Profile Confirmation -->
+      <section id="stage-completed" class="card" style="display:none;padding:48px 36px;text-align:center;">
+        <div style="width:72px;height:72px;border-radius:50%;background:rgba(255,228,182,0.18);border:1px solid rgba(255,228,182,0.6);display:grid;place-items:center;font-size:2rem;margin:0 auto 20px;color:#ffe2b2;">
+          ✓
+        </div>
+        <div class="section-label" style="color:var(--gold);">VERIFICATION COMPLETE</div>
+        <h1 style="font-size:clamp(1.8rem,3.2vw,2.4rem);margin:6px 0 12px;font-weight:600;color:#fff;">
+          Welcome to Patella, <span id="comp-user-name">Alex</span>!
+        </h1>
+        <p style="color:var(--text-secondary);max-width:54ch;margin:0 auto 28px;font-size:0.95rem;line-height:1.5;">
+          Your profile has been created with verified CIPC demo status. You can now coordinate orders, monitor handoffs, and manage escrow settlements.
+        </p>
+
+        <div style="background:rgba(2,6,15,0.6);border:1px solid rgba(217,195,154,0.3);border-radius:14px;padding:22px;text-align:left;max-width:560px;margin:0 auto 32px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <span style="font-weight:600;color:#ffe2b2;font-size:0.95rem;">Profile &amp; Credentials Record</span>
+            <span class="badge badge-gold">CIPC Verified Demo</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:0.85rem;">
+            <div>
+              <span class="meta-text">Role Model:</span>
+              <div id="comp-role-badge" style="color:#fff;font-weight:500;">Commercial Buyer</div>
+            </div>
+            <div>
+              <span class="meta-text">Email Address:</span>
+              <div id="comp-email" style="color:#fff;font-weight:500;">alex@company.co.za</div>
+            </div>
+            <div>
+              <span class="meta-text">Mobile Dispatch:</span>
+              <div id="comp-phone" style="color:#fff;font-weight:500;">+27 82 555 0192</div>
+            </div>
+            <div>
+              <span class="meta-text">Assigned Workspace:</span>
+              <div id="comp-workspace" style="color:#96c4f4;font-weight:500;">orders.html</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;">
+          <a href="orders.html" id="comp-workspace-btn" class="btn btn-primary" style="padding:14px 34px;font-size:1rem;">
+            <span>Enter Your Workspace →</span>
+          </a>
+          <a href="index.html" class="btn btn-secondary" style="padding:14px 28px;">Return to Blueprint Hub</a>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const ROLE_CONFIGS = {
+      buyer: {
+        title: "Commercial Buyer / Consignor",
+        redirectUrl: "orders.html",
+        steps: [
+          {
+            title: "Company & CIPC Registration",
+            subtitle: "Provide your registered South African business entity information.",
+            fields: [
+              { id: "companyName", label: "Registered Company Name", type: "text", placeholder: "e.g. Anglo African Resources (Pty) Ltd", required: true },
+              { id: "cipcNumber", label: "CIPC Registration Number", type: "text", placeholder: "e.g. 2019/549120/07", required: true },
+              { id: "vatNumber", label: "SARS VAT Number (Optional)", type: "text", placeholder: "e.g. 4820192841" }
+            ]
+          },
+          {
+            title: "Commodity & Procurement Sector",
+            subtitle: "Select the primary goods you procure across South Africa.",
+            fields: [
+              {
+                id: "commoditySectors",
+                label: "Primary Cargo Categories",
+                type: "multiselect",
+                options: [
+                  "Metallurgical Minerals (Bauxite, Coal, Chrome)",
+                  "Agricultural Produce (Maize, Grain, Sugar)",
+                  "Heavy Machinery & Industrial Equipment",
+                  "Fast Moving Consumer Goods (FMCG)",
+                  "Petroleum & Chemical Liquid Bulks"
+                ],
+                required: true
+              }
+            ]
+          },
+          {
+            title: "Logistics Corridors & Volumes",
+            subtitle: "Where does your cargo originate and discharge?",
+            fields: [
+              { id: "originDepots", label: "Primary Origin Loading Points", type: "text", placeholder: "e.g. Witbank / Postmasburg / Steelpoort", required: true },
+              { id: "dischargePorts", label: "Primary Delivery Terminals / Ports", type: "text", placeholder: "e.g. Richards Bay Dry Bulk Terminal / Durban Pier 2", required: true },
+              { id: "monthlyVolume", label: "Estimated Monthly Cargo Volume", type: "select", options: ["Under 1,000 MT per month", "1,000 MT – 10,000 MT per month", "10,000 MT – 50,000 MT per month", "50,000+ MT bulk industrial volume"], required: true }
+            ]
+          },
+          {
+            title: "Banking & Settlement Method",
+            subtitle: "Configure your South African Rand escrow funding preference.",
+            fields: [
+              { id: "bankPartner", label: "Primary Business Banking Institution", type: "select", options: ["Standard Bank South Africa", "First National Bank (FNB)", "Nedbank Group", "Absa Corporate Banking", "Investec Bank"], required: true },
+              { id: "escrowFundingMethod", label: "Preferred Escrow Deposit Method", type: "select", options: ["Standard Bank Client Trust Account (Direct EFT)", "Ozow Instant Bank Settlement", "ZARP Rand Stablecoin (Base Sepolia)"], required: true }
+            ]
+          }
+        ]
+      },
+      carrier: {
+        title: "Freight Logistics Carrier",
+        redirectUrl: "tender-trail.html",
+        steps: [
+          {
+            title: "Fleet Capacity & Configuration",
+            subtitle: "Tell us about your active heavy vehicle fleet and configurations.",
+            fields: [
+              { id: "fleetSize", label: "Commercial Fleet Size", type: "select", options: ["Owner Operator (1–2 trucks)", "Small Fleet (3–10 trucks)", "Medium Fleet (11–35 trucks)", "Enterprise Fleet (35+ trucks)"], required: true },
+              { id: "trailerTypes", label: "Primary Trailer Configurations", type: "multiselect", options: ["Side-Tippers (Bulk Minerals)", "Flatbeds / Superlinks (General Freight)", "Tautliners / Curtain-side (FMCG)", "Refrigerated (Reefers)", "Tankers"], required: true }
+            ]
+          },
+          {
+            title: "Carrier CIPC & Compliance",
+            subtitle: "Confirm road freight operating compliance and permits.",
+            fields: [
+              { id: "carrierCompanyName", label: "Registered Carrier Business Name", type: "text", placeholder: "e.g. Trans-Limpopo Freight Logistics (Pty) Ltd", required: true },
+              { id: "cipcNumber", label: "CIPC Registration Number", type: "text", placeholder: "e.g. 2018/392819/07", required: true },
+              { id: "crossBorderPermit", label: "Cross-Border Permit (CBRTA)", type: "select", options: ["Yes – Licensed for SADC Corridors", "No – Domestic South Africa Only"] }
+            ]
+          },
+          {
+            title: "Goods-in-Transit (GIT) Insurance",
+            subtitle: "Provide verified GIT insurance cover required for high-value cargo.",
+            fields: [
+              { id: "gitInsurer", label: "Insurance Underwriter", type: "text", placeholder: "e.g. Santam Commercial / Old Mutual Insure", required: true },
+              { id: "gitPolicyNumber", label: "GIT Policy Number", type: "text", placeholder: "e.g. POL-ZA-89102-GIT", required: true },
+              { id: "gitCoverLimit", label: "Maximum GIT Cover Limit per Consignment", type: "select", options: ["R 1,000,000 ZAR per load", "R 2,500,000 ZAR per load", "R 5,000,000 ZAR per load", "R 10,000,000+ ZAR high-value cargo"], required: true }
+            ]
+          },
+          {
+            title: "Corridors & Driver Dispatch",
+            subtitle: "Where do your trucks run and how do you dispatch driver links?",
+            fields: [
+              { id: "primaryCorridors", label: "Main Transport Corridors", type: "text", placeholder: "e.g. Johannesburg to Richards Bay", required: true },
+              { id: "dispatchMobile", label: "Dispatch Mobile (SMS / WhatsApp for Driver Tokens)", type: "text", placeholder: "+27 82 555 0199", required: true }
+            ]
+          }
+        ]
+      },
+      supplier: {
+        title: "Commodity Supplier / Producer",
+        redirectUrl: "order-detail.html",
+        steps: [
+          {
+            title: "Commodity & Production Profile",
+            subtitle: "Details of commodities dispatched from your site.",
+            fields: [
+              { id: "commodityType", label: "Primary Commodity Supplied", type: "text", placeholder: "e.g. Metallurgical Bauxite / Chrome", required: true },
+              { id: "mineLocation", label: "Facility / Mine Site Location", type: "text", placeholder: "e.g. Steelpoort Mine Complex, Limpopo", required: true },
+              { id: "weighbridgeStandard", label: "On-Site Certified Weighbridge Available?", type: "select", options: ["Yes – SABS Calibrated Certified Scale", "No – Off-Site Third-Party Scale"] }
+            ]
+          },
+          {
+            title: "Commercial Delivery Terms",
+            subtitle: "Define baseline delivery and dispatch terms.",
+            fields: [
+              { id: "incoterms", label: "Standard Incoterms", type: "select", options: ["FCA – Free Carrier (Loaded on carrier)", "FOB – Free on Board", "EXW – Ex Works (Gate pickup)", "CIF – Cost, Insurance, Freight"], required: true },
+              { id: "advanceDispatchPercent", label: "Dispatch Advance Tranche Expectation", type: "select", options: ["20% advance upon gate exit signature", "30% advance with weighbridge slip", "10% advance / 90% terminal delivery"] }
+            ]
+          },
+          {
+            title: "Payout Banking Account",
+            subtitle: "Bank details for rule-triggered tranche payouts in ZAR.",
+            fields: [
+              { id: "payoutBank", label: "Receiving Bank", type: "select", options: ["Standard Bank", "First National Bank", "Nedbank", "Absa", "Investec"], required: true },
+              { id: "payoutAccountNumber", label: "Account Number", type: "text", placeholder: "e.g. 1019283746", required: true },
+              { id: "payoutBranchCode", label: "Branch Code", type: "text", placeholder: "e.g. 051001", required: true }
+            ]
+          }
+        ]
+      },
+      driver: {
+        title: "Frontline Driver / Clerk",
+        redirectUrl: "guest-handoff.html",
+        steps: [
+          {
+            title: "Driver Credentials & License",
+            subtitle: "Identification for physical custody handoff verification.",
+            fields: [
+              { id: "driverIdNumber", label: "South African ID or Passport Number", type: "text", placeholder: "e.g. 880415 5129 083", required: true },
+              { id: "licenseCode", label: "Driver License Code", type: "select", options: ["Code 14 (EC) – Heavy Articulated Vehicle", "Code 10 (C1) – Heavy Rigid Vehicle", "Forklift / Reach Truck Operator", "Weighbridge Receiving Clerk"], required: true }
+            ]
+          },
+          {
+            title: "Mobile Phone for Guest Links",
+            subtitle: "Single-use handoff links are delivered to this phone.",
+            fields: [
+              { id: "driverPhone", label: "Smartphone Mobile Number", type: "text", placeholder: "+27 72 345 6789", required: true },
+              { id: "preferredFleet", label: "Current Transporter or Warehouse Bay", type: "text", placeholder: "e.g. Trans-Limpopo / City Deep Hub" }
+            ]
+          },
+          {
+            title: "Quick Sign-Off Security PIN",
+            subtitle: "Choose a 4-digit PIN for swift dual-party sign-off at loading gates.",
+            fields: [
+              { id: "driverPin", label: "4-Digit Custody Sign-Off PIN", type: "text", placeholder: "e.g. 4892", required: true }
+            ]
+          }
+        ]
+      },
+      auditor: {
+        title: "Forensic Auditor / Inspector",
+        redirectUrl: "auditor-trail.html",
+        steps: [
+          {
+            title: "Auditing Firm & Accreditation",
+            subtitle: "Professional affiliation and credentials.",
+            fields: [
+              { id: "firmName", label: "Auditing Firm / Regulatory Agency", type: "text", placeholder: "e.g. Deloitte Logistics / SARS Customs", required: true },
+              { id: "accreditationNumber", label: "Registration Number (IRBA / SAICA / Customs)", type: "text", placeholder: "e.g. IRBA-2024-9182", required: true }
+            ]
+          },
+          {
+            title: "Inspection Scope",
+            subtitle: "Define your compliance mandate on Patella.",
+            fields: [
+              {
+                id: "auditScope",
+                label: "Audit & Verification Scope",
+                type: "multiselect",
+                options: [
+                  "Bank Trust Account Solvency & Reconciliation",
+                  "Two-Party Custody Chain & Dual Digital Signatures",
+                  "Document Byte Hashing & Base Sepolia Block Anchors",
+                  "Isolated Dispute Reserve Holding Compliance"
+                ],
+                required: true
+              }
+            ]
+          },
+          {
+            title: "Cryptographic Attestation Key",
+            subtitle: "Configure public key for signing audit certificates.",
+            fields: [
+              { id: "auditorPublicKey", label: "Verification Public Key / Fingerprint (Optional)", type: "text", placeholder: "0x4f8a92... or leave blank to auto-generate" }
+            ]
+          }
+        ]
+      }
+    };
+
+    let selectedRole = "buyer";
+    let currentStepIdx = 0;
+    const userData = {
+      name: "",
+      email: "",
+      phone: "",
+      extra: {}
+    };
+
+    function selectRole(r) {
+      selectedRole = r;
+      document.querySelectorAll(".role-select-card").forEach(el => {
+        el.classList.toggle("selected", el.getAttribute("data-role") === r);
+      });
+    }
+
+    document.getElementById("form-register").addEventListener("submit", function(e) {
+      e.preventDefault();
+      userData.name = document.getElementById("reg-name").value.trim();
+      userData.email = document.getElementById("reg-email").value.trim();
+      userData.phone = document.getElementById("reg-phone").value.trim();
+
+      if (!userData.name || !userData.email || !userData.phone) {
+        alert("Please fill in all required fields.");
+        return;
+      }
+
+      // Transition to Stage 2: Progressive Questionnaire
+      document.getElementById("stage-register").style.display = "none";
+      document.getElementById("stage-onboarding").style.display = "block";
+      currentStepIdx = 0;
+      renderStep();
+    });
+
+    function renderStep() {
+      const cfg = ROLE_CONFIGS[selectedRole];
+      const step = cfg.steps[currentStepIdx];
+      const total = cfg.steps.length;
+
+      document.getElementById("ob-role-label").textContent = cfg.title.toUpperCase() + " ONBOARDING";
+      document.getElementById("ob-step-counter").textContent = "Step " + (currentStepIdx + 1) + " of " + total;
+      document.getElementById("ob-progress-bar").style.width = ((currentStepIdx + 1) / total * 100) + "%";
+      document.getElementById("ob-step-title").textContent = step.title;
+      document.getElementById("ob-step-subtitle").textContent = step.subtitle;
+      document.getElementById("ob-next-btn").textContent = currentStepIdx === total - 1 ? "Complete Verification & Finish Setup ✓" : "Save & Next Step →";
+
+      const container = document.getElementById("ob-fields-container");
+      container.innerHTML = "";
+
+      step.fields.forEach(f => {
+        const wrap = document.createElement("div");
+        wrap.className = "form-group";
+
+        const label = document.createElement("label");
+        label.className = "form-label";
+        label.htmlFor = "field-" + f.id;
+        label.innerHTML = f.label + (f.required ? ' <span style="color:#ffe2b2;">*</span>' : '');
+        wrap.appendChild(label);
+
+        if (f.type === "text") {
+          const input = document.createElement("input");
+          input.type = "text";
+          input.id = "field-" + f.id;
+          input.className = "form-control";
+          input.placeholder = f.placeholder || "";
+          input.value = userData.extra[f.id] || "";
+          if (f.required) input.required = true;
+          input.addEventListener("input", e => { userData.extra[f.id] = e.target.value; });
+          wrap.appendChild(input);
+        } else if (f.type === "select") {
+          const sel = document.createElement("select");
+          sel.id = "field-" + f.id;
+          sel.className = "form-control";
+          f.options.forEach(opt => {
+            const opEl = document.createElement("option");
+            opEl.value = opt;
+            opEl.textContent = opt;
+            if (userData.extra[f.id] === opt) opEl.selected = true;
+            sel.appendChild(opEl);
+          });
+          userData.extra[f.id] = sel.value;
+          sel.addEventListener("change", e => { userData.extra[f.id] = e.target.value; });
+          wrap.appendChild(sel);
+        } else if (f.type === "multiselect") {
+          const listWrap = document.createElement("div");
+          const selected = Array.isArray(userData.extra[f.id]) ? userData.extra[f.id] : [];
+          userData.extra[f.id] = selected;
+
+          f.options.forEach(opt => {
+            const item = document.createElement("div");
+            item.className = "multi-choice-item" + (selected.includes(opt) ? " checked" : "");
+            item.innerHTML = '<span class="check-box-square">' + (selected.includes(opt) ? "✓" : "") + '</span><span>' + opt + '</span>';
+            item.addEventListener("click", () => {
+              const idx = selected.indexOf(opt);
+              if (idx >= 0) selected.splice(idx, 1);
+              else selected.push(opt);
+              item.className = "multi-choice-item" + (selected.includes(opt) ? " checked" : "");
+              item.querySelector(".check-box-square").textContent = selected.includes(opt) ? "✓" : "";
+            });
+            listWrap.appendChild(item);
+          });
+          wrap.appendChild(listWrap);
+        }
+
+        container.appendChild(wrap);
+      });
+    }
+
+    document.getElementById("form-onboarding").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const cfg = ROLE_CONFIGS[selectedRole];
+      const step = cfg.steps[currentStepIdx];
+
+      // Validate required
+      for (const f of step.fields) {
+        if (f.required) {
+          const val = userData.extra[f.id];
+          if (!val || (Array.isArray(val) && val.length === 0)) {
+            alert("Please provide " + f.label);
+            return;
+          }
+        }
+      }
+
+      if (currentStepIdx < cfg.steps.length - 1) {
+        currentStepIdx++;
+        renderStep();
+      } else {
+        // Complete!
+        const profile = {
+          name: userData.name,
+          email: userData.email,
+          phone: userData.phone,
+          role: selectedRole,
+          roleTitle: cfg.title,
+          extra: userData.extra,
+          verified: true
+        };
+        try {
+          localStorage.setItem("patela_auth_user", JSON.stringify(profile));
+        } catch(e) {}
+
+        document.getElementById("stage-onboarding").style.display = "none";
+        document.getElementById("stage-completed").style.display = "block";
+        document.getElementById("comp-user-name").textContent = userData.name;
+        document.getElementById("comp-role-badge").textContent = cfg.title;
+        document.getElementById("comp-email").textContent = userData.email;
+        document.getElementById("comp-phone").textContent = userData.phone;
+        document.getElementById("comp-workspace").textContent = cfg.redirectUrl;
+        document.getElementById("comp-workspace-btn").href = cfg.redirectUrl;
+      }
+    });
+
+    function prevOnboardingStep() {
+      if (currentStepIdx > 0) {
+        currentStepIdx--;
+        renderStep();
+      } else {
+        document.getElementById("stage-onboarding").style.display = "none";
+        document.getElementById("stage-register").style.display = "block";
+      }
+    }
+  </script>
+</body>
+</html>

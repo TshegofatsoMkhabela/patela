@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In — Patella</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/blueprint.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+  <style>
+    .persona-quick-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(196, 214, 232, 0.14);
+      background: rgba(255, 255, 255, 0.02);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      margin-bottom: 10px;
+    }
+    .persona-quick-item:hover {
+      border-color: rgba(255, 228, 182, 0.6);
+      background: rgba(255, 226, 178, 0.08);
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <video class="patela-bgv" autoplay muted loop playsinline aria-hidden="true">
+    <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104303_0c6d60b2-9353-408e-9449-585108a22fb5.mp4" type="video/mp4" />
+  </video>
+  <div class="patela-frost" aria-hidden="true"></div>
+
+  <div class="entry-shell" style="max-width:960px;margin:0 auto;padding:24px 20px 80px;position:relative;z-index:2;">
+    <!-- Top Header -->
+    <header style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:12px 0 24px;border-bottom:1px solid var(--border-subtle);">
+      <a href="index.html" class="brand-link" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+        <svg viewBox="0 0 23 17" aria-hidden="true" style="width:23px;fill:#fff;">
+          <path d="M8.15 0.9 L4.55 0.9 L0.5 9.3 L4.1 9.3 Z" />
+          <path d="M17.0 0 L13.4 0 L6.15 16.4 L9.75 16.4 Z" />
+          <path d="M22.9 0 L19.3 0 L15.0 7.6 L18.6 7.6 Z" />
+          <path d="M22.6 6.9 L19.0 6.9 L14.05 16.4 L17.65 16.4 Z" />
+        </svg>
+        <span class="brand-wordmark" style="font-size:1.3rem;letter-spacing:0.18em;font-weight:600;color:#fff;">PATELLA</span>
+      </a>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <span style="font-size:0.875rem;color:var(--text-secondary);">New to Patella?</span>
+        <a href="signup.html" class="btn btn-secondary btn-sm" style="border-color:rgba(255,228,182,0.4);color:#ffe2b2;">Sign Up</a>
+      </div>
+    </header>
+
+    <main style="margin-top:36px;">
+      <div style="text-align:center;margin-bottom:36px;">
+        <div class="section-label" style="color:var(--gold);margin-bottom:8px;">ENTERPRISE SUPPLY CHAIN ACCESS</div>
+        <h1 style="font-size:clamp(1.8rem,3.4vw,2.5rem);margin:0 0 10px;font-weight:600;color:#fff;">
+          Sign in to your Patella workspace
+        </h1>
+        <p style="color:var(--text-secondary);max-width:56ch;margin:0 auto;font-size:0.95rem;line-height:1.5;">
+          Access active multi-hop orders, manage custody handoffs, review declarative escrow tranches, and inspect the Base Sepolia auditor trail.
+        </p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(360px, 1fr));gap:28px;">
+        <!-- Credentials Form -->
+        <div class="card" style="padding:36px 32px;">
+          <div style="margin-bottom:20px;">
+            <h2 style="font-size:1.25rem;margin:0 0 4px;font-weight:600;color:#fff;">Account Credentials</h2>
+            <p style="color:var(--text-secondary);font-size:0.875rem;margin:0;">
+              Enter your registered enterprise email and password.
+            </p>
+          </div>
+
+          <form id="signin-form">
+            <div style="margin-bottom:18px;">
+              <label class="form-label" for="si-email">Business Email or Mobile</label>
+              <input type="text" id="si-email" class="form-control" placeholder="name@company.co.za" required />
+            </div>
+
+            <div style="margin-bottom:18px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <label class="form-label" for="si-pw">Password</label>
+                <a href="#" onclick="alert('Testnet demo: use any password or click a 1-click persona on the right.'); return false;" style="font-size:0.8rem;color:#ffe2b2;text-decoration:underline;">Forgot password?</a>
+              </div>
+              <input type="password" id="si-pw" class="form-control" placeholder="••••••••" required />
+            </div>
+
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px;">
+              <input type="checkbox" id="si-rem" checked style="accent-color:#ffe2b2;width:16px;height:16px;" />
+              <label for="si-rem" style="font-size:0.85rem;color:var(--text-secondary);cursor:pointer;">Remember this device for 30 days</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;">
+              <span>Sign In to Workspace →</span>
+            </button>
+          </form>
+
+          <div style="text-align:center;margin-top:24px;font-size:0.85rem;color:var(--text-secondary);">
+            Need an enterprise account? <a href="signup.html" style="color:#ffe2b2;font-weight:600;text-decoration:underline;">Sign up with progressive onboarding</a>
+          </div>
+        </div>
+
+        <!-- 1-Click Fast Role Sign-In -->
+        <div class="card" style="padding:36px 32px;">
+          <div style="margin-bottom:18px;">
+            <span class="badge badge-gold" style="font-size:0.75rem;margin-bottom:8px;display:inline-block;">Instant Demo Access</span>
+            <h2 style="font-size:1.25rem;margin:0 0 4px;font-weight:600;color:#fff;">1-Click Role Login</h2>
+            <p style="color:var(--text-secondary);font-size:0.85rem;margin:0;">
+              Switch directly into any verified supply chain role to inspect their dedicated screens and controls:
+            </p>
+          </div>
+
+          <div>
+            <div class="persona-quick-item" onclick="quickLogin('Alex Vance', 'Commercial Buyer', 'orders.html')">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <span style="font-size:1.4rem;">🏢</span>
+                <div>
+                  <div style="font-weight:600;font-size:0.9rem;color:#fff;">Alex Vance</div>
+                  <div style="font-size:0.75rem;color:#ffe2b2;">Commercial Buyer / Consignor</div>
+                  <div style="font-size:0.7rem;color:var(--text-secondary);">Anglo African Resources (Pty) Ltd</div>
+                </div>
+              </div>
+              <span style="color:#ffe2b2;font-weight:600;font-size:0.85rem;">Enter →</span>
+            </div>
+
+            <div class="persona-quick-item" onclick="quickLogin('Dumisani Khumalo', 'Freight Fleet Operator', 'tender-trail.html')">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <span style="font-size:1.4rem;">🚛</span>
+                <div>
+                  <div style="font-weight:600;font-size:0.9rem;color:#fff;">Dumisani Khumalo</div>
+                  <div style="font-size:0.75rem;color:#ffe2b2;">Freight Fleet Operator</div>
+                  <div style="font-size:0.7rem;color:var(--text-secondary);">Trans-Limpopo Freight Logistics</div>
+                </div>
+              </div>
+              <span style="color:#ffe2b2;font-weight:600;font-size:0.85rem;">Enter →</span>
+            </div>
+
+            <div class="persona-quick-item" onclick="quickLogin('Johan van der Merwe', 'Commodity Supplier', 'order-detail.html')">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <span style="font-size:1.4rem;">🏭</span>
+                <div>
+                  <div style="font-weight:600;font-size:0.9rem;color:#fff;">Johan van der Merwe</div>
+                  <div style="font-size:0.75rem;color:#ffe2b2;">Commodity Supplier</div>
+                  <div style="font-size:0.7rem;color:var(--text-secondary);">Witbank Minerals &amp; Mining Co</div>
+                </div>
+              </div>
+              <span style="color:#ffe2b2;font-weight:600;font-size:0.85rem;">Enter →</span>
+            </div>
+
+            <div class="persona-quick-item" onclick="quickLogin('Sipho Ndlovu', 'Frontline Driver', 'guest-handoff.html')">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <span style="font-size:1.4rem;">🚚</span>
+                <div>
+                  <div style="font-weight:600;font-size:0.9rem;color:#fff;">Sipho Ndlovu</div>
+                  <div style="font-size:0.75rem;color:#ffe2b2;">Frontline Driver / Clerk</div>
+                  <div style="font-size:0.7rem;color:var(--text-secondary);">Cross-Dock Heavy Articulated Driver</div>
+                </div>
+              </div>
+              <span style="color:#ffe2b2;font-weight:600;font-size:0.85rem;">Enter →</span>
+            </div>
+
+            <div class="persona-quick-item" onclick="quickLogin('Dr. Nomsa Mthembu', 'Forensic Auditor', 'auditor-trail.html')">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <span style="font-size:1.4rem;">🔍</span>
+                <div>
+                  <div style="font-weight:600;font-size:0.9rem;color:#fff;">Dr. Nomsa Mthembu</div>
+                  <div style="font-size:0.75rem;color:#ffe2b2;">Forensic Auditor / Inspector</div>
+                  <div style="font-size:0.7rem;color:var(--text-secondary);">IRBA Registered Compliance Audit</div>
+                </div>
+              </div>
+              <span style="color:#ffe2b2;font-weight:600;font-size:0.85rem;">Enter →</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    document.getElementById("signin-form").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const em = document.getElementById("si-email").value.trim();
+      const auth = {
+        name: em.split("@")[0].toUpperCase(),
+        email: em,
+        role: "buyer",
+        roleTitle: "Commercial Consignor / Buyer",
+        verified: true
+      };
+      try {
+        localStorage.setItem("patela_auth_user", JSON.stringify(auth));
+      } catch(e) {}
+      window.location.href = "orders.html";
+    });
+
+    function quickLogin(name, role, redirect) {
+      const auth = {
+        name: name,
+        role: role,
+        roleTitle: role,
+        verified: true
+      };
+      try {
+        localStorage.setItem("patela_auth_user", JSON.stringify(auth));
+      } catch(e) {}
+      window.location.href = redirect;
+    }
+  </script>
+</body>
+</html>

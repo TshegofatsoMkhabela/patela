@@ -69,3 +69,4 @@ volumes:
   patela_pgdata:
   patela_redisdata:
   patela_miniodata:
+
