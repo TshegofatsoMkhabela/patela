@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Orders &amp; RFQ Management (APP-02)</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/blueprint.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-force-role="client" data-page="orders" data-breadcrumb="Orders &amp; RFQ">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content">
+        <!-- Header & Primary CTA -->
+        <section class="welcome-header" aria-label="Orders Header">
+          <div>
+            <div class="section-label" style="color:var(--gold);">BUSINESS WORKSPACE · APP-02</div>
+            <h1 class="page-title">Orders &amp; Supply Contracts</h1>
+            <p class="page-subtitle">Track orders with clear distinction between order state, custody movement, and payment tranches.</p>
+          </div>
+          <div class="welcome-actions">
+            <a href="tender-trail.html" class="btn btn-secondary">Tender Trail (RFQ)</a>
+            <a href="create-order.html" class="btn btn-primary">+ Create Order / RFQ</a>
+          </div>
+        </section>
+
+        <!-- Summary Metric Cards -->
+        <section class="metrics-grid" aria-label="Orders Summary">
+          <div class="metric-card gold-accent">
+            <span class="metric-label">Active Orders</span>
+            <div class="metric-value tabular">3</div>
+            <span class="metric-foot">2 in transit · 1 tender awarded ↗</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Total Escrow Governed</span>
+            <div class="metric-value tabular">R 1,280,000<span class="metric-unit">ZAR</span></div>
+            <span class="metric-foot">R 485,000 in active transit ↗</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Shipments Requiring Action</span>
+            <div class="metric-value tabular" style="color:var(--gold-light);">1</div>
+            <span class="metric-foot">Waypoint handoff ready for review ↗</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Exceptions / Disputes</span>
+            <div class="metric-value tabular" style="color:var(--error);">1</div>
+            <span class="metric-foot">Isolated parcel dispute active ↗</span>
+          </div>
+        </section>
+
+        <!-- Filter & Search Toolbar -->
+        <div class="card" style="margin-bottom:20px;padding:16px 20px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:280px;">
+              <input type="text" class="input" id="order-search-input" placeholder="Search by Order ID, Counterparty, or Cargo…" style="max-width:360px;" />
+              <select class="input" id="order-stage-filter" style="width:auto;min-width:160px;">
+                <option value="all">All Order Stages</option>
+                <option value="Active">Active</option>
+                <option value="Funded">Funded</option>
+                <option value="Disputed">Disputed</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="meta-text">View:</span>
+              <button type="button" class="btn btn-sm btn-secondary active">All</button>
+              <button type="button" class="btn btn-sm btn-ghost">Buyer Role</button>
+              <button type="button" class="btn btn-sm btn-ghost">Supplier Role</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Orders Data Table (Section 4.2 APP-02) -->
+        <section class="card-flush">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Order Reference</th>
+                  <th>Counterparty</th>
+                  <th>Total (ZAR)</th>
+                  <th>Order Stage</th>
+                  <th>Shipment &amp; Custody State</th>
+                  <th>Payment Tranche Status</th>
+                  <th>Next Required Action</th>
+                  <th class="right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="orders-table-tbody">
+                <!-- Row 1: Primary Demo Order -->
+                <tr>
+                  <td>
+                    <div style="font-weight:600;color:var(--text-primary);">ORD-2026-8941</div>
+                    <div class="meta-text" style="font-size:0.7rem;">RFQ-MIN-8941 · Bauxite Ore</div>
+                  </td>
+                  <td>
+                    <div>Highveld Logistics Ltd</div>
+                    <div class="meta-text" style="font-size:0.7rem;">Supplier (KYB Verified)</div>
+                  </td>
+                  <td class="tabular" style="font-weight:600;color:var(--gold-light);">
+                    R 485,000.00
+                  </td>
+                  <td>
+                    <span class="badge badge-gold">Active</span>
+                  </td>
+                  <td>
+                    <div style="font-size:0.8125rem;">In Transit (Leg 2/3)</div>
+                    <div class="meta-text" style="font-size:0.7rem;color:var(--gold);">Held at Durban Hub</div>
+                  </td>
+                  <td>
+                    <div style="font-size:0.8125rem;">Tranche 2 Releasable</div>
+                    <div class="meta-text" style="font-size:0.7rem;">R 145,500 awaiting approval</div>
+                  </td>
+                  <td>
+                    <span class="badge badge-neutral" style="border-color:var(--border-gold);color:var(--gold-light);">Sign Handoff / Review</span>
+                  </td>
+                  <td class="right">
+                    <a href="order-detail.html" class="btn btn-primary btn-sm">Open Order →</a>
+                  </td>
+                </tr>
+
+                <!-- Row 2: Secondary Completed Order -->
+                <tr>
+                  <td>
+                    <div style="font-weight:600;color:var(--text-primary);">ORD-2026-8712</div>
+                    <div class="meta-text" style="font-size:0.7rem;">RFQ-MIN-8712 · Manganese Concentrate</div>
+                  </td>
+                  <td>
+                    <div>Kalahari Bulk Hauliers (Pty) Ltd</div>
+                    <div class="meta-text" style="font-size:0.7rem;">Supplier (KYB Verified)</div>
+                  </td>
+                  <td class="tabular" style="font-weight:600;color:var(--text-primary);">
+                    R 620,000.00
+                  </td>
+                  <td>
+                    <span class="badge badge-success">Completed</span>
+                  </td>
+                  <td>
+                    <div style="font-size:0.8125rem;">Delivered &amp; Accepted</div>
+                    <div class="meta-text" style="font-size:0.7rem;">Final depot confirmed</div>
+                  </td>
+                  <td>
+                    <div style="font-size:0.8125rem;">All Tranches Released</div>
+                    <div class="meta-text" style="font-size:0.7rem;">Settled in Standard Bank trust</div>
+                  </td>
+                  <td>
+                    <span class="meta-text">Archived · Fully Reconciled</span>
+                  </td>
+                  <td class="right">
+                    <a href="order-detail.html" class="btn btn-secondary btn-sm">Inspect Audit →</a>
+                  </td>
+                </tr>
+
+                <!-- Row 3: Funded Order Awaiting Initial Dispatch -->
+                <tr>
+                  <td>
+                    <div style="font-weight:600;color:var(--text-primary);">ORD-2026-9014</div>
+                    <div class="meta-text" style="font-size:0.7rem;">Direct Agreement · Chrome Ingot Freight</div>
+                  </td>
+                  <td>
+                    <div>Trans-Kalahari Logistics</div>
+                    <div class="meta-text" style="font-size:0.7rem;">Carrier Partner</div>
+                  </td>
+                  <td class="tabular" style="font-weight:600;color:var(--text-primary);">
+                    R 175,000.00
+                  </td>
+                  <td>
+                    <span class="badge badge-blue">Funded</span>
+                  </td>
+                  <td>
+                    <div style="font-size:0.8125rem;">Origin Staged</div>
+                    <div class="meta-text" style="font-size:0.7rem;">Weighbridge scheduled</div>
+                  </td>
+                  <td>
+                    <div style="font-size:0.8125rem;">Tranche 1 Locked</div>
+                    <div class="meta-text" style="font-size:0.7rem;">R 35,000 mobilization ready</div>
+                  </td>
+                  <td>
+                    <span class="badge badge-neutral">Issue Dispatch Link</span>
+                  </td>
+                  <td class="right">
+                    <a href="guest-handoff.html" class="btn btn-secondary btn-sm">Dispatch →</a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Architecture Rules Note -->
+        <div class="trust-boundary-card" style="margin-top:24px;">
+          <div style="color:var(--gold);font-size:1.3rem;">ℹ️</div>
+          <div>
+            <strong>Architecture State Distinction (Section 3.1):</strong>
+            'Active' order state indicates commercial terms and escrow funding are in effect; it does not imply physical goods movement is finished. Custody transitions, parcel acceptance, and tranche releases occur independently under agreed rules.
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/patella-blueprint.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/interactions.js"></script>
+</body>
+</html>

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Driver &amp; Warehouse Guest Handoff (GST-01, GST-02)</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/blueprint.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-force-role="partner" data-page="guest-handoff" data-breadcrumb="Guest Handoff Portal">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content" style="max-width:980px;margin:0 auto;">
+        <!-- Top Guest Handoff Header -->
+        <section class="welcome-header" aria-label="Guest Handoff Header">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+              <span class="section-label" style="color:var(--gold);margin-bottom:0;">GUEST-FIRST CUSTODY · GST-01 &amp; GST-02</span>
+              <span class="badge badge-gold" id="token-status-badge">Single-Use Token Valid</span>
+              <span class="badge badge-neutral">No App or Wallet Required</span>
+            </div>
+            <h1 class="page-title" style="font-size:1.85rem;">Two-Party Physical Custody Confirmation</h1>
+            <p class="page-subtitle">Both assigned parties must confirm the same physical transfer before Patela records it as a jointly signed event.</p>
+          </div>
+          <div class="welcome-actions">
+            <button type="button" class="btn btn-secondary btn-sm" id="toggle-expired-btn">Test Expired Token (GST-03)</button>
+          </div>
+        </section>
+
+        <!-- Expired Token Container (GST-03 Hidden by Default) -->
+        <div id="expired-token-view" style="display:none;margin-bottom:28px;">
+          <div class="card" style="text-align:center;padding:48px 24px;border-color:var(--border-error);">
+            <div style="font-size:2.4rem;color:var(--error);margin-bottom:12px;">⚠️</div>
+            <h2 style="font-size:1.3rem;font-weight:600;color:var(--text-primary);margin-bottom:8px;">
+              Handoff Link Expired or Already Used (GST-03)
+            </h2>
+            <p style="max-width:54ch;margin:0 auto 20px;font-size:0.875rem;color:var(--text-secondary);">
+              This one-time custody link is no longer valid. For security, no shipment cargo details are disclosed. Please contact your logistics coordinator to issue a fresh one-time link.
+            </p>
+            <div class="mono" style="font-size:0.75rem;color:var(--text-muted);margin-bottom:20px;">
+              Support Reference: REF-GST-ERR-8941-EXP
+            </div>
+            <button type="button" class="btn btn-secondary" id="restore-valid-btn">Return to Active Valid Token View</button>
+          </div>
+        </div>
+
+        <!-- Active Valid Token View (GST-01 & GST-02) -->
+        <div id="valid-token-view">
+          <!-- Trust Disclosure -->
+          <div class="trust-boundary-card" style="margin-bottom:24px;">
+            <div style="color:var(--gold);font-size:1.3rem;">🤝</div>
+            <div>
+              <strong>Two-Party Handoff Rule (Section 4.4 &amp; 6):</strong>
+              Confirmation records that the consignor (giver) and consignee (receiver) both acknowledged the physical custody transfer. <strong>One signature alone cannot claim completion or release funds.</strong>
+            </div>
+          </div>
+
+          <!-- Minimal Shipment Scoped Context Card (GST-01) -->
+          <section class="card" style="margin-bottom:24px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+              <div>
+                <span class="meta-text" style="text-transform:uppercase;font-size:0.7rem;">Assigned Transfer Node</span>
+                <h2 style="font-size:1.2rem;font-weight:600;margin:2px 0 0;color:var(--text-primary);">
+                  City Deep Container Terminal (Depot A), Johannesburg
+                </h2>
+                <div class="meta-text" style="margin-top:2px;">Corridor Leg 2 · Durban Inland Hub &rarr; City Deep Depot</div>
+              </div>
+              <span class="badge badge-gold">Shipment SHP-99201</span>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:14px;padding:14px;background:var(--surface-subtle);border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
+              <div>
+                <span class="meta-text" style="font-size:0.7rem;text-transform:uppercase;">Cargo Consignment</span>
+                <div style="font-weight:600;color:var(--text-primary);margin-top:2px;">Parcel A (80 Metric Tons)</div>
+                <div class="meta-text" style="font-size:0.7rem;">Industrial Bauxite Ore · Tri-Axle Bulk Tipper</div>
+              </div>
+              <div>
+                <span class="meta-text" style="font-size:0.7rem;text-transform:uppercase;">Container Tamper Seals</span>
+                <div style="font-weight:600;color:var(--success);margin-top:2px;">Seals #RB-99411 &amp; #RB-99412</div>
+                <div class="meta-text" style="font-size:0.7rem;">Declared Intact at Waypoint</div>
+              </div>
+              <div>
+                <span class="meta-text" style="font-size:0.7rem;text-transform:uppercase;">Rule Trigger Impact</span>
+                <div style="font-weight:600;color:var(--gold-light);margin-top:2px;">Tranche 2 (R 145,500.00)</div>
+                <div class="meta-text" style="font-size:0.7rem;">Becomes Releasable in Plan</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Dual-Signature Slots (GST-02) -->
+          <section class="card" style="margin-bottom:24px;">
+            <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:14px;">Two-Party Signature Attestation</h2>
+
+            <div class="dual-signature-grid">
+              <!-- Side 1: Giver (Driver) -->
+              <div class="signature-slot-card signed" id="giver-slot-card">
+                <div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <span class="badge badge-gold">Consignor / Giver</span>
+                    <span class="signature-stamp valid">✓ Signed &amp; Timestamped</span>
+                  </div>
+                  <div style="font-weight:600;font-size:1.05rem;color:var(--text-primary);">Thabo Molefe</div>
+                  <div class="meta-text" style="font-size:0.75rem;">Driver · Trans-Kalahari Haulage Ltd</div>
+                  <div class="mono" style="font-size:0.7rem;color:var(--text-muted);margin-top:6px;">
+                    Device Key: 0x39a1c028e4…7129bc
+                  </div>
+                </div>
+                <div class="meta-text" style="font-size:0.72rem;margin-top:14px;border-top:1px solid var(--border-subtle);padding-top:8px;">
+                  Confirmed: 2026-11-12 17:45 SAST (GPS: -26.2198, 28.0921)
+                </div>
+              </div>
+
+              <!-- Side 2: Receiver (Depot Supervisor) -->
+              <div class="signature-slot-card awaiting" id="receiver-slot-card">
+                <div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <span class="badge badge-blue">Consignee / Receiver</span>
+                    <span class="signature-stamp pending" id="receiver-stamp-text">⏳ Awaiting Your Signature</span>
+                  </div>
+                  <div style="font-weight:600;font-size:1.05rem;color:var(--text-primary);" id="receiver-name-display">
+                    Sarah Khanyile
+                  </div>
+                  <div class="meta-text" style="font-size:0.75rem;">Receiving Depot Supervisor · Anglo-Bavarian City Deep</div>
+                  <div class="meta-text" style="font-size:0.7rem;margin-top:6px;">
+                    Verify seal numbers and weighbridge ticket before signing.
+                  </div>
+                </div>
+
+                <div style="margin-top:16px;">
+                  <button type="button" class="btn btn-primary" id="sign-receiver-btn" style="width:100%;">
+                    ✍️ Sign &amp; Confirm Custody Receipt
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Optional Evidence & Photo Upload -->
+            <div style="margin-top:18px;padding-top:18px;border-top:1px solid var(--border-subtle);">
+              <label class="form-label">Attach Inspection Photo or Weight Slip (Optional Evidence)</label>
+              <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                <input type="file" id="handoff-photo-input" style="display:none;" />
+                <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('handoff-photo-input').click()">
+                  📷 Take / Upload Photo
+                </button>
+                <span class="meta-text" id="photo-upload-status">tamper_seal_check_citydeep.jpg (Attached · SHA-256 Hash verified)</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Joint Confirmation Receipt (Populated after signing) -->
+          <div id="joint-receipt-card" class="card" style="display:none;border-color:var(--border-success);background:rgba(110, 231, 168, 0.04);">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:1.6rem;color:var(--success);">✓</span>
+                <div>
+                  <h3 style="font-size:1.15rem;font-weight:600;margin:0;color:var(--text-primary);">Two-Party Handoff Jointly Confirmed</h3>
+                  <div class="meta-text" style="margin-top:2px;">Cryptographic custody event anchored and rule evaluated</div>
+                </div>
+              </div>
+              <span class="badge badge-success">Joint Signature Matched</span>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;margin-bottom:14px;">
+              <div class="card-elevated">
+                <span class="meta-text" style="font-size:0.7rem;">Event Proof Hash</span>
+                <div class="mono" style="font-size:0.72rem;color:var(--gold-light);margin-top:2px;">
+                  0x1e8471289c01…bcda12
+                </div>
+              </div>
+              <div class="card-elevated">
+                <span class="meta-text" style="font-size:0.7rem;">Payment Rule Trigger</span>
+                <div style="font-size:0.8rem;font-weight:600;color:var(--gold-light);margin-top:2px;">
+                  Tranche 2 Releasable (R 145,500.00)
+                </div>
+              </div>
+              <div class="card-elevated">
+                <span class="meta-text" style="font-size:0.7rem;">Next Destination</span>
+                <div style="font-size:0.8rem;color:var(--text-primary);margin-top:2px;">
+                  Final Consignee Storage Silo
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+              <a href="shipment-timeline.html" class="btn btn-secondary btn-sm">View in Shipment Timeline (TIM-01) →</a>
+              <a href="payment-builder.html" class="btn btn-primary btn-sm">Inspect Payment Plan (PAY-01) →</a>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/patella-blueprint.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/interactions.js"></script>
+  <script>
+    // Receiver Sign Action
+    document.getElementById('sign-receiver-btn').addEventListener('click', function () {
+      var res = window.PatelaBlueprint.confirmGuestReceiver('Sarah Khanyile (Consignee)');
+      var slot = document.getElementById('receiver-slot-card');
+      slot.classList.remove('awaiting');
+      slot.classList.add('signed');
+      document.getElementById('receiver-stamp-text').className = 'signature-stamp valid';
+      document.getElementById('receiver-stamp-text').textContent = '✓ Signed & Verified';
+      document.getElementById('sign-receiver-btn').style.display = 'none';
+
+      document.getElementById('joint-receipt-card').style.display = 'block';
+      window.PatelaUI.toast('Custody Confirmed', 'Two-party cryptographic receipt generated. Tranche 2 is now releasable.');
+    });
+
+    // Test Expired Link (GST-03)
+    document.getElementById('toggle-expired-btn').addEventListener('click', function () {
+      document.getElementById('valid-token-view').style.display = 'none';
+      document.getElementById('expired-token-view').style.display = 'block';
+      document.getElementById('token-status-badge').className = 'badge badge-error';
+      document.getElementById('token-status-badge').textContent = 'Token Expired';
+    });
+
+    document.getElementById('restore-valid-btn').addEventListener('click', function () {
+      document.getElementById('expired-token-view').style.display = 'none';
+      document.getElementById('valid-token-view').style.display = 'block';
+      document.getElementById('token-status-badge').className = 'badge badge-gold';
+      document.getElementById('token-status-badge').textContent = 'Single-Use Token Valid';
+    });
+  </script>
+</body>
+</html>

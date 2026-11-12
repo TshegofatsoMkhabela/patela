@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Tender Trail &amp; Sealed Bids (TEN-01)</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/blueprint.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-force-role="client" data-page="tender-trail" data-breadcrumb="Tender Trail (RFQ-MIN-8941)">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content">
+        <!-- Top Header -->
+        <section class="welcome-header" aria-label="Tender Header">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+              <span class="section-label" style="color:var(--gold);margin-bottom:0;">TENDER TRAIL · TEN-01</span>
+              <span class="badge badge-success">Awarded &amp; Converted</span>
+              <span class="badge badge-neutral">Sealed Bids Verified</span>
+            </div>
+            <h1 class="page-title" style="font-size:1.85rem;">RFQ-MIN-8941: Bulk Bauxite Haulage Tender</h1>
+            <p class="page-subtitle">Sealed bidding evaluation &amp; scoring rubric for Richards Bay to Gauteng mining corridor.</p>
+          </div>
+          <div class="welcome-actions">
+            <a href="order-detail.html" class="btn btn-primary">View Converted Order (ORD-8941) →</a>
+          </div>
+        </section>
+
+        <!-- Sealed Bid Safeguard Banner (Section 4.2 TEN-01) -->
+        <div class="trust-boundary-card" style="margin-bottom:24px;">
+          <div style="color:var(--gold);font-size:1.3rem;">🔒</div>
+          <div>
+            <strong>Confidentiality Invariant (Section 4.2 &amp; 6):</strong>
+            All supplier bids were encrypted upon submission and sealed until deadline: <strong>2026-11-09 17:00 SAST</strong>. No competitor pricing or capacity was leaked prior to deadline unsealing. Scoring decisions produce an immutable audit trail.
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:24px;margin-bottom:32px;">
+          <!-- Left: Tender Scope & Rubric -->
+          <div class="card">
+            <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:16px;">Procurement Scope &amp; Evaluation Criteria</h2>
+
+            <div style="display:flex;flex-direction:column;gap:16px;">
+              <div>
+                <span class="meta-text" style="font-size:0.72rem;text-transform:uppercase;">Cargo &amp; Corridor</span>
+                <div style="font-weight:500;color:var(--text-primary);margin-top:2px;">120 Metric Tons Bauxite Ore · Richards Bay &rarr; City Deep</div>
+              </div>
+
+              <div>
+                <span class="meta-text" style="font-size:0.72rem;text-transform:uppercase;">Deadline &amp; Unsealing</span>
+                <div style="font-weight:500;color:var(--text-primary);margin-top:2px;">Closed: 09 Nov 2026 17:00 SAST · Unsealed at 17:01 SAST</div>
+              </div>
+
+              <!-- Scoring Rubric -->
+              <div style="border-top:1px solid var(--border-subtle);padding-top:14px;">
+                <div style="font-size:0.875rem;font-weight:600;color:var(--text-primary);margin-bottom:10px;">Scoring Rubric Breakdown</div>
+                <div class="table-container" style="border:1px solid var(--border-neutral);border-radius:var(--radius-sm);">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Criterion</th>
+                        <th class="right">Weight</th>
+                        <th>Standard</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Price / Ton-KM Rate Card</td>
+                        <td class="right tabular" style="color:var(--gold);">40%</td>
+                        <td class="meta-text">ZAR/MT rate including fuel surcharge</td>
+                      </tr>
+                      <tr>
+                        <td>Guaranteed Transit Time</td>
+                        <td class="right tabular" style="color:var(--gold);">30%</td>
+                        <td class="meta-text">&lt;= 72 hours pickup to City Deep</td>
+                      </tr>
+                      <tr>
+                        <td>Vetting &amp; Confirmed Handoffs</td>
+                        <td class="right tabular" style="color:var(--gold);">30%</td>
+                        <td class="meta-text">&gt; 95% confirmed on-time rate in Patela</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Supplier Bid Submission Portal (For suppliers before close) -->
+          <div class="card">
+            <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:16px;">Supplier Bid Portal (Sealed Submission)</h2>
+
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div>
+                <label class="form-label">Total Bid Price in Rand (ZAR)</label>
+                <input type="text" class="input" value="R 485,000.00 ZAR" disabled style="opacity:0.85;" />
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div>
+                  <label class="form-label">Guaranteed Lead Time</label>
+                  <input type="text" class="input" value="48 Hours" disabled style="opacity:0.85;" />
+                </div>
+                <div>
+                  <label class="form-label">Committed Fleet Capacity</label>
+                  <input type="text" class="input" value="6x 34-Ton Tri-Axles" disabled style="opacity:0.85;" />
+                </div>
+              </div>
+
+              <div>
+                <label class="form-label">Fleet Insurance &amp; Bond Number</label>
+                <input type="text" class="input" value="MUTUAL-FREIGHT-88201 (R 20M Cargo in Transit)" disabled style="opacity:0.85;" />
+              </div>
+
+              <div style="padding:12px;background:var(--surface-subtle);border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
+                <div style="font-size:0.75rem;color:var(--text-secondary);">
+                  <strong style="color:var(--text-primary);">Tender Status:</strong> This tender is closed and awarded. Bids can no longer be amended. The winning supplier was converted to binding contract <strong>ORD-2026-8941</strong>.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Unsealed Evaluated Bids Table (Section 4.2 TEN-01) -->
+        <section class="card-flush">
+          <div style="padding:20px 24px;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+            <div>
+              <h2 style="font-size:1.1rem;margin:0;font-weight:500;">Unsealed Supplier Bids &amp; Scoring Results</h2>
+              <div class="meta-text" style="margin-top:2px;">Decrypted upon deadline arrival on 09 Nov 2026 17:01 SAST</div>
+            </div>
+            <span class="badge badge-gold">3 Bids Evaluated</span>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Supplier / Carrier</th>
+                  <th>Bid Price (ZAR)</th>
+                  <th>Transit Lead Time</th>
+                  <th>Fleet Telematics</th>
+                  <th>Rubric Score</th>
+                  <th>Award Status</th>
+                  <th class="right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="background:rgba(255, 226, 178, 0.04);">
+                  <td>
+                    <div style="font-weight:600;color:var(--gold-light);">Highveld Logistics &amp; Mining Consumables</div>
+                    <div class="meta-text" style="font-size:0.7rem;">CIPC Reg: 2018/491029/07 · KYB Verified</div>
+                  </td>
+                  <td class="tabular" style="font-weight:600;color:var(--gold-light);">R 485,000.00</td>
+                  <td>48 Hours</td>
+                  <td class="meta-text">6x 34-Ton Tri-Axles (Satellite Tracked)</td>
+                  <td class="tabular" style="font-weight:600;color:var(--success);">94.5 / 100</td>
+                  <td><span class="badge badge-success">✓ Awarded &amp; Contracted</span></td>
+                  <td class="right">
+                    <a href="order-detail.html" class="btn btn-primary btn-sm">Inspect Order →</a>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>
+                    <div style="font-weight:500;color:var(--text-primary);">Kalahari Bulk Hauliers (Pty) Ltd</div>
+                    <div class="meta-text" style="font-size:0.7rem;">CIPC Reg: 2020/091824/07 · KYB Verified</div>
+                  </td>
+                  <td class="tabular">R 512,000.00</td>
+                  <td>72 Hours</td>
+                  <td class="meta-text">4x Superlink Tippers</td>
+                  <td class="tabular">87.2 / 100</td>
+                  <td><span class="badge badge-neutral">Runner Up</span></td>
+                  <td class="right">
+                    <button type="button" class="btn btn-ghost btn-sm" disabled>Archived</button>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>
+                    <div style="font-weight:500;color:var(--text-primary);">Durban Coastal Drayage Ltd</div>
+                    <div class="meta-text" style="font-size:0.7rem;">CIPC Reg: 2022/194820/07</div>
+                  </td>
+                  <td class="tabular">R 460,000.00</td>
+                  <td>96 Hours</td>
+                  <td class="meta-text">Sub-contracted fleet</td>
+                  <td class="tabular" style="color:var(--error);">62.0 / 100</td>
+                  <td><span class="badge badge-error">Disqualified</span></td>
+                  <td class="right">
+                    <button type="button" class="btn btn-ghost btn-sm" disabled>Non-Compliant</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/patella-blueprint.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/interactions.js"></script>
+</body>
+</html>

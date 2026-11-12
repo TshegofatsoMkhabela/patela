@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Shipment Timeline &amp; Custody Events (TIM-01)</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/blueprint.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-force-role="client" data-page="shipment-overview" data-breadcrumb="Shipment Timeline (TIM-01)">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content">
+        <!-- Top Timeline Header -->
+        <section class="welcome-header" aria-label="Timeline Header">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+              <span class="section-label" style="color:var(--gold);margin-bottom:0;">AUDITABLE CHRONOLOGY · TIM-01</span>
+              <span class="badge badge-gold">Append-Only Event Ledger</span>
+              <span class="badge badge-neutral">Order ORD-2026-8941</span>
+            </div>
+            <h1 class="page-title" style="font-size:1.85rem;">Signed Custody &amp; Settlement Chronology</h1>
+            <p class="page-subtitle">Every significant custody handoff, agreement version, funding event, and payment release recorded with verifiable cryptographic proofs.</p>
+          </div>
+          <div class="welcome-actions">
+            <a href="auditor-trail.html" class="btn btn-secondary">Auditor View (AUD-01)</a>
+            <a href="guest-handoff.html" class="btn btn-primary">+ Record Handoff Event ⚡</a>
+          </div>
+        </section>
+
+        <!-- Chronological Timeline Stream (Section 4.4 TIM-01) -->
+        <section class="card" style="margin-bottom:28px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+            <div>
+              <div class="section-label" style="color:var(--gold);">EVENT STREAM</div>
+              <h2 style="font-size:1.15rem;margin:4px 0 0;font-weight:600;">Sequential Order Lifecycle Events</h2>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button type="button" class="btn btn-sm btn-secondary active">All Events</button>
+              <button type="button" class="btn btn-sm btn-ghost">Signed Handoffs</button>
+              <button type="button" class="btn btn-sm btn-ghost">Financial Releases</button>
+              <button type="button" class="btn btn-sm btn-ghost">Exceptions</button>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:18px;">
+            <!-- Event 1: Recent Handoff -->
+            <div class="card-elevated" style="border-left:3px solid var(--gold);">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
+                <div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="badge badge-gold">Signed Handoff</span>
+                    <strong style="color:var(--text-primary);font-size:0.95rem;">Node 02 &rarr; Leg 2 Custody Transfer Confirmed</strong>
+                  </div>
+                  <div class="meta-text" style="font-size:0.75rem;margin-top:2px;">
+                    Actor: Thabo Molefe (Trans-Kalahari Driver) &amp; Sarah Khanyile (City Deep Receiving)
+                  </div>
+                </div>
+                <div class="meta-text" style="font-size:0.75rem;">12 Nov 2026 17:45 SAST</div>
+              </div>
+
+              <div style="font-size:0.8125rem;color:var(--text-secondary);margin-bottom:10px;">
+                Two-party guest confirmation completed at City Deep Depot. Parcel A (80 MT Bauxite) verified with tamper seals intact. Tranche 2 (R 145,500.00) rule evaluated as releasable.
+              </div>
+
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-top:1px solid var(--border-subtle);padding-top:8px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span class="hash-pill">Proof Hash: 0x1e8471…bcda12</span>
+                  <span class="meta-text" style="font-size:0.7rem;">Attached: seal_photo.jpg (SHA-256 Verified)</span>
+                </div>
+                <a href="guest-handoff.html" class="btn btn-ghost btn-sm" style="font-size:0.72rem;">Inspect Receipt →</a>
+              </div>
+            </div>
+
+            <!-- Event 2: Active Dispute Exception -->
+            <div class="card-elevated" style="border-left:3px solid var(--error);">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
+                <div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="badge badge-error">Exception Logged</span>
+                    <strong style="color:var(--error);font-size:0.95rem;">Tamper Seal Breach Dispute on Parcel B (40 MT)</strong>
+                  </div>
+                  <div class="meta-text" style="font-size:0.75rem;margin-top:2px;">
+                    Reported by Dave M. (Logistics Officer) · Under Review by Nomvula Sithole
+                  </div>
+                </div>
+                <div class="meta-text" style="font-size:0.75rem;">12 Nov 2026 11:20 SAST</div>
+              </div>
+
+              <div style="font-size:0.8125rem;color:var(--text-secondary);margin-bottom:10px;">
+                Seal #RB-99413 broken and high moisture reading (8.6%). <strong>Isolated holding applied: R 121,250 held</strong> in Tranche 4. Unaffected Parcel A allowed to proceed.
+              </div>
+
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-top:1px solid var(--border-subtle);padding-top:8px;">
+                <span class="hash-pill">Dispute Ref: DIS-2026-041</span>
+                <a href="dispute-centre.html" class="btn btn-secondary btn-sm" style="font-size:0.72rem;">Open Dispute Case →</a>
+              </div>
+            </div>
+
+            <!-- Event 3: Waypoint Handoff Node 01 to Node 02 -->
+            <div class="card-elevated" style="border-left:3px solid var(--success);">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
+                <div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="badge badge-success">Signed Handoff</span>
+                    <strong style="color:var(--text-primary);font-size:0.95rem;">Waypoint 1 Completed at Durban Inland Hub</strong>
+                  </div>
+                  <div class="meta-text" style="font-size:0.75rem;margin-top:2px;">
+                    Carrier: Trans-Kalahari Haulage &rarr; Durban Terminal Inward Receiving
+                  </div>
+                </div>
+                <div class="meta-text" style="font-size:0.75rem;">12 Nov 2026 14:15 SAST</div>
+              </div>
+
+              <div style="font-size:0.8125rem;color:var(--text-secondary);margin-bottom:10px;">
+                Inward delivery scan confirmed. Both 34-ton tri-axle vehicles cleared through hub weighbridge.
+              </div>
+
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-top:1px solid var(--border-subtle);padding-top:8px;">
+                <span class="hash-pill">Proof Hash: 0x41ab98…21a1</span>
+                <span class="meta-text" style="font-size:0.7rem;">Block #19482450</span>
+              </div>
+            </div>
+
+            <!-- Event 4: Financial Release Tranche 1 -->
+            <div class="card-elevated" style="border-left:3px solid var(--success);">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
+                <div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="badge badge-success">Financial Release</span>
+                    <strong style="color:var(--text-primary);font-size:0.95rem;">Tranche 1 (R 97,000.00 ZAR) Released to Supplier</strong>
+                  </div>
+                  <div class="meta-text" style="font-size:0.75rem;margin-top:2px;">
+                    Payee: Highveld Logistics Ltd · Mobilization Trigger Satisfied
+                  </div>
+                </div>
+                <div class="meta-text" style="font-size:0.75rem;">11 Nov 2026 09:15 SAST</div>
+              </div>
+
+              <div style="font-size:0.8125rem;color:var(--text-secondary);margin-bottom:10px;">
+                Weighbridge certificate and origin dispatch handoff confirmed. Settlement executed via Standard Bank trust ledger.
+              </div>
+
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-top:1px solid var(--border-subtle);padding-top:8px;">
+                <span class="hash-pill">Base Sepolia Tx: 0x41ab982c…21a1</span>
+                <a href="payments.html" class="btn btn-ghost btn-sm" style="font-size:0.72rem;">Inspect Ledger →</a>
+              </div>
+            </div>
+
+            <!-- Event 5: Agreement Signed & Anchored -->
+            <div class="card-elevated" style="border-left:3px solid var(--gold);">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
+                <div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="badge badge-gold">Agreement Signed</span>
+                    <strong style="color:var(--text-primary);font-size:0.95rem;">Canonical Agreement v1.2 Dual-Signed &amp; Anchored</strong>
+                  </div>
+                  <div class="meta-text" style="font-size:0.75rem;margin-top:2px;">
+                    Signatories: Alex Morgan (Buyer) &amp; Marcus Khumalo (Supplier)
+                  </div>
+                </div>
+                <div class="meta-text" style="font-size:0.75rem;">10 Nov 2026 15:05 SAST</div>
+              </div>
+
+              <div style="font-size:0.8125rem;color:var(--text-secondary);margin-bottom:10px;">
+                Canonical agreement terms, 4-node multi-hop route graph, and 4-tranche payment plan cryptographically bound.
+              </div>
+
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-top:1px solid var(--border-subtle);padding-top:8px;">
+                <span class="hash-pill">Canonical Hash: 0x8b3f2e41…8e0f12</span>
+                <span class="meta-text" style="font-size:0.7rem;">Base Sepolia Block #19482103</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/patella-blueprint.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/interactions.js"></script>
+</body>
+</html>

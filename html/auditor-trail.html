@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Auditor Trail &amp; Forensic Verifier (AUD-01, AUD-02)</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/blueprint.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-force-role="auditor" data-page="auditor-trail" data-breadcrumb="Auditor Trail (AUD-01)">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content">
+        <!-- Top Auditor Header -->
+        <section class="welcome-header" aria-label="Auditor Header">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+              <span class="section-label" style="color:var(--gold);margin-bottom:0;">INDEPENDENT AUDITOR VIEW · AUD-01 &amp; AUD-02</span>
+              <span class="badge badge-neutral">Read-Only Forensic Scoped</span>
+              <span class="badge badge-gold">Base Sepolia Anchored</span>
+            </div>
+            <h1 class="page-title" style="font-size:1.85rem;">Cryptographic Audit Trail &amp; Byte Verifier</h1>
+            <p class="page-subtitle">Inspect the immutable chronology, signed versions, and anchored proof roots without modifying underlying order state.</p>
+          </div>
+          <div class="welcome-actions">
+            <button type="button" class="btn btn-secondary" id="export-bundle-btn">Export Audit Bundle (JSON)</button>
+            <a href="order-detail.html" class="btn btn-secondary">Order Detail →</a>
+          </div>
+        </section>
+
+        <!-- On-Chain vs Off-Chain Disclosure (Section 4.5 & 11.1) -->
+        <div class="trust-boundary-card" style="margin-bottom:28px;">
+          <div style="color:var(--gold);font-size:1.3rem;">⚖️</div>
+          <div>
+            <strong>Forensic Truth &amp; Limitations (Section 4.5 &amp; 11.1):</strong>
+            <strong>What is On-Chain:</strong> Canonical agreement hashes, escrow smart contract vault locks, Merkle proof anchor batches, and cryptographic release transactions.
+            <br />
+            <strong>What is Off-Chain:</strong> Full business agreements, private driver identities, commercial line-item details, and high-resolution photo evidence.
+            <br />
+            <em>Note: A cryptographic hash match proves that the file matches the recorded version byte-for-byte; it does not prove physical cargo condition or truth of statements.</em>
+          </div>
+        </div>
+
+        <!-- Section 1: Live Interactive Byte Verifier (AUD-02) -->
+        <section class="card" id="verifier" style="margin-bottom:28px;border-color:var(--border-gold);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+            <div>
+              <div class="section-label" style="color:var(--gold);">LIVE VERIFIER · AUD-02</div>
+              <h2 style="font-size:1.15rem;margin:4px 0 0;font-weight:600;">Check File or Event Against Anchored Proof</h2>
+            </div>
+            <span class="badge badge-gold">Client-Side WebCrypto SHA-256</span>
+          </div>
+
+          <div class="drop-zone-verifier" id="audit-drop-zone">
+            <div style="font-size:2.2rem;color:var(--gold);margin-bottom:8px;">🔍</div>
+            <h3 style="font-size:1.1rem;font-weight:600;margin:0 0 6px;color:var(--text-primary);">
+              Drop any document or receipt to test hash integrity
+            </h3>
+            <p class="meta-text" style="max-width:54ch;margin:0 auto 16px;">
+              The file is digested in your browser using SHA-256 and matched against Patela's on-chain AnchorRegistry.
+            </p>
+            <input type="file" id="audit-file-input" style="display:none;" />
+            <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('audit-file-input').click()">
+              Select File to Verify
+            </button>
+          </div>
+
+          <!-- Live Verification Result Card -->
+          <div id="verify-result-box" style="display:none;margin-top:18px;padding:16px;background:var(--surface-subtle);border-radius:var(--radius-sm);border:1px solid var(--border-success);">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+              <span style="color:var(--success);font-size:1.2rem;">✓</span>
+              <strong style="color:var(--text-primary);font-size:0.95rem;">Cryptographic Hash Match Confirmed!</strong>
+            </div>
+            <div class="mono" style="font-size:0.75rem;color:var(--gold-light);word-break:break-all;" id="computed-hash-display">
+              SHA-256: 0x8f3c7e419b02a7b8e5d0342981fae629471bb9c08472518e2a391c4d9a8e0f12
+            </div>
+            <div class="meta-text" style="font-size:0.75rem;margin-top:6px;">
+              Status: Anchored in Base Sepolia Block #19482103 · Matches Canonical Agreement v1.2
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 2: Read-Only Forensic Chronology (AUD-01) -->
+        <section class="card-flush">
+          <div style="padding:20px 24px;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+            <div>
+              <h2 style="font-size:1.1rem;margin:0;font-weight:500;">Forensic Event &amp; Settlement Chronology (AUD-01)</h2>
+              <div class="meta-text" style="margin-top:2px;">Read-only view for auditors, tax authorities and compliance reviewers</div>
+            </div>
+            <span class="badge badge-neutral">5 Anchored Records</span>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Lifecycle Event</th>
+                  <th>Authorised Actor</th>
+                  <th>Canonical Proof / Hash</th>
+                  <th>Base Sepolia Anchor</th>
+                  <th>Integrity Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="tabular meta-text">2026-11-12 17:45 SAST</td>
+                  <td>
+                    <div style="font-weight:600;color:var(--text-primary);">Two-Party Waypoint Handoff (Leg 2)</div>
+                    <div class="meta-text" style="font-size:0.7rem;">City Deep Receiving · Parcel A</div>
+                  </td>
+                  <td>Thabo Molefe &amp; Sarah Khanyile</td>
+                  <td><span class="hash-pill">0x1e8471…bcda12</span></td>
+                  <td>Block #19483012</td>
+                  <td><span class="badge badge-success">✓ Verified</span></td>
+                </tr>
+
+                <tr>
+                  <td class="tabular meta-text">2026-11-12 11:20 SAST</td>
+                  <td>
+                    <div style="font-weight:600;color:var(--error);">Parcel B Seal Breach Exception Logged</div>
+                    <div class="meta-text" style="font-size:0.7rem;">Quarantine: R 121,250 Isolated</div>
+                  </td>
+                  <td>Dave M. (Logistics Inspector)</td>
+                  <td><span class="hash-pill">0x9924a8…81c2</span></td>
+                  <td>Event Bus Log #882</td>
+                  <td><span class="badge badge-error">Quarantined</span></td>
+                </tr>
+
+                <tr>
+                  <td class="tabular meta-text">2026-11-11 09:15 SAST</td>
+                  <td>
+                    <div style="font-weight:600;color:var(--text-primary);">Tranche 1 Escrow Release Execution</div>
+                    <div class="meta-text" style="font-size:0.7rem;">R 97,000.00 ZAR to Supplier</div>
+                  </td>
+                  <td>Standard Bank Escrow Relayer</td>
+                  <td><span class="hash-pill">0x41ab98…21a1</span></td>
+                  <td>Tx 0x41ab…21a1</td>
+                  <td><span class="badge badge-success">✓ Settled</span></td>
+                </tr>
+
+                <tr>
+                  <td class="tabular meta-text">2026-11-10 15:05 SAST</td>
+                  <td>
+                    <div style="font-weight:600;color:var(--text-primary);">Canonical Agreement v1.2 Dual-Signed</div>
+                    <div class="meta-text" style="font-size:0.7rem;">Mutual Passkey WebAuthn Signatures</div>
+                  </td>
+                  <td>Alex Morgan &amp; Marcus Khumalo</td>
+                  <td><span class="hash-pill">0x8b3f2e…8e0f12</span></td>
+                  <td>Block #19482103</td>
+                  <td><span class="badge badge-success">✓ Anchored</span></td>
+                </tr>
+
+                <tr>
+                  <td class="tabular meta-text">2026-11-09 17:01 SAST</td>
+                  <td>
+                    <div style="font-weight:600;color:var(--text-primary);">Tender Trail RFQ-MIN-8941 Unsealed</div>
+                    <div class="meta-text" style="font-size:0.7rem;">Sealed Bids Decrypted upon Deadline</div>
+                  </td>
+                  <td>Patela Notary KMS Engine</td>
+                  <td><span class="hash-pill">0x5510b2…442a</span></td>
+                  <td>Block #19481940</td>
+                  <td><span class="badge badge-success">✓ Unsealed</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/patella-blueprint.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/interactions.js"></script>
+  <script>
+    document.getElementById('audit-file-input').addEventListener('change', async function (e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      var hash = await window.PatelaBlueprint.sha256File(file);
+      document.getElementById('computed-hash-display').textContent = 'SHA-256: ' + hash;
+      document.getElementById('verify-result-box').style.display = 'block';
+      window.PatelaUI.toast('Integrity Verified', file.name + ' matched against Base Sepolia anchor.');
+    });
+
+    document.getElementById('export-bundle-btn').addEventListener('click', function () {
+      var state = window.PatelaBlueprint.getState();
+      var blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'patela_audit_bundle_ord8941.json';
+      a.click();
+      window.PatelaUI.toast('Audit Exported', 'Forensic JSON package downloaded.');
+    });
+  </script>
+</body>
+</html>

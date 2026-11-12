@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Patela — Workspace Prototype</title>
+  <title>Patela — Supply Chain, Custody &amp; Payment Coordination</title>
   <link rel="stylesheet" href="assets/css/design-system.css" />
   <link rel="stylesheet" href="assets/css/dashboard.css" />
   <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/blueprint.css" />
   <link rel="stylesheet" href="assets/css/responsive.css" />
 </head>
 <body>
@@ -15,11 +16,11 @@
   </video>
   <div class="patela-frost" aria-hidden="true"></div>
 
-  <div class="entry-shell">
+  <div class="entry-shell" style="max-width:1380px;margin:0 auto;padding:24px 20px 60px;">
     <!-- Top Header -->
-    <header style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:6px 0;">
+    <header style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:10px 0 20px;border-bottom:1px solid var(--border-subtle);">
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-        <a href="/" data-site-path="/" class="brand-link" title="Back to Patela Landing Page">
+        <a href="index.html" class="brand-link" title="Patela Blueprint Hub">
           <svg viewBox="0 0 23 17" aria-hidden="true">
             <path d="M8.15 0.9 L4.55 0.9 L0.5 9.3 L4.1 9.3 Z" />
             <path d="M17.0 0 L13.4 0 L6.15 16.4 L9.75 16.4 Z" />
@@ -28,155 +29,395 @@
           </svg>
           <span class="brand-wordmark">PATELA</span>
         </a>
-        <nav aria-label="Site Navigation" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <a href="/" data-site-path="/" class="topbar-site-pill">← Home</a>
-          <a href="/how-it-works" data-site-path="/how-it-works" class="topbar-site-pill">How it works</a>
-          <a href="/marketplace" data-site-path="/marketplace" class="topbar-site-pill">Public Marketplace</a>
-          <a href="/post-job" data-site-path="/post-job" class="topbar-site-pill">Quick Post Job</a>
+        <nav aria-label="Quick Nav" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <a href="orders.html" class="topbar-site-pill">Orders &amp; RFQ</a>
+          <a href="shipment-overview.html" class="topbar-site-pill">Shipment Custody</a>
+          <a href="payment-builder.html" class="topbar-site-pill">Payment Plan</a>
+          <a href="guest-handoff.html" class="topbar-site-pill" style="border-color:var(--border-gold);color:var(--gold-light);">Guest Handoff ⚡</a>
+          <a href="operations-console.html" class="topbar-site-pill">Operations</a>
+          <a href="auditor-trail.html" class="topbar-site-pill">Auditor Trail</a>
         </nav>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
-        <span class="badge badge-neutral">Unified Demo Workspace</span>
+        <span class="badge badge-gold">UX Blueprint v1.0 · Nov 2026</span>
         <button type="button" class="btn btn-secondary btn-sm" id="entry-reset-btn">Reset demo state</button>
       </div>
     </header>
 
-    <!-- Main Role Selection -->
-    <main>
-      <div class="entry-hero">
-        <div class="section-label" style="margin-bottom:10px;color:var(--accent-gold);">MILESTONE ESCROW &amp; AI VERIFICATION CONSOLE</div>
-        <h1 class="page-title" style="font-size:clamp(1.85rem, 3.2vw, 2.5rem);">
-          Select your Patela workspace
+    <!-- Main Hero Banner (PUB-01) -->
+    <main style="margin-top:32px;">
+      <div class="entry-hero" style="text-align:center;margin-bottom:36px;">
+        <div class="section-label" style="margin-bottom:12px;color:var(--gold);letter-spacing:0.12em;font-size:0.8rem;text-transform:uppercase;">
+          PRODUCT, PAGE ARCHITECTURE &amp; UX BLUEPRINT
+        </div>
+        <h1 class="page-title" style="font-size:clamp(2rem, 3.8vw, 2.9rem);line-height:1.2;font-weight:600;margin-bottom:14px;color:var(--text-primary);">
+          Every handoff accounted for.<br />Every payment governed by agreed rules.
         </h1>
-        <p class="page-subtitle" style="max-width:52ch;margin:10px auto 0;">
-          Seamlessly connected with the Patela marketplace. Choose a role below to manage escrows, inspect AI verification reports, or submit milestone deliverables.
+        <p class="page-subtitle" style="max-width:68ch;margin:0 auto;font-size:1.05rem;line-height:1.6;color:var(--text-secondary);">
+          Patela helps buyers, suppliers and logistics partners coordinate multi-hop orders, track custody without mandatory apps or wallets, and manage escrow-based payments from pickup to delivery.
         </p>
       </div>
 
-      <!-- Two Role Cards -->
-      <div class="entry-role-grid">
-        <section class="role-choice-card" aria-labelledby="role-client-heading">
-          <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-              <span class="badge badge-gold">Client Workspace</span>
-              <span class="meta-text" id="entry-client-escrow">$2,450 USDC in escrow</span>
-            </div>
-            <h2 id="role-client-heading" style="font-family:var(--font-display);font-size:1.3rem;font-weight:500;margin-bottom:6px;">Alex Morgan</h2>
-            <p style="color:var(--text-secondary);font-size:0.84375rem;margin-bottom:18px;">
-              Post jobs, fund smart-contract escrows, review advisory AI verification reports, and approve completed milestones.
-            </p>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
-              <a href="post-job.html" class="topbar-site-pill" data-role-jump="client">5-Step Job Wizard</a>
-              <a href="projects.html" class="topbar-site-pill" data-role-jump="client">My Projects</a>
-              <a href="submissions.html" class="topbar-site-pill" data-role-jump="client">AI Review Queue</a>
-              <a href="analytics.html" class="topbar-site-pill" data-role-jump="client">Analytics</a>
-            </div>
-          </div>
-          <a href="client-dashboard.html" class="btn btn-primary btn-lg" id="enter-client-btn" style="width:100%;">
-            Enter Client Dashboard →
-          </a>
-        </section>
-
-        <section class="role-choice-card" aria-labelledby="role-worker-heading">
-          <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-              <span class="badge badge-blue">Worker Workspace</span>
-              <span class="meta-text" id="entry-worker-escrow">$1,850 USDC secured</span>
-            </div>
-            <h2 id="role-worker-heading" style="font-family:var(--font-display);font-size:1.3rem;font-weight:500;margin-bottom:6px;">Jordan Blake</h2>
-            <p style="color:var(--text-secondary);font-size:0.84375rem;margin-bottom:18px;">
-              Discover pre-funded jobs, submit proposals, upload deliverables for AI verification, and receive instant on-chain payouts.
-            </p>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
-              <a href="marketplace.html" class="topbar-site-pill" data-role-jump="worker">Find Work Console</a>
-              <a href="Active-work.html" class="topbar-site-pill" data-role-jump="worker">Active Milestones</a>
-              <a href="submissions.html" class="topbar-site-pill" data-role-jump="worker">Submit Deliverable</a>
-              <a href="payments.html" class="topbar-site-pill" data-role-jump="worker">Wallet &amp; Payouts</a>
-            </div>
-          </div>
-          <a href="worker-dashboard.html" class="btn btn-secondary btn-lg" id="enter-worker-btn" style="width:100%;">
-            Enter Worker Dashboard →
-          </a>
-        </section>
+      <!-- Trust Boundary & Honest Truth Callout (Section 1.1) -->
+      <div class="trust-boundary-card" style="margin-bottom:32px;">
+        <div style="color:var(--gold);font-size:1.4rem;line-height:1;">🛡️</div>
+        <div>
+          <div style="font-size:0.875rem;font-weight:600;color:var(--gold-light);margin-bottom:4px;">The Honest Trust Boundary (Section 1.1 &amp; 11.1)</div>
+          <p>
+            A cryptographic scan proves that the two designated parties confirmed a physical custody transfer. It is <strong>not</strong> an independent guarantee that goods are undamaged, nor does Patela operate trucks or prevent hijacking. Balances are shown in <strong>South African Rand (ZAR)</strong>; authorized licensed partners handle banking, conversion and money movement behind the scenes.
+          </p>
+        </div>
       </div>
+
+      <!-- Suggested Demo Narrative Walkthrough (Section 10.1) -->
+      <section class="card" style="margin-bottom:36px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px;">
+          <div>
+            <div class="section-label" style="color:var(--gold);">DEMO NARRATIVE (SECTION 10.1)</div>
+            <h2 style="font-size:1.15rem;margin:4px 0 0;font-weight:500;">End-to-End Order-to-Settlement Flow with Exception Path</h2>
+          </div>
+          <span class="badge badge-neutral">8-Stage Gated Architecture</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:10px;text-align:center;">
+          <a href="create-order.html" class="card-elevated" style="text-decoration:none;transition:all var(--transition-fast);">
+            <div class="node-step-badge completed" style="margin:0 auto 8px;">1</div>
+            <div style="font-size:0.8rem;font-weight:600;color:var(--text-primary);">Buyer creates RFQ</div>
+            <div class="meta-text" style="font-size:0.7rem;margin-top:2px;">Goods &amp; destinations</div>
+          </a>
+          <a href="tender-trail.html" class="card-elevated" style="text-decoration:none;transition:all var(--transition-fast);">
+            <div class="node-step-badge completed" style="margin:0 auto 8px;">2</div>
+            <div style="font-size:0.8rem;font-weight:600;color:var(--text-primary);">Supplier sealed bid</div>
+            <div class="meta-text" style="font-size:0.7rem;margin-top:2px;">Encrypted until close</div>
+          </a>
+          <a href="tender-trail.html" class="card-elevated" style="text-decoration:none;transition:all var(--transition-fast);">
+            <div class="node-step-badge completed" style="margin:0 auto 8px;">3</div>
+            <div style="font-size:0.8rem;font-weight:600;color:var(--text-primary);">Award to order</div>
+            <div class="meta-text" style="font-size:0.7rem;margin-top:2px;">Scoring rubric</div>
+          </a>
+          <a href="order-detail.html" class="card-elevated" style="text-decoration:none;transition:all var(--transition-fast);">
+            <div class="node-step-badge completed" style="margin:0 auto 8px;">4</div>
+            <div style="font-size:0.8rem;font-weight:600;color:var(--text-primary);">Sign agreement</div>
+            <div class="meta-text" style="font-size:0.7rem;margin-top:2px;">Dual signatures</div>
+          </a>
+          <a href="escrow-funding.html" class="card-elevated" style="text-decoration:none;transition:all var(--transition-fast);">
+            <div class="node-step-badge completed" style="margin:0 auto 8px;">5</div>
+            <div style="font-size:0.8rem;font-weight:600;color:var(--text-primary);">Fund escrow</div>
+            <div class="meta-text" style="font-size:0.7rem;margin-top:2px;">R 485,000 locked</div>
+          </a>
+          <a href="guest-handoff.html" class="card-elevated" style="text-decoration:none;border-color:var(--border-gold);transition:all var(--transition-fast);">
+            <div class="node-step-badge active" style="margin:0 auto 8px;">6</div>
+            <div style="font-size:0.8rem;font-weight:600;color:var(--gold-light);">Multi-hop handoff</div>
+            <div class="meta-text" style="font-size:0.7rem;margin-top:2px;">Two-party guest sign</div>
+          </a>
+          <a href="shipment-overview.html" class="card-elevated" style="text-decoration:none;transition:all var(--transition-fast);">
+            <div class="node-step-badge" style="margin:0 auto 8px;">7</div>
+            <div style="font-size:0.8rem;font-weight:600;color:var(--text-primary);">Buyer acceptance</div>
+            <div class="meta-text" style="font-size:0.7rem;margin-top:2px;">Final parcel check</div>
+          </a>
+          <a href="auditor-trail.html" class="card-elevated" style="text-decoration:none;transition:all var(--transition-fast);">
+            <div class="node-step-badge" style="margin:0 auto 8px;">8</div>
+            <div style="font-size:0.8rem;font-weight:600;color:var(--text-primary);">Release &amp; audit</div>
+            <div class="meta-text" style="font-size:0.7rem;margin-top:2px;">On-chain proofs</div>
+          </a>
+        </div>
+
+        <!-- Exception Demonstration Callout (Section 5.5 & 10.1) -->
+        <div style="margin-top:18px;padding:12px 16px;background:rgba(228, 126, 131, 0.05);border:1px solid var(--border-error);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div>
+            <span class="badge badge-error" style="margin-right:8px;">Live Exception Test</span>
+            <span style="font-size:0.8125rem;color:var(--text-primary);">
+              Parcel B seal breach dispute active. <strong>Only R 121,250 is held</strong>; unaffected Parcel A (R 363,750) continues normal delivery and payment release.
+            </span>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <a href="dispute-centre.html" class="btn btn-secondary btn-sm">Inspect Dispute Centre →</a>
+            <a href="operations-console.html" class="btn btn-primary btn-sm">Resolve in Ops Console →</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5 Main User Workspaces (Section 1.2) -->
+      <div class="section-label" style="margin-bottom:14px;color:var(--text-secondary);text-transform:uppercase;">SELECT USER WORKSPACE</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:18px;margin-bottom:44px;">
+        
+        <!-- 1. Buyer Workspace -->
+        <div class="card" style="display:flex;flex-direction:column;justify-content:space-between;">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <span class="badge badge-gold">Buyer Workspace</span>
+              <span class="meta-text">ZAR 485k Escrow</span>
+            </div>
+            <h3 style="font-size:1.15rem;font-weight:600;margin-bottom:6px;">Anglo-Bavarian Mineral Trade</h3>
+            <p style="font-size:0.8125rem;color:var(--text-secondary);margin-bottom:16px;">
+              Publish RFQs, agree canonical terms, fund escrow via licensed South African bank partner, and monitor custody.
+            </p>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
+              <a href="orders.html" class="topbar-site-pill">Orders &amp; Agreements (APP-02, ORD-02)</a>
+              <a href="route-builder.html" class="topbar-site-pill">Route Plan Builder (ROUTE-01)</a>
+              <a href="payment-builder.html" class="topbar-site-pill">Payment Plan Builder (PAY-01)</a>
+              <a href="escrow-funding.html" class="topbar-site-pill">Escrow Funding (PAY-02)</a>
+            </div>
+          </div>
+          <a href="client-dashboard.html" class="btn btn-primary" style="width:100%;">Enter Buyer Workspace →</a>
+        </div>
+
+        <!-- 2. Supplier Workspace -->
+        <div class="card" style="display:flex;flex-direction:column;justify-content:space-between;">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <span class="badge badge-blue">Supplier Workspace</span>
+              <span class="meta-text">ZAR 145.5k Releasable</span>
+            </div>
+            <h3 style="font-size:1.15rem;font-weight:600;margin-bottom:6px;">Highveld Logistics &amp; Mining</h3>
+            <p style="font-size:0.8125rem;color:var(--text-secondary);margin-bottom:16px;">
+              Submit sealed tender bids, sign versioned agreements, coordinate dispatches, and receive verified rand payouts.
+            </p>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
+              <a href="tender-trail.html" class="topbar-site-pill">Tender Trail &amp; Sealed Bids (TEN-01)</a>
+              <a href="order-detail.html" class="topbar-site-pill">Sign Canonical Agreement (ORD-02)</a>
+              <a href="shipment-timeline.html" class="topbar-site-pill">Signed Shipment Timeline (TIM-01)</a>
+              <a href="payments.html" class="topbar-site-pill">Wallet &amp; Double-Entry Ledger (PAY-03)</a>
+            </div>
+          </div>
+          <a href="worker-dashboard.html" class="btn btn-secondary" style="width:100%;">Enter Supplier Workspace →</a>
+        </div>
+
+        <!-- 3. Logistics & Guest Handoff Portal -->
+        <div class="card" style="display:flex;flex-direction:column;justify-content:space-between;border-color:var(--border-gold);">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <span class="badge badge-gold">Carrier &amp; Guest Portal</span>
+              <span class="meta-text">No App / No Wallet</span>
+            </div>
+            <h3 style="font-size:1.15rem;font-weight:600;margin-bottom:6px;">Driver &amp; Warehouse Handoffs</h3>
+            <p style="font-size:0.8125rem;color:var(--text-secondary);margin-bottom:16px;">
+              Drivers and depot staff confirm handoffs via short-lived one-time mobile links. Two distinct cryptographic signatures required.
+            </p>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
+              <a href="guest-handoff.html" class="topbar-site-pill">Mobile Guest Handoff (GST-01, GST-02)</a>
+              <a href="partner-directory.html" class="topbar-site-pill">Vetted Partner Directory (PART-01)</a>
+              <a href="shipment-overview.html" class="topbar-site-pill">Live Custody &amp; Parcels (SHIP-01)</a>
+            </div>
+          </div>
+          <a href="guest-handoff.html" class="btn btn-primary" style="width:100%;">Open Driver Guest Handoff →</a>
+        </div>
+
+        <!-- 4. Operations Console -->
+        <div class="card" style="display:flex;flex-direction:column;justify-content:space-between;">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <span class="badge badge-neutral">Operations Console</span>
+              <span class="meta-text">KYB, Disputes, Ledger</span>
+            </div>
+            <h3 style="font-size:1.15rem;font-weight:600;margin-bottom:6px;">Patela Operations &amp; Review</h3>
+            <p style="font-size:0.8125rem;color:var(--text-secondary);margin-bottom:16px;">
+              Review KYB onboarding, arbitrate isolated parcel disputes, manage contract pause keys, and reconcile ledger vs vault.
+            </p>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
+              <a href="operations-console.html" class="topbar-site-pill">Operations Queue &amp; Health (OPS-01)</a>
+              <a href="operations-console.html#disputes" class="topbar-site-pill">Dispute Resolution Console (OPS-02)</a>
+              <a href="business-verification.html" class="topbar-site-pill">Business KYB Verification (AUTH-03)</a>
+            </div>
+          </div>
+          <a href="operations-console.html" class="btn btn-secondary" style="width:100%;">Open Operations Console →</a>
+        </div>
+
+        <!-- 5. Forensic Auditor View -->
+        <div class="card" style="display:flex;flex-direction:column;justify-content:space-between;">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <span class="badge badge-neutral">Auditor View</span>
+              <span class="meta-text">Read-Only Forensic</span>
+            </div>
+            <h3 style="font-size:1.15rem;font-weight:600;margin-bottom:6px;">Auditor Trail &amp; Hash Verifier</h3>
+            <p style="font-size:0.8125rem;color:var(--text-secondary);margin-bottom:16px;">
+              Independent chronological proof of versions, signatures, anchor batches on Base Sepolia, and live byte hash verifier.
+            </p>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
+              <a href="auditor-trail.html" class="topbar-site-pill">Forensic Event Trail (AUD-01)</a>
+              <a href="auditor-trail.html#verifier" class="topbar-site-pill">Drag &amp; Drop Byte Verifier (AUD-02)</a>
+              <a href="documents-evidence.html" class="topbar-site-pill">Documents &amp; Evidence Vault (DOC-01)</a>
+            </div>
+          </div>
+          <a href="auditor-trail.html" class="btn btn-secondary" style="width:100%;">Open Auditor Trail →</a>
+        </div>
+      </div>
+
+      <!-- Comprehensive Sitemap Catalog (Section 2) -->
+      <section class="card-flush" style="margin-bottom:36px;">
+        <div style="padding:20px 24px;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h2 style="font-size:1.1rem;margin:0;font-weight:500;">Complete Blueprint Sitemap &amp; Screen Directory</h2>
+            <div class="meta-text" style="margin-top:2px;">All 28 specification screen IDs mapped directly to functional HTML prototype views</div>
+          </div>
+          <span class="badge badge-gold">Section 2 Mapping</span>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width:110px;">ID</th>
+                <th>Page Title</th>
+                <th>Audience</th>
+                <th>Core Purpose &amp; Architecture Rule</th>
+                <th class="right">Prototype Link</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono" style="color:var(--gold);">PUB-01</td>
+                <td><strong>Landing / Product Overview</strong></td>
+                <td>All Prospective Users</td>
+                <td>Explain problem, custody workflow, honest trust boundary and ZAR settlement.</td>
+                <td class="right"><a href="index.html" class="topbar-site-pill">index.html</a></td>
+              </tr>
+              <tr>
+                <td class="mono" style="color:var(--gold);">AUTH-02/03</td>
+                <td><strong>Business KYB Verification Status</strong></td>
+                <td>Business Admin</td>
+                <td>Capture CIPC details, director IDs, and show verification status before escrow funding.</td>
+                <td class="right"><a href="business-verification.html" class="topbar-site-pill">business-verification.html</a></td>
+              </tr>
+              <tr>
+                <td class="mono" style="color:var(--gold);">APP-02</td>
+                <td><strong>Orders List &amp; Stage Filter</strong></td>
+                <td>Buyer / Supplier</td>
+                <td>Track orders with clear distinction between Order state, Shipment state and Payment state.</td>
+                <td class="right"><a href="orders.html" class="topbar-site-pill">orders.html</a></td>
+              </tr>
+              <tr>
+                <td class="mono" style="color:var(--gold);">ORD-01</td>
+                <td><strong>Create Order / RFQ</strong></td>
+                <td>Buyer</td>
+                <td>Describe goods, quantities, destinations, and direct or sealed tender bidding mode.</td>
+                <td class="right"><a href="create-order.html" class="topbar-site-pill">create-order.html</a></td>
+              </tr>
+              <tr>
+                <td class="mono" style="color:var(--gold);">TEN-01</td>
+                <td><strong>Tender Trail &amp; Sealed Bids</strong></td>
+                <td>Supplier / Buyer</td>
+                <td>Submit encrypted sealed bids, score against rubric, and convert award to binding order.</td>
+                <td class="right"><a href="tender-trail.html" class="topbar-site-pill">tender-trail.html</a></td>
+              </tr>
+              <tr>
+                <td class="mono" style="color:var(--gold);">ORD-02</td>
+                <td><strong>Order Detail &amp; Agreement</strong></td>
+                <td>Buyer &amp; Supplier</td>
+                <td>Canonical agreement terms, dual signatures, and Base Sepolia block anchor.</td>
+                <td class="right"><a href="order-detail.html" class="topbar-site-pill">order-detail.html</a></td>
+              </tr>
+              <tr>
+                <td class="mono" style="color:var(--gold);">SHIP-01</td>
+                <td><strong>Shipment Overview &amp; Route Diagram</strong></td>
+                <td>Buyer / Supplier / Partner</td>
+                <td>Visual multi-hop route graph, parcel branches, and verified custody holder.</td>
+                <td class="right"><a href="shipment-overview.html" class="topbar-site-pill">shipment-overview.html</a></td>
+              </tr>
+              <tr>
+                <td class="mono" style="color:var(--gold);">ROUTE-01</td>
+                <td><strong>Route Plan Builder</strong></td>
+                <td>Buyer &amp; Supplier</td>
+                <td>Route-agnostic graph: add nodes, legs, proof levels and allowed signer roles.</td>
+                <td class="right"><a href="route-builder.html" class="topbar-site-pill">route-builder.html</a></td>
+              </tr>
+              <tr>
+                <td class="mono" style="color:var(--gold);">PAY-01</td>
+                <td><strong>Payment Plan Builder</strong></td>
+                <td>Buyer &amp; Supplier</td>
+                <td>Allocate tranches with live exact sum validation in ZAR; mandatory final acceptance rule.</td>
+                <td class="right"><a href="payment-builder.html" class="topbar-site-pill">payment-builder.html</a></td>
+              </tr>
+              <tr>
+                <td class="mono" style="color:var(--gold);">PAY-02</td>
+                <td><strong>Escrow Funding Lifecycle</strong></td>
+                <td>Buyer</td>
+                <td>5 distinct stages: Deposit initiated &rarr; Rand cleared &rarr; Conversion &rarr; Stablecoin &rarr; Locked.</td>
+                <td class="right"><a href="escrow-funding.html" class="topbar-site-pill">escrow-funding.html</a></td>
+              </tr>
+              <tr>
+                <td class="mono" style="color:var(--gold);">PAY-03</td>
+                <td><strong>Wallet &amp; Double-Entry Ledger</strong></td>
+                <td>Buyer / Supplier / Partner</td>
+                <td>Three rand buckets: Available, Locked in Escrow, Payable; double-entry audit records.</td>
+                <td class="right"><a href="payments.html" class="topbar-site-pill">payments.html</a></td>
+              </tr>
+              <tr>
+                <td class="mono" style="color:var(--gold);">GST-01/02</td>
+                <td><strong>Two-Party Guest Handoff Portal</strong></td>
+                <td>Driver &amp; Warehouse Staff</td>
+                <td>Short-lived one-time mobile link; two distinct signatures required; instant receipt.</td>
+                <td class="right"><a href="guest-handoff.html" class="topbar-site-pill">guest-handoff.html</a></td>
+              </tr>
+              <tr>
+                <td class="mono" style="color:var(--gold);">TIM-01</td>
+                <td><strong>Chronological Shipment Timeline</strong></td>
+                <td>All Order Parties</td>
+                <td>Append-only event log with actor, timestamp, version, and cryptographic hash proof.</td>
+                <td class="right"><a href="shipment-timeline.html" class="topbar-site-pill">shipment-timeline.html</a></td>
+              </tr>
+              <tr>
+                <td class="mono" style="color:var(--gold);">PART-01/02</td>
+                <td><strong>Partner Directory &amp; Booking</strong></td>
+                <td>Buyer / Supplier / Ops</td>
+                <td>Vetted freight carriers, rate card versions, insurance expiry, and route leg booking.</td>
+                <td class="right"><a href="partner-directory.html" class="topbar-site-pill">partner-directory.html</a></td>
+              </tr>
+              <tr>
+                <td class="mono" style="color:var(--gold);">DIS-01</td>
+                <td><strong>Dispute Centre &amp; Isolated Holding</strong></td>
+                <td>Buyer / Supplier / Arbitrator</td>
+                <td>Hold only affected parcel funds (R 121,250); allow unaffected tranches to proceed.</td>
+                <td class="right"><a href="dispute-centre.html" class="topbar-site-pill">dispute-centre.html</a></td>
+              </tr>
+              <tr>
+                <td class="mono" style="color:var(--gold);">DOC-01</td>
+                <td><strong>Documents &amp; Evidence Vault</strong></td>
+                <td>Authorised Parties</td>
+                <td>Byte-level SHA-256 hashing; invoice OCR extraction marked as advisory suggestion.</td>
+                <td class="right"><a href="documents-evidence.html" class="topbar-site-pill">documents-evidence.html</a></td>
+              </tr>
+              <tr>
+                <td class="mono" style="color:var(--gold);">AUD-01/02</td>
+                <td><strong>Auditor Trail &amp; Hash Verifier</strong></td>
+                <td>Auditor / Compliance</td>
+                <td>Read-only forensic log and drag-and-drop file hash verification against stored anchor.</td>
+                <td class="right"><a href="auditor-trail.html" class="topbar-site-pill">auditor-trail.html</a></td>
+              </tr>
+              <tr>
+                <td class="mono" style="color:var(--gold);">OPS-01/05</td>
+                <td><strong>Operations &amp; Reconciliation Console</strong></td>
+                <td>Restricted Ops</td>
+                <td>KYB review, dispute split/refund ruling, contract pause controls, ledger vs vault sync.</td>
+                <td class="right"><a href="operations-console.html" class="topbar-site-pill">operations-console.html</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
     </main>
 
-    <footer style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;" class="meta-text">
-      <span>Patela Workspace · Simulated Escrow &amp; Advisory AI Verification (Base Sepolia Demo)</span>
-      <div style="display:flex;align-items:center;gap:14px;">
-        <a href="/" data-site-path="/" style="color:var(--text-secondary);">Landing Page</a>
-        <a href="/marketplace" data-site-path="/marketplace" style="color:var(--text-secondary);">Public Marketplace</a>
-        <a href="/security" data-site-path="/security" style="color:var(--text-secondary);">Security</a>
+    <!-- Footer -->
+    <footer style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:20px;border-top:1px solid var(--border-subtle);" class="meta-text">
+      <span>Patela Supply Chain &amp; Escrow Blueprint · Version 1.0 (12 November 2026)</span>
+      <div style="display:flex;align-items:center;gap:16px;">
+        <a href="orders.html" style="color:var(--text-secondary);">Orders</a>
+        <a href="guest-handoff.html" style="color:var(--text-secondary);">Guest Handoff</a>
+        <a href="operations-console.html" style="color:var(--text-secondary);">Operations</a>
+        <a href="auditor-trail.html" style="color:var(--text-secondary);">Auditor Trail</a>
       </div>
     </footer>
   </div>
 
   <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/patella-blueprint.js"></script>
   <script src="assets/js/interactions.js"></script>
   <script>
-    (function () {
-      function resolveHref(sitePath) {
-        if (window.location.protocol === 'file:') {
-          return '../public/index.html';
-        }
-        return sitePath;
-      }
-
-      document.querySelectorAll('[data-site-path]').forEach(function (link) {
-        var p = link.getAttribute('data-site-path');
-        if (p) link.setAttribute('href', resolveHref(p));
-      });
-
-      function refreshLiveMetrics() {
-        if (!window.PatelaStore) return;
-        var st = window.PatelaStore.getState();
-        if (st && st.balances) {
-          var cEl = document.getElementById('entry-client-escrow');
-          var wEl = document.getElementById('entry-worker-escrow');
-          if (cEl && st.balances.client) {
-            cEl.textContent = '$' + Number(st.balances.client.inEscrow || 2450).toLocaleString() + ' USDC in escrow';
-          }
-          if (wEl && st.balances.worker) {
-            wEl.textContent = '$' + Number(st.balances.worker.activeEscrow || 1850).toLocaleString() + ' USDC secured';
-          }
-        }
-      }
-      refreshLiveMetrics();
-
-      function navigateFluid(href, role) {
-        if (role && window.PatelaStore) {
-          window.PatelaStore.setRole(role);
-        }
-        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-          window.location.href = href;
-          return;
-        }
-        document.body.classList.add('ios-page-leaving');
-        setTimeout(function () {
-          window.location.href = href;
-        }, 170);
-      }
-
-      document.getElementById('enter-client-btn').addEventListener('click', function (e) {
-        e.preventDefault();
-        navigateFluid('client-dashboard.html', 'client');
-      });
-      document.getElementById('enter-worker-btn').addEventListener('click', function (e) {
-        e.preventDefault();
-        navigateFluid('worker-dashboard.html', 'worker');
-      });
-      document.querySelectorAll('[data-role-jump]').forEach(function (link) {
-        link.addEventListener('click', function (e) {
-          e.preventDefault();
-          navigateFluid(link.getAttribute('href'), link.getAttribute('data-role-jump'));
-        });
-      });
-      document.getElementById('entry-reset-btn').addEventListener('click', function () {
-        window.PatelaStore.resetState();
-        refreshLiveMetrics();
-        window.PatelaUI.toast('Demo State Reset', 'Default balances and projects restored.');
-      });
-    })();
+    document.getElementById('entry-reset-btn').addEventListener('click', function () {
+      window.PatelaBlueprint.resetState();
+      window.PatelaStore.resetState();
+      window.PatelaUI.toast('State Restored', 'Blueprint state, escrow balances and demo narrative reset to defaults.');
+    });
   </script>
 </body>
 </html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Partner Directory &amp; Booking (PART-01, PART-02)</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/blueprint.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-force-role="client" data-page="partner-directory" data-breadcrumb="Partner Directory (PART-01)">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content">
+        <!-- Top Header -->
+        <section class="welcome-header" aria-label="Partner Header">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+              <span class="section-label" style="color:var(--gold);margin-bottom:0;">LOGISTICS NETWORK · PART-01 &amp; PART-02</span>
+              <span class="badge badge-gold">Vetted Carriers &amp; Hubs</span>
+              <span class="badge badge-neutral">Confirmed Handoff Metrics</span>
+            </div>
+            <h1 class="page-title" style="font-size:1.85rem;">Logistics Partner Directory &amp; Leg Booking</h1>
+            <p class="page-subtitle">Choose carriers and bonded warehouses based on verified KYB, active cargo insurance, and on-chain handoff track records.</p>
+          </div>
+          <div class="welcome-actions">
+            <button type="button" class="btn btn-secondary" id="invite-partner-btn">+ Invite External Carrier</button>
+            <a href="route-builder.html" class="btn btn-primary">Assign to Route Leg (ROUTE-01) →</a>
+          </div>
+        </section>
+
+        <!-- Trust Disclosure Banner -->
+        <div class="trust-boundary-card" style="margin-bottom:24px;">
+          <div style="color:var(--gold);font-size:1.3rem;">🚛</div>
+          <div>
+            <strong>Partner Truth &amp; Independence (Section 4.5):</strong>
+            Patela does not operate vehicles or warehouses. Performance ratings shown below are strictly derived from <strong>confirmed cryptographic handoffs</strong> recorded on-chain, not unverified reviews. Insurance policies are verified against underwriters.
+          </div>
+        </div>
+
+        <!-- Partner Cards Grid (Section 4.5 PART-01) -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:24px;margin-bottom:32px;">
+          <!-- Partner 1 -->
+          <div class="card" style="display:flex;flex-direction:column;justify-content:space-between;border-color:var(--border-gold);">
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px;">
+                <div>
+                  <span class="badge badge-gold" style="margin-bottom:4px;">Network Partner</span>
+                  <h3 style="font-size:1.15rem;font-weight:600;margin:0;color:var(--text-primary);">
+                    Trans-Kalahari Haulage &amp; Intermodal (Pty) Ltd
+                  </h3>
+                  <div class="meta-text" style="font-size:0.75rem;margin-top:2px;">CIPC Reg: 2018/491029/07 · Sandton, GP</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:1.2rem;font-weight:600;color:var(--success);">98.8%</div>
+                  <div class="meta-text" style="font-size:0.68rem;">342 Handoffs</div>
+                </div>
+              </div>
+
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
+                <span class="topbar-site-pill" style="font-size:0.7rem;">Heavy Road Haulage</span>
+                <span class="topbar-site-pill" style="font-size:0.7rem;">Intermodal Rail/Road</span>
+                <span class="topbar-site-pill" style="font-size:0.7rem;">KZN &rarr; Gauteng Corridor</span>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:8px;padding:12px;background:var(--surface-subtle);border-radius:var(--radius-sm);font-size:0.75rem;margin-bottom:14px;">
+                <div style="display:flex;justify-content:space-between;">
+                  <span class="meta-text">Insurance:</span>
+                  <span style="color:var(--text-primary);">MUTUAL-FREIGHT-88201 (R 20M Cargo)</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;">
+                  <span class="meta-text">Rate Card:</span>
+                  <span class="mono" style="color:var(--gold-light);">v2026.3 (R 420.00 / MT)</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;">
+                  <span class="meta-text">Telematics:</span>
+                  <span style="color:var(--success);">✓ Active Satellite &amp; Seal Tracking</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;">
+              <button type="button" class="btn btn-secondary btn-sm" style="flex:1;">View Rate Card</button>
+              <a href="route-builder.html" class="btn btn-primary btn-sm" style="flex:1;">Book for Leg 2 →</a>
+            </div>
+          </div>
+
+          <!-- Partner 2 -->
+          <div class="card" style="display:flex;flex-direction:column;justify-content:space-between;">
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px;">
+                <div>
+                  <span class="badge badge-blue" style="margin-bottom:4px;">Bonded Facility</span>
+                  <h3 style="font-size:1.15rem;font-weight:600;margin:0;color:var(--text-primary);">
+                    Durban Bonded Terminal &amp; Hub Services
+                  </h3>
+                  <div class="meta-text" style="font-size:0.75rem;margin-top:2px;">CIPC Reg: 2015/019284/07 · Bayhead, KZN</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:1.2rem;font-weight:600;color:var(--success);">99.4%</div>
+                  <div class="meta-text" style="font-size:0.68rem;">890 Handoffs</div>
+                </div>
+              </div>
+
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
+                <span class="topbar-site-pill" style="font-size:0.7rem;">Bonded Warehousing</span>
+                <span class="topbar-site-pill" style="font-size:0.7rem;">Weighbridge Calibration</span>
+                <span class="topbar-site-pill" style="font-size:0.7rem;">Tamper Seal Staging</span>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:8px;padding:12px;background:var(--surface-subtle);border-radius:var(--radius-sm);font-size:0.75rem;margin-bottom:14px;">
+                <div style="display:flex;justify-content:space-between;">
+                  <span class="meta-text">Insurance:</span>
+                  <span style="color:var(--text-primary);">SANLAM-WHSE-91820 (R 50M Liability)</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;">
+                  <span class="meta-text">Rate Card:</span>
+                  <span class="mono" style="color:var(--gold-light);">v2026.1 (Bonded Depot Staging)</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;">
+                  <span class="meta-text">Custody Tokens:</span>
+                  <span style="color:var(--success);">✓ QR &amp; Guest Driver Integration</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;">
+              <button type="button" class="btn btn-secondary btn-sm" style="flex:1;">View Facility Specs</button>
+              <a href="route-builder.html" class="btn btn-secondary btn-sm" style="flex:1;">Assign as Hub Node</a>
+            </div>
+          </div>
+
+          <!-- Partner 3 -->
+          <div class="card" style="display:flex;flex-direction:column;justify-content:space-between;">
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px;">
+                <div>
+                  <span class="badge badge-neutral" style="margin-bottom:4px;">Invited Partner</span>
+                  <h3 style="font-size:1.15rem;font-weight:600;margin:0;color:var(--text-primary);">
+                    Highveld Express Drayage (Pty) Ltd
+                  </h3>
+                  <div class="meta-text" style="font-size:0.75rem;margin-top:2px;">CIPC Reg: 2022/948192/07 · City Deep, GP</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:1.2rem;font-weight:600;color:var(--text-primary);">97.2%</div>
+                  <div class="meta-text" style="font-size:0.68rem;">184 Handoffs</div>
+                </div>
+              </div>
+
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
+                <span class="topbar-site-pill" style="font-size:0.7rem;">Last-Mile Drayage</span>
+                <span class="topbar-site-pill" style="font-size:0.7rem;">Gauteng Regional Delivery</span>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:8px;padding:12px;background:var(--surface-subtle);border-radius:var(--radius-sm);font-size:0.75rem;margin-bottom:14px;">
+                <div style="display:flex;justify-content:space-between;">
+                  <span class="meta-text">Insurance:</span>
+                  <span style="color:var(--text-primary);">HOLLARD-CIT-41920 (R 10M Cargo)</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;">
+                  <span class="meta-text">Rate Card:</span>
+                  <span class="mono" style="color:var(--gold-light);">v2026.2 (Local Shunting)</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;">
+                  <span class="meta-text">Vetting:</span>
+                  <span style="color:var(--success);">✓ CIPC &amp; Tax Clearance Active</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;">
+              <button type="button" class="btn btn-secondary btn-sm" style="flex:1;">View Details</button>
+              <a href="route-builder.html" class="btn btn-secondary btn-sm" style="flex:1;">Book Drayage</a>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/patella-blueprint.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/interactions.js"></script>
+  <script>
+    document.getElementById('invite-partner-btn').addEventListener('click', function () {
+      window.PatelaUI.toast('Invite Carrier', 'Enter carrier email or phone to issue onboarding link with rate card registration.');
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Payment Plan Builder (PAY-01)</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/blueprint.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-force-role="client" data-page="payment-builder" data-breadcrumb="Payment Plan Builder">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content">
+        <!-- Top Header -->
+        <section class="welcome-header" aria-label="Payment Plan Header">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+              <span class="section-label" style="color:var(--gold);margin-bottom:0;">FINANCIAL GOVERNANCE · PAY-01</span>
+              <span class="badge badge-gold">Exact Sum Conservation</span>
+              <span class="badge badge-neutral">Plan Version v1.2</span>
+            </div>
+            <h1 class="page-title" style="font-size:1.85rem;">Conditional Escrow Payment Plan</h1>
+            <p class="page-subtitle">Agree who gets paid, how much they receive, and what custody events make each tranche releasable.</p>
+          </div>
+          <div class="welcome-actions">
+            <a href="escrow-funding.html" class="btn btn-secondary">Escrow Vault (PAY-02)</a>
+            <button type="button" class="btn btn-primary" id="submit-plan-btn">Sign &amp; Lock Plan Version →</button>
+          </div>
+        </section>
+
+        <!-- Live Math & Conservation Invariant Monitor (Section 1.1 & 4.3 PAY-01) -->
+        <section class="card" style="margin-bottom:28px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:14px;">
+            <div>
+              <div class="section-label" style="color:var(--gold);">MONEY CONSERVATION INVARIANT (SECTION 1.1)</div>
+              <h2 style="font-size:1.15rem;margin:4px 0 0;font-weight:600;">Escrow Allocation vs. Governed Total</h2>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="badge badge-success" id="math-status-badge">✓ Exact Conservation Matched</span>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:16px;">
+            <div class="card-elevated">
+              <span class="meta-text" style="font-size:0.72rem;text-transform:uppercase;">Agreed Escrow Total</span>
+              <div class="metric-value tabular" style="font-size:1.4rem;color:var(--text-primary);margin-top:4px;">
+                R 485,000.00 <span class="metric-unit">ZAR</span>
+              </div>
+              <div class="meta-text" style="font-size:0.7rem;margin-top:2px;">Canonical Agreement ORD-2026-8941</div>
+            </div>
+
+            <div class="card-elevated" style="border-color:var(--border-gold);">
+              <span class="meta-text" style="font-size:0.72rem;text-transform:uppercase;color:var(--gold);">Allocated Across Tranches</span>
+              <div class="metric-value tabular" style="font-size:1.4rem;color:var(--gold-light);margin-top:4px;" id="allocated-sum-display">
+                R 485,000.00 <span class="metric-unit">100%</span>
+              </div>
+              <div class="meta-text" style="font-size:0.7rem;margin-top:2px;">4 Tranches defined</div>
+            </div>
+
+            <div class="card-elevated">
+              <span class="meta-text" style="font-size:0.72rem;text-transform:uppercase;">Unallocated Dust / Remainder</span>
+              <div class="metric-value tabular" style="font-size:1.4rem;color:var(--success);margin-top:4px;" id="unallocated-diff-display">
+                R 0.00 <span class="metric-unit">ZAR</span>
+              </div>
+              <div class="meta-text" style="font-size:0.7rem;margin-top:2px;">Zero remainder (No rounding loss)</div>
+            </div>
+          </div>
+
+          <!-- Invariant Requirements Notice -->
+          <div class="trust-boundary-card" style="margin-top:16px;">
+            <div style="color:var(--gold);font-size:1.3rem;">⚖️</div>
+            <div>
+              <strong>Mandatory Architecture Rules (Section 4.3):</strong>
+              1) Every tranche must sum exactly to the escrowed total before submission.
+              2) At least one tranche (Tranche 4) must remain strictly tied to final delivery acceptance by the buyer.
+              3) Released tranches are immutable and cannot be rewritten or clawed back.
+            </div>
+          </div>
+        </section>
+
+        <!-- Tranche Specification Table -->
+        <section class="card-flush" style="margin-bottom:28px;">
+          <div style="padding:20px 24px;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+            <div>
+              <h2 style="font-size:1.1rem;margin:0;font-weight:500;">Payment Tranches &amp; Architectural Triggers</h2>
+              <div class="meta-text" style="margin-top:2px;">Triggers reference verified custody events from route graph nodes</div>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" id="add-tranche-btn">+ Add Tranche</button>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Tranche</th>
+                  <th>Share</th>
+                  <th>Amount (ZAR)</th>
+                  <th>Payee</th>
+                  <th>Architectural Trigger</th>
+                  <th>Response Window</th>
+                  <th>Status</th>
+                  <th class="right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="tranches-table-tbody">
+                <!-- Tranche 1 -->
+                <tr>
+                  <td>
+                    <div style="font-weight:600;color:var(--text-primary);">Tranche 1</div>
+                    <div class="meta-text" style="font-size:0.7rem;">Mobilization &amp; Origin Dispatch</div>
+                  </td>
+                  <td class="tabular">20%</td>
+                  <td class="tabular" style="font-weight:600;color:var(--text-primary);">R 97,000.00</td>
+                  <td>Highveld Logistics (Supplier)</td>
+                  <td>
+                    <span class="badge badge-neutral">Origin Dispatch Handoff</span>
+                    <div class="meta-text" style="font-size:0.7rem;margin-top:2px;">Node 01 dual signature confirmed</div>
+                  </td>
+                  <td class="meta-text">24 Hours</td>
+                  <td><span class="badge badge-success">✓ Released</span></td>
+                  <td class="right">
+                    <span class="hash-pill" title="Base Sepolia Release Tx">Tx 0x41ab…21a1</span>
+                  </td>
+                </tr>
+
+                <!-- Tranche 2 -->
+                <tr style="background:rgba(255, 226, 178, 0.04);">
+                  <td>
+                    <div style="font-weight:600;color:var(--gold-light);">Tranche 2</div>
+                    <div class="meta-text" style="font-size:0.7rem;">Durban Hub Waypoint Handoff</div>
+                  </td>
+                  <td class="tabular">30%</td>
+                  <td class="tabular" style="font-weight:600;color:var(--gold-light);">R 145,500.00</td>
+                  <td>Highveld &amp; Trans-Kalahari</td>
+                  <td>
+                    <span class="badge badge-gold">Durban Inland Hub Handoff</span>
+                    <div class="meta-text" style="font-size:0.7rem;margin-top:2px;">Node 02 inward custody verified</div>
+                  </td>
+                  <td class="meta-text">48 Hours (Auto-release if no dispute)</td>
+                  <td><span class="badge badge-gold">⚡ Releasable</span></td>
+                  <td class="right">
+                    <button type="button" class="btn btn-primary btn-sm" id="release-tranche-2-btn">Authorize Release →</button>
+                  </td>
+                </tr>
+
+                <!-- Tranche 3 -->
+                <tr>
+                  <td>
+                    <div style="font-weight:600;color:var(--text-primary);">Tranche 3</div>
+                    <div class="meta-text" style="font-size:0.7rem;">Parcel A Delivery at City Deep</div>
+                  </td>
+                  <td class="tabular">25%</td>
+                  <td class="tabular" style="font-weight:600;color:var(--text-primary);">R 121,250.00</td>
+                  <td>Highveld Logistics (Supplier)</td>
+                  <td>
+                    <span class="badge badge-neutral">Parcel A Destination Handoff</span>
+                    <div class="meta-text" style="font-size:0.7rem;margin-top:2px;">Consignee guest token signature</div>
+                  </td>
+                  <td class="meta-text">72 Hours</td>
+                  <td><span class="badge badge-neutral">Locked in Escrow</span></td>
+                  <td class="right">
+                    <span class="meta-text">Awaiting Arrival</span>
+                  </td>
+                </tr>
+
+                <!-- Tranche 4 -->
+                <tr style="background:rgba(228, 126, 131, 0.03);">
+                  <td>
+                    <div style="font-weight:600;color:var(--error);">Tranche 4</div>
+                    <div class="meta-text" style="font-size:0.7rem;">Final Delivery &amp; Acceptance</div>
+                  </td>
+                  <td class="tabular">25%</td>
+                  <td class="tabular" style="font-weight:600;color:var(--text-primary);">R 121,250.00</td>
+                  <td>Highveld Logistics (Supplier)</td>
+                  <td>
+                    <span class="badge badge-error">Final Consignee Acceptance</span>
+                    <div class="meta-text" style="font-size:0.7rem;margin-top:2px;">Requires Parcel B dispute resolution</div>
+                  </td>
+                  <td class="meta-text">5 Business Days</td>
+                  <td><span class="badge badge-error">Held · Isolated Dispute</span></td>
+                  <td class="right">
+                    <a href="dispute-centre.html" class="btn btn-secondary btn-sm">Resolve Dispute</a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/patella-blueprint.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/interactions.js"></script>
+  <script>
+    document.getElementById('release-tranche-2-btn').addEventListener('click', function () {
+      var tranche = window.PatelaBlueprint.releaseTranche('TR-02');
+      if (tranche) {
+        window.PatelaUI.toast('Tranche 2 Released', 'R 145,500.00 successfully released to supplier. Transaction hash: ' + tranche.txHash.substring(0, 14) + '…');
+        setTimeout(function () {
+          window.location.reload();
+        }, 1200);
+      }
+    });
+
+    document.getElementById('submit-plan-btn').addEventListener('click', function () {
+      window.PatelaUI.toast('Payment Plan Locked', 'Plan v1.2 signed by buyer. Awaiting counterparty consent.');
+    });
+  </script>
+</body>
+</html>

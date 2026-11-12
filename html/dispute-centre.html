@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Dispute Centre &amp; Isolated Escrow (DIS-01)</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/blueprint.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-force-role="client" data-page="dispute-centre" data-breadcrumb="Dispute Centre (DIS-01)">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content">
+        <!-- Top Dispute Header -->
+        <section class="welcome-header" aria-label="Dispute Header">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+              <span class="section-label" style="color:var(--gold);margin-bottom:0;">EXCEPTION RESOLUTION · DIS-01</span>
+              <span class="badge badge-error">1 Active Dispute</span>
+              <span class="badge badge-neutral">Isolated Holding Active</span>
+            </div>
+            <h1 class="page-title" style="font-size:1.85rem;">Dispute Centre &amp; Tranche Isolation</h1>
+            <p class="page-subtitle">Raise a concern against an affected parcel. The disputed amount is held while unaffected tranches and parcels continue moving.</p>
+          </div>
+          <div class="welcome-actions">
+            <button type="button" class="btn btn-secondary" id="open-new-dispute-btn">+ File New Exception</button>
+            <a href="operations-console.html#disputes" class="btn btn-primary">Ops Arbitration Console (OPS-02) →</a>
+          </div>
+        </section>
+
+        <!-- Isolated Escrow Architecture Callout (Section 1.1, 4.4, 5.5) -->
+        <section class="card" style="margin-bottom:28px;border-color:var(--border-gold);">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
+            <div>
+              <div class="section-label" style="color:var(--gold);">ARCHITECTURAL SAFEGUARD (SECTION 5.5)</div>
+              <h2 style="font-size:1.15rem;margin:4px 0 0;font-weight:600;">Isolated Escrow Protection &amp; Capital Efficiency</h2>
+            </div>
+            <span class="badge badge-gold">Non-Blocking Resolution</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:16px;">
+            <!-- Unaffected Funds (Free to flow) -->
+            <div class="card-elevated" style="border-left:3px solid var(--success);">
+              <span class="meta-text" style="font-size:0.72rem;text-transform:uppercase;color:var(--success);">Unaffected Funds (Free to Flow)</span>
+              <div class="metric-value tabular" style="font-size:1.5rem;color:var(--text-primary);margin-top:4px;">
+                R 363,750.00 <span class="metric-unit">75%</span>
+              </div>
+              <div class="meta-text" style="font-size:0.72rem;margin-top:2px;">
+                Parcel A (80 MT) &amp; Tranches 1, 2, 3 continue normal progress without delay.
+              </div>
+            </div>
+
+            <!-- Disputed / Isolated Holding -->
+            <div class="card-elevated" style="border-left:3px solid var(--error);">
+              <span class="meta-text" style="font-size:0.72rem;text-transform:uppercase;color:var(--error);">Isolated Disputed Holding</span>
+              <div class="metric-value tabular" style="font-size:1.5rem;color:var(--error);margin-top:4px;">
+                R 121,250.00 <span class="metric-unit">25%</span>
+              </div>
+              <div class="meta-text" style="font-size:0.72rem;margin-top:2px;">
+                Tied exclusively to Parcel B (40 MT) in Tranche 4. Held in vault pending ruling.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Active Dispute Detail Card (DIS-2026-041) -->
+        <section class="card" style="margin-bottom:28px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                <span class="badge badge-error">Under Review</span>
+                <span class="mono" style="font-size:0.85rem;color:var(--text-primary);font-weight:600;">DIS-2026-041</span>
+              </div>
+              <h2 style="font-size:1.2rem;font-weight:600;margin:0;color:var(--text-primary);">
+                Tamper Seal Broken &amp; Partial Moisture Contamination on Parcel B
+              </h2>
+              <div class="meta-text" style="margin-top:2px;">
+                Linked Order: ORD-2026-8941 · Affected Parcel: PCL-8941-B (40 Metric Tons)
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <span class="meta-text" style="font-size:0.72rem;">Response Window Countdown</span>
+              <div style="font-weight:600;color:var(--gold-light);font-size:1.05rem;">32h 15m remaining</div>
+              <div class="meta-text" style="font-size:0.68rem;">Closes: 14 Nov 2026 17:00 SAST</div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:20px;margin-bottom:20px;">
+            <div>
+              <span class="meta-text" style="font-size:0.72rem;text-transform:uppercase;">Dispute Description</span>
+              <p style="font-size:0.84375rem;line-height:1.5;color:var(--text-secondary);margin-top:4px;">
+                During inward inspection at Durban Inland Hub, container seal #RB-99413 was found severed. Laboratory moisture analysis indicated 8.6% moisture (contract limit: 4.2%). Parcel A passed inspection and was dispatched.
+              </p>
+            </div>
+            <div>
+              <span class="meta-text" style="font-size:0.72rem;text-transform:uppercase;">Assigned Dispute Reviewer</span>
+              <div style="font-weight:500;color:var(--text-primary);margin-top:4px;">Nomvula Sithole (Senior Operations Arbitrator)</div>
+              <div class="meta-text" style="font-size:0.72rem;margin-top:2px;">Independent Review Authority · Impartial Decision Maker</div>
+            </div>
+          </div>
+
+          <!-- Submitted Evidence Files (Byte Hashed) -->
+          <div style="border-top:1px solid var(--border-subtle);padding-top:16px;margin-bottom:20px;">
+            <div style="font-size:0.875rem;font-weight:600;color:var(--text-primary);margin-bottom:10px;">Attached Evidence Files (SHA-256 Byte Verified)</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div class="card-elevated" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <span>📷</span>
+                  <div>
+                    <div style="font-size:0.8125rem;font-weight:500;color:var(--text-primary);">seal_breach_photo_01.jpg (2.4 MB)</div>
+                    <div class="meta-text" style="font-size:0.7rem;">High-resolution photo of severed security seal #RB-99413</div>
+                  </div>
+                </div>
+                <span class="hash-pill">SHA-256: 0x9924a…81c2</span>
+              </div>
+
+              <div class="card-elevated" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <span>🧪</span>
+                  <div>
+                    <div style="font-size:0.8125rem;font-weight:500;color:var(--text-primary);">lab_moisture_analysis.pdf (480 KB)</div>
+                    <div class="meta-text" style="font-size:0.7rem;">Certified assay reading: 8.6% moisture content</div>
+                  </div>
+                </div>
+                <span class="hash-pill">SHA-256: 0x5510b…442a</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Arbitrated Settlement Recommendation (Section 5.5 & OPS-02) -->
+          <div style="padding:16px;background:rgba(255, 226, 178, 0.04);border:1px solid var(--border-gold);border-radius:var(--radius-sm);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;">
+            <div>
+              <div style="font-weight:600;color:var(--gold-light);font-size:0.9rem;">Proposed Split/Refund Settlement (OPS-02)</div>
+              <div style="font-size:0.8125rem;color:var(--text-secondary);margin-top:2px;">
+                Release to Supplier: <strong>R 72,750 (60%)</strong> · Refund to Buyer: <strong>R 48,500 (40%)</strong>. Both parties have consented in review.
+              </div>
+            </div>
+            <a href="operations-console.html#disputes" class="btn btn-primary btn-sm">Execute Split Ruling in Ops Console →</a>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/patella-blueprint.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/interactions.js"></script>
+  <script>
+    document.getElementById('open-new-dispute-btn').addEventListener('click', function () {
+      window.PatelaUI.toast('Exception Intake', 'To open a new dispute, select the affected parcel in Shipment Overview.');
+    });
+  </script>
+</body>
+</html>

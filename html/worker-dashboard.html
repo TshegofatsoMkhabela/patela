@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="assets/css/design-system.css" />
   <link rel="stylesheet" href="assets/css/dashboard.css" />
   <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/blueprint.css" />
   <link rel="stylesheet" href="assets/css/responsive.css" />
 </head>
 <body data-force-role="worker" data-page="overview" data-breadcrumb="Overview">
@@ -24,10 +25,32 @@
             <p class="page-subtitle">Your work, progress, and earnings at a glance.</p>
           </div>
           <div class="welcome-actions">
-            <a href="analytics.html" class="btn btn-secondary">Earnings analytics</a>
+            <a href="tender-trail.html" class="btn btn-secondary">Tender Trail (RFQ)</a>
             <a href="marketplace.html" class="btn btn-primary">Explore jobs</a>
           </div>
         </section>
+
+        <!-- Supplier Supply Chain Fulfillment Banner -->
+        <div class="card" style="margin-bottom:24px;border-color:var(--border-gold);background:linear-gradient(135deg, rgba(255,226,178,0.06) 0%, rgba(12,19,32,0.9) 100%);padding:18px 22px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;">
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                <span class="badge badge-gold">Supplier Fulfilment</span>
+                <span class="badge badge-success">R 145,500 Releasable</span>
+              </div>
+              <div style="font-size:1.05rem;font-weight:600;color:var(--text-primary);">
+                ORD-2026-8941: Bulk Bauxite Delivery · Highveld Logistics Ltd
+              </div>
+              <div class="meta-text" style="font-size:0.75rem;margin-top:2px;">
+                Durban waypoint confirmed via two-party guest handoff. Tranche 2 is awaiting buyer release execution.
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;">
+              <a href="order-detail.html" class="btn btn-secondary btn-sm">Agreement &amp; Order →</a>
+              <a href="guest-handoff.html" class="btn btn-primary btn-sm">Issue Destination Link ⚡</a>
+            </div>
+          </div>
+        </div>
 
         <!-- B. Earnings Summary (4 Clean Metric Cards) -->
         <section class="metrics-grid" aria-label="Earnings summary">

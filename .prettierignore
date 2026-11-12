@@ -4,3 +4,4 @@ dist
 out
 package-lock.json
 next-env.d.ts
+html/**

@@ -1,0 +1,297 @@
+/* ==========================================================================
+   PATELLA — SUPPLY CHAIN BLUEPRINT STYLES (blueprint.css)
+   Route Graphs · Two-Party Handoff Stamps · Exact Math Conservation · Forensic Audit
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   ROUTE GRAPH & NODE CONNECTIONS (ROUTE-01, SHIP-01)
+   -------------------------------------------------------------------------- */
+.route-graph-container {
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 20px 8px;
+  position: relative;
+  scrollbar-width: thin;
+}
+
+.route-node-card {
+  flex: 1 1 240px;
+  min-width: 230px;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-neutral);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all var(--transition-fast);
+}
+
+.route-node-card.active-custody {
+  border-color: var(--gold);
+  background: linear-gradient(155deg, rgba(255, 226, 178, 0.08) 0%, rgba(12, 19, 32, 0.95) 100%);
+  box-shadow: 0 0 24px rgba(255, 226, 178, 0.12);
+}
+
+.route-node-card.completed-node {
+  border-color: var(--border-success);
+}
+
+.route-node-card.disputed-node {
+  border-color: var(--border-error);
+  background: linear-gradient(155deg, rgba(228, 126, 131, 0.08) 0%, rgba(12, 19, 32, 0.95) 100%);
+}
+
+.node-step-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-neutral);
+  color: var(--text-primary);
+}
+
+.node-step-badge.completed {
+  background: var(--success-subtle);
+  border-color: var(--border-success);
+  color: var(--success);
+}
+
+.node-step-badge.active {
+  background: var(--gold-subtle);
+  border-color: var(--border-gold);
+  color: var(--gold-light);
+}
+
+.route-connector-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
+  font-size: 1.4rem;
+  padding: 0 4px;
+}
+
+/* --------------------------------------------------------------------------
+   TWO-PARTY GUEST HANDOFF SIGNATURE SLOTS (GST-01, GST-02)
+   -------------------------------------------------------------------------- */
+.dual-signature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin: 20px 0;
+}
+
+.signature-slot-card {
+  background: var(--surface-subtle);
+  border: 1px dashed var(--border-neutral);
+  border-radius: var(--radius-md);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 200px;
+  position: relative;
+  transition: all var(--transition-fast);
+}
+
+.signature-slot-card.signed {
+  border-style: solid;
+  border-color: var(--border-success);
+  background: rgba(110, 231, 168, 0.03);
+}
+
+.signature-slot-card.awaiting {
+  border-color: var(--border-gold);
+  background: rgba(255, 226, 178, 0.03);
+}
+
+.signature-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  border: 1px solid currentColor;
+}
+
+.signature-stamp.valid {
+  color: var(--success);
+  background: var(--success-subtle);
+}
+
+.signature-stamp.pending {
+  color: var(--gold-light);
+  background: var(--gold-subtle);
+}
+
+/* --------------------------------------------------------------------------
+   ESCROW 5-STAGE LIFECYCLE BAR (PAY-02)
+   -------------------------------------------------------------------------- */
+.escrow-pipeline-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  margin: 32px 0 24px;
+  padding: 0 16px;
+}
+
+.escrow-pipeline-bar::before {
+  content: '';
+  position: absolute;
+  top: 15px;
+  left: 32px;
+  right: 32px;
+  height: 2px;
+  background: var(--border-neutral);
+  z-index: 1;
+}
+
+.escrow-step-item {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 140px;
+}
+
+.escrow-step-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-main);
+  border: 2px solid var(--border-neutral);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  transition: all var(--transition-base);
+}
+
+.escrow-step-item.done .escrow-step-circle {
+  border-color: var(--success);
+  background: var(--success-subtle);
+  color: var(--success);
+}
+
+.escrow-step-item.active .escrow-step-circle {
+  border-color: var(--gold);
+  background: var(--gold-subtle);
+  color: var(--gold-light);
+  box-shadow: 0 0 16px rgba(255, 226, 178, 0.4);
+}
+
+.escrow-step-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.escrow-step-item.done .escrow-step-label,
+.escrow-step-item.active .escrow-step-label {
+  color: var(--text-primary);
+}
+
+/* --------------------------------------------------------------------------
+   MONEY CONSERVATION & TRANCHE VALIDATION CALLOUT
+   -------------------------------------------------------------------------- */
+.conservation-validator-box {
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-neutral);
+  border-radius: var(--radius-sm);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.conservation-validator-box.valid {
+  border-color: var(--border-success);
+  background: rgba(110, 231, 168, 0.04);
+}
+
+.conservation-validator-box.invalid {
+  border-color: var(--border-error);
+  background: rgba(228, 126, 131, 0.04);
+}
+
+/* --------------------------------------------------------------------------
+   FORENSIC AUDITOR HASH INSPECTION & PROOFS (AUD-01, AUD-02)
+   -------------------------------------------------------------------------- */
+.hash-pill {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  padding: 4px 8px;
+  border-radius: var(--radius-xs);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  color: var(--gold-light);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hash-pill:hover {
+  background: rgba(255, 226, 178, 0.08);
+  border-color: var(--border-gold);
+}
+
+.drop-zone-verifier {
+  border: 2px dashed var(--border-neutral);
+  border-radius: var(--radius-md);
+  padding: 36px 20px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--surface-subtle);
+  transition: all var(--transition-fast);
+}
+
+.drop-zone-verifier:hover,
+.drop-zone-verifier.drag-over {
+  border-color: var(--gold);
+  background: var(--gold-subtle);
+}
+
+/* --------------------------------------------------------------------------
+   HONEST TRUST BOUNDARY CALLOUT
+   -------------------------------------------------------------------------- */
+.trust-boundary-card {
+  background: linear-gradient(135deg, rgba(255, 226, 178, 0.06) 0%, rgba(12, 19, 32, 0.8) 100%);
+  border: 1px solid var(--border-gold);
+  border-left: 4px solid var(--gold);
+  border-radius: var(--radius-sm);
+  padding: 16px 20px;
+  margin: 16px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.trust-boundary-card p {
+  margin: 0;
+  font-size: 0.84375rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.trust-boundary-card strong {
+  color: var(--gold-light);
+}

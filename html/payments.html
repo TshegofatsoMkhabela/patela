@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="assets/css/design-system.css" />
   <link rel="stylesheet" href="assets/css/dashboard.css" />
   <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/blueprint.css" />
   <link rel="stylesheet" href="assets/css/responsive.css" />
 </head>
 <body data-page="payments" data-breadcrumb="Payments">
@@ -24,6 +25,45 @@
           </div>
           <div class="welcome-actions">
             <a href="analytics.html" class="btn btn-secondary btn-sm">Open financial analytics →</a>
+          </div>
+        </section>
+
+        <!-- Supply Chain Blueprint Rand Buckets (PAY-03) -->
+        <section class="card section-block" style="padding:18px 22px;border-color:var(--border-gold);margin-bottom:24px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
+            <div>
+              <span class="section-label" style="color:var(--gold);margin-bottom:0;">SUPPLY CHAIN LEDGER · PAY-03</span>
+              <h2 style="font-size:1.1rem;font-weight:600;margin:2px 0 0;color:var(--text-primary);">
+                South African Rand (ZAR) Balances &amp; Escrow Buckets
+              </h2>
+            </div>
+            <a href="escrow-funding.html" class="btn btn-secondary btn-sm">Escrow Vault Lifecycle (PAY-02) →</a>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:14px;">
+            <div class="card-elevated">
+              <span class="meta-text" style="font-size:0.7rem;text-transform:uppercase;">1. Available Balance</span>
+              <div class="metric-value tabular" style="font-size:1.35rem;color:var(--text-primary);margin-top:2px;">
+                R 184,200.00 <span class="metric-unit">ZAR</span>
+              </div>
+              <div class="meta-text" style="font-size:0.68rem;margin-top:2px;">Free operating funds in trust</div>
+            </div>
+
+            <div class="card-elevated" style="border-color:var(--border-gold);">
+              <span class="meta-text" style="font-size:0.7rem;text-transform:uppercase;color:var(--gold);">2. Locked in Escrow</span>
+              <div class="metric-value tabular" style="font-size:1.35rem;color:var(--gold-light);margin-top:2px;">
+                R 485,000.00 <span class="metric-unit">ZAR</span>
+              </div>
+              <div class="meta-text" style="font-size:0.68rem;margin-top:2px;">Order ORD-2026-8941 Vault</div>
+            </div>
+
+            <div class="card-elevated">
+              <span class="meta-text" style="font-size:0.7rem;text-transform:uppercase;">3. Payable / Releasable</span>
+              <div class="metric-value tabular" style="font-size:1.35rem;color:var(--success);margin-top:2px;">
+                R 145,500.00 <span class="metric-unit">ZAR</span>
+              </div>
+              <div class="meta-text" style="font-size:0.68rem;margin-top:2px;">Tranche 2 verified waypoint</div>
+            </div>
           </div>
         </section>
 

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Business KYB Verification (AUTH-02, AUTH-03)</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/blueprint.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-force-role="client" data-page="settings" data-breadcrumb="Business KYB Verification">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content">
+        <!-- Top Header -->
+        <section class="welcome-header" aria-label="KYB Header">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+              <span class="section-label" style="color:var(--gold);margin-bottom:0;">ORGANISATION IDENTITY · AUTH-02 &amp; AUTH-03</span>
+              <span class="badge badge-success">KYB Verified</span>
+              <span class="badge badge-neutral">South Africa (CIPC)</span>
+            </div>
+            <h1 class="page-title" style="font-size:1.85rem;">Business Verification &amp; Compliance Status</h1>
+            <p class="page-subtitle">Make KYB review progress, missing evidence, and permitted transactional capacity transparent.</p>
+          </div>
+          <div class="welcome-actions">
+            <button type="button" class="btn btn-secondary" id="update-kyb-btn">+ Upload Fresh Evidence</button>
+            <a href="orders.html" class="btn btn-primary">Return to Orders →</a>
+          </div>
+        </section>
+
+        <!-- KYB Gate Notice (Section 4.1 AUTH-03 & 6) -->
+        <div class="trust-boundary-card" style="margin-bottom:24px;">
+          <div style="color:var(--gold);font-size:1.3rem;">📋</div>
+          <div>
+            <strong>Compliance &amp; Fund Movement Gate (Section 4.1 &amp; 6):</strong>
+            To prevent fraud, only businesses that pass South African KYB verification (CIPC registration, verified directors, and confirmed commercial bank accounts) can fund escrow or receive fiat payouts. Unverified accounts can prepare draft orders and route plans.
+          </div>
+        </div>
+
+        <!-- Registered Legal Organisation Profile -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:24px;margin-bottom:32px;">
+          <!-- Left: Business Legal Entity Details -->
+          <div class="card">
+            <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:16px;">1. Legal Entity Profile (CIPC South Africa)</h2>
+
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div>
+                <label class="form-label">Registered Legal Name</label>
+                <input type="text" class="input" value="Anglo-Bavarian Mineral Trade (Pty) Ltd" readonly />
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div>
+                  <label class="form-label">CIPC Registration Number</label>
+                  <input type="text" class="input mono" value="2021/894012/07" readonly />
+                </div>
+                <div>
+                  <label class="form-label">SARS VAT Number</label>
+                  <input type="text" class="input mono" value="ZA4910284712" readonly />
+                </div>
+              </div>
+
+              <div>
+                <label class="form-label">Registered Physical Address</label>
+                <input type="text" class="input" value="14 Commerce Square, West Road South, Sandton, 2196" readonly />
+              </div>
+
+              <div>
+                <label class="form-label">Designated Signing Director</label>
+                <input type="text" class="input" value="Alex Morgan (Director ID: 880412 5019 088)" readonly />
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: 4-Step Verification Status Tracker -->
+          <div class="card">
+            <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:16px;">2. Verification Progress &amp; Audit Status</h2>
+
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div class="card-elevated" style="border-left:3px solid var(--success);display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-weight:600;font-size:0.85rem;color:var(--text-primary);">CIPC Entity Validation</div>
+                  <div class="meta-text" style="font-size:0.7rem;">Verified against official corporate registry</div>
+                </div>
+                <span class="badge badge-success">✓ Verified</span>
+              </div>
+
+              <div class="card-elevated" style="border-left:3px solid var(--success);display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-weight:600;font-size:0.85rem;color:var(--text-primary);">Director Identity &amp; AML Screening</div>
+                  <div class="meta-text" style="font-size:0.7rem;">Government ID checked · Sanction clearance clear</div>
+                </div>
+                <span class="badge badge-success">✓ Cleared</span>
+              </div>
+
+              <div class="card-elevated" style="border-left:3px solid var(--success);display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-weight:600;font-size:0.85rem;color:var(--text-primary);">Bank Account Confirmation</div>
+                  <div class="meta-text" style="font-size:0.7rem;">Standard Bank Corporate Account letter confirmed</div>
+                </div>
+                <span class="badge badge-success">✓ Verified</span>
+              </div>
+
+              <div class="card-elevated" style="border-left:3px solid var(--success);display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-weight:600;font-size:0.85rem;color:var(--text-primary);">Escrow Settlement Capacity</div>
+                  <div class="meta-text" style="font-size:0.7rem;">Authorized for orders up to R 10,000,000 ZAR</div>
+                </div>
+                <span class="badge badge-success">Active</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/patella-blueprint.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/interactions.js"></script>
+  <script>
+    document.getElementById('update-kyb-btn').addEventListener('click', function () {
+      window.PatelaUI.toast('Upload Documentation', 'Select updated CIPC certificate or bank letter to submit to compliance review.');
+    });
+  </script>
+</body>
+</html>

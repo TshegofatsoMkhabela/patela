@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Order Detail &amp; Agreement (ORD-02)</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/blueprint.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-force-role="client" data-page="orders" data-breadcrumb="Order ORD-2026-8941">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content">
+        <!-- Top Order Navigation & Status -->
+        <section class="welcome-header" aria-label="Order Header">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+              <span class="section-label" style="color:var(--gold);margin-bottom:0;">ORDER &amp; CANONICAL AGREEMENT · ORD-02</span>
+              <span class="badge badge-gold">Active Order</span>
+              <span class="badge badge-success">Dual-Signed Canonical</span>
+            </div>
+            <h1 class="page-title" style="font-size:1.85rem;">ORD-2026-8941: Bulk Industrial Bauxite</h1>
+            <p class="page-subtitle">Richards Bay Extraction Mine &rarr; Durban Port Terminal 4 &rarr; Johannesburg City Deep Depot</p>
+          </div>
+          <div class="welcome-actions">
+            <a href="shipment-overview.html" class="btn btn-secondary">Shipment Custody (SHIP-01)</a>
+            <a href="payment-builder.html" class="btn btn-secondary">Payment Plan (PAY-01)</a>
+            <a href="escrow-funding.html" class="btn btn-primary">Funding Vault (PAY-02)</a>
+          </div>
+        </section>
+
+        <!-- Financial Summary Ribbon in Rand (ZAR in, Rand out) -->
+        <section class="metrics-grid" style="margin-bottom:28px;">
+          <div class="metric-card gold-accent">
+            <span class="metric-label">Escrow Governed Value</span>
+            <div class="metric-value tabular">R 485,000.00<span class="metric-unit">ZAR</span></div>
+            <span class="metric-foot">100% Conserved across 4 tranches ↗</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Tranches Released to Date</span>
+            <div class="metric-value tabular">R 97,000.00<span class="metric-unit">ZAR</span></div>
+            <span class="metric-foot">Tranche 1 (Mobilization) settled ↗</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Releasable Awaiting Action</span>
+            <div class="metric-value tabular" style="color:var(--gold-light);">R 145,500.00<span class="metric-unit">ZAR</span></div>
+            <span class="metric-foot">Waypoint handoff confirmed ↗</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Disputed / Held Shortfall</span>
+            <div class="metric-value tabular" style="color:var(--error);">R 121,250.00<span class="metric-unit">ZAR</span></div>
+            <span class="metric-foot">Parcel B seal breach under review ↗</span>
+          </div>
+        </section>
+
+        <!-- Canonical Dual-Signature Card (Section 4.2 ORD-02) -->
+        <section class="card" style="margin-bottom:28px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px;">
+            <div>
+              <div class="section-label" style="color:var(--gold);">CRYPTOGRAPHIC ATTESTATION</div>
+              <h2 style="font-size:1.15rem;margin:4px 0 0;font-weight:600;">Agreement Version v1.2 (Canonical &amp; Immutable)</h2>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="hash-pill" title="Canonical Agreement Hash on Base Sepolia">
+                SHA-256: 0x8b3f2e41c9…8e0f12
+              </span>
+              <span class="badge badge-neutral">Block #19482103</span>
+            </div>
+          </div>
+
+          <div class="dual-signature-grid">
+            <!-- Buyer Signature -->
+            <div class="signature-slot-card signed">
+              <div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                  <span class="badge badge-gold">Buyer Signatory</span>
+                  <span class="signature-stamp valid">✓ Signed &amp; Anchored</span>
+                </div>
+                <div style="font-weight:600;font-size:1.05rem;color:var(--text-primary);">Alex Morgan</div>
+                <div class="meta-text" style="font-size:0.75rem;">Procurement Director · Anglo-Bavarian Mineral Trade</div>
+                <div class="mono" style="font-size:0.72rem;color:var(--text-secondary);margin-top:8px;">
+                  Wallet: 0x71c4b8209f31d8e44019ca2b5580e91124009a2e
+                </div>
+              </div>
+              <div class="meta-text" style="font-size:0.72rem;margin-top:14px;border-top:1px solid var(--border-subtle);padding-top:8px;">
+                Signed: 2026-11-10 14:22 SAST via Passkey WebAuthn
+              </div>
+            </div>
+
+            <!-- Supplier Signature -->
+            <div class="signature-slot-card signed">
+              <div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                  <span class="badge badge-blue">Supplier Signatory</span>
+                  <span class="signature-stamp valid">✓ Signed &amp; Anchored</span>
+                </div>
+                <div style="font-weight:600;font-size:1.05rem;color:var(--text-primary);">Marcus Khumalo</div>
+                <div class="meta-text" style="font-size:0.75rem;">Managing Director · Highveld Logistics &amp; Mining Consumables</div>
+                <div class="mono" style="font-size:0.72rem;color:var(--text-secondary);margin-top:8px;">
+                  Wallet: 0x94b8e1204c78a9d11038fb4c2291a80053103e1f
+                </div>
+              </div>
+              <div class="meta-text" style="font-size:0.72rem;margin-top:14px;border-top:1px solid var(--border-subtle);padding-top:8px;">
+                Signed: 2026-11-10 15:05 SAST via Passkey WebAuthn
+              </div>
+            </div>
+          </div>
+
+          <!-- Amendment Safeguard Banner (Section 5.4 & 6) -->
+          <div style="padding:12px 16px;background:var(--surface-subtle);border-radius:var(--radius-sm);border:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div style="font-size:0.8125rem;color:var(--text-secondary);">
+              <strong style="color:var(--text-primary);">Immutability Guarantee:</strong> This agreement cannot be overwritten. Any route change, carrier substitution, or fee adjustment will generate a new Draft version (v1.3) requiring mutual re-signing before governing funds.
+            </div>
+            <a href="route-builder.html" class="btn btn-secondary btn-sm">Draft Amendment →</a>
+          </div>
+        </section>
+
+        <!-- Detailed Specifications Tabs (Commercial, Parcels, Route, Tranches) -->
+        <section class="card-flush" style="margin-bottom:28px;">
+          <div style="padding:20px 24px;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+            <h2 style="font-size:1.1rem;margin:0;font-weight:500;">Commercial Terms &amp; Scope Breakdown</h2>
+            <div style="display:flex;gap:8px;">
+              <a href="documents-evidence.html" class="btn btn-secondary btn-sm">View Attached Documents (3)</a>
+              <a href="shipment-timeline.html" class="btn btn-secondary btn-sm">Audit Chronology</a>
+            </div>
+          </div>
+
+          <div style="padding:24px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:24px;margin-bottom:24px;">
+              <div>
+                <span class="meta-text" style="text-transform:uppercase;font-size:0.7rem;">Cargo Specification</span>
+                <div style="font-size:0.95rem;font-weight:500;color:var(--text-primary);margin-top:4px;">
+                  120 Metric Tons High-Grade Bauxite Ore
+                </div>
+                <div class="meta-text" style="margin-top:2px;">Moisture limit <= 4.2% · Al2O3 grade >= 48%</div>
+              </div>
+              <div>
+                <span class="meta-text" style="text-transform:uppercase;font-size:0.7rem;">Delivery Incoterm</span>
+                <div style="font-size:0.95rem;font-weight:500;color:var(--text-primary);margin-top:4px;">
+                  DAP (Delivered at Place, City Deep Terminal)
+                </div>
+                <div class="meta-text" style="margin-top:2px;">Supplier responsible for transport risks to depot</div>
+              </div>
+              <div>
+                <span class="meta-text" style="text-transform:uppercase;font-size:0.7rem;">Agreed Transit Window</span>
+                <div style="font-size:0.95rem;font-weight:500;color:var(--text-primary);margin-top:4px;">
+                  10 Nov 2026 &rarr; 14 Nov 2026
+                </div>
+                <div class="meta-text" style="margin-top:2px;">Target 96-hour multi-hop road corridor</div>
+              </div>
+              <div>
+                <span class="meta-text" style="text-transform:uppercase;font-size:0.7rem;">Settlement Partner &amp; Escrow</span>
+                <div style="font-size:0.95rem;font-weight:500;color:var(--text-primary);margin-top:4px;">
+                  Standard Bank Corporate Trust (South Africa)
+                </div>
+                <div class="meta-text" style="margin-top:2px;">Mirroring Base Sepolia Vault 0x84532B…</div>
+              </div>
+            </div>
+
+            <!-- Parcels Table (Split Shipment Section 5.3) -->
+            <div style="margin-top:20px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <h3 style="font-size:0.95rem;font-weight:600;margin:0;">Consignment Parcels &amp; Isolated Status</h3>
+                <span class="meta-text">2 Active Parcels</span>
+              </div>
+              <div class="table-container" style="border:1px solid var(--border-neutral);border-radius:var(--radius-sm);">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Parcel ID</th>
+                      <th>Quantity</th>
+                      <th>Destination Node</th>
+                      <th>Custody Holder</th>
+                      <th>Escrow Value</th>
+                      <th>Status</th>
+                      <th class="right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="mono" style="color:var(--gold);">PCL-8941-A</td>
+                      <td>80 Metric Tons</td>
+                      <td>City Deep Depot A (JHB)</td>
+                      <td>Trans-Kalahari Driver (Thabo M.)</td>
+                      <td class="tabular">R 363,750.00</td>
+                      <td><span class="badge badge-gold">In Transit · Normal</span></td>
+                      <td class="right"><a href="guest-handoff.html" class="btn btn-secondary btn-sm">Confirm Handoff</a></td>
+                    </tr>
+                    <tr>
+                      <td class="mono" style="color:var(--error);">PCL-8941-B</td>
+                      <td>40 Metric Tons</td>
+                      <td>Pretoria East Warehouse</td>
+                      <td>Durban Terminal Hub Staging</td>
+                      <td class="tabular">R 121,250.00</td>
+                      <td><span class="badge badge-error">Disputed · Held</span></td>
+                      <td class="right"><a href="dispute-centre.html" class="btn btn-secondary btn-sm">Inspect Dispute</a></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/patella-blueprint.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/interactions.js"></script>
+</body>
+</html>

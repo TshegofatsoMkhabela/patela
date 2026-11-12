@@ -27,7 +27,19 @@
     close: '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M18 6 6 18M6 6l12 12"/></svg>',
     sidebarToggle: '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="1.75" fill="none"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>',
     chevronLeft: '<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="1.8" fill="none"><path d="m15 18-6-6 6-6"/></svg>',
-    chevronRight: '<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="1.8" fill="none"><path d="m9 18 6-6-6-6"/></svg>'
+    chevronRight: '<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="1.8" fill="none"><path d="m9 18 6-6-6-6"/></svg>',
+    orders: '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+    route: '<svg viewBox="0 0 24 24"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>',
+    custody: '<svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>',
+    paymentPlan: '<svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+    guestHandoff: '<svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="m10 13 2 2 4-4"/></svg>',
+    tender: '<svg viewBox="0 0 24 24"><path d="m14 13-7.5 7.5a2.12 2.12 0 1 1-3-3L11 10"/><path d="m16 16 6-6"/><path d="m8 8 6-6"/><path d="m9 7 8 8"/></svg>',
+    dispute: '<svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+    partners: '<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>',
+    documents: '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>',
+    auditor: '<svg viewBox="0 0 24 24"><path d="M2 12h20"/><path d="M20 12v8H4v-8"/><path d="m4 4 8-2 8 2v4H4z"/><line x1="10" y1="12" x2="10" y2="20"/><line x1="14" y1="12" x2="14" y2="20"/></svg>',
+    operations: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M3 12h4m10 0h4M12 3v4m0 10v4"/></svg>',
+    blueprint: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>'
   };
 
   const SIDEBAR_PREF_KEY = 'patela_sidebar_collapsed';
@@ -102,6 +114,23 @@
     }
   }
 
+  function getBlueprintNavItems() {
+    return [
+      { id: 'orders', label: 'Orders & RFQ', href: 'orders.html', icon: ICONS.orders },
+      { id: 'route-builder', label: 'Route Builder', href: 'route-builder.html', icon: ICONS.route },
+      { id: 'shipment-overview', label: 'Shipment Custody', href: 'shipment-overview.html', icon: ICONS.custody },
+      { id: 'payment-builder', label: 'Payment Plan', href: 'payment-builder.html', icon: ICONS.paymentPlan },
+      { id: 'escrow-funding', label: 'Escrow Funding', href: 'escrow-funding.html', icon: ICONS.payments },
+      { id: 'guest-handoff', label: 'Guest Handoff', href: 'guest-handoff.html', icon: ICONS.guestHandoff, dot: true },
+      { id: 'tender-trail', label: 'Tender Trail', href: 'tender-trail.html', icon: ICONS.tender },
+      { id: 'dispute-centre', label: 'Dispute Centre', href: 'dispute-centre.html', icon: ICONS.dispute },
+      { id: 'partner-directory', label: 'Partner Directory', href: 'partner-directory.html', icon: ICONS.partners },
+      { id: 'documents-evidence', label: 'Documents & Proof', href: 'documents-evidence.html', icon: ICONS.documents },
+      { id: 'auditor-trail', label: 'Auditor Trail', href: 'auditor-trail.html', icon: ICONS.auditor },
+      { id: 'operations-console', label: 'Operations Console', href: 'operations-console.html', icon: ICONS.operations }
+    ];
+  }
+
   function getNavItems(role) {
     if (role === 'worker') {
       return [
@@ -139,6 +168,7 @@
     const profile = state.profiles[role];
     const activePage = document.body.getAttribute('data-page') || 'overview';
     const navItems = getNavItems(role);
+    const bpItems = getBlueprintNavItems();
     const collapsed = isSidebarCollapsed();
     const homeHref = resolveSiteHref('/');
     const publicMpHref = resolveSiteHref('/marketplace');
@@ -162,6 +192,7 @@
         '</div>' +
       '</div>' +
       '<nav class="sidebar-nav" aria-label="Main Navigation">' +
+        '<div class="sidebar-section-title" style="padding:8px 14px 4px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);font-weight:600;">Workspace</div>' +
         navItems.map(function (item) {
           const isActive = item.id === activePage;
           return (
@@ -171,6 +202,19 @@
                 '<span>' + item.label + '</span>' +
               '</span>' +
               (item.dot ? '<span class="nav-badge" title="Pending review"></span>' : '') +
+            '</a>'
+          );
+        }).join('') +
+        '<div class="sidebar-section-title" style="padding:14px 14px 4px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--gold);font-weight:600;">Supply Chain &amp; Escrow</div>' +
+        bpItems.map(function (item) {
+          const isActive = item.id === activePage;
+          return (
+            '<a href="' + item.href + '" class="nav-item ' + (isActive ? 'active' : '') + '" data-tooltip="' + item.label + '">' +
+              '<span class="nav-item-left">' +
+                item.icon +
+                '<span>' + item.label + '</span>' +
+              '</span>' +
+              (item.dot ? '<span class="nav-badge" title="Action needed"></span>' : '') +
             '</a>'
           );
         }).join('') +
@@ -282,8 +326,9 @@
       '</div>' +
       '<div class="topbar-right">' +
         '<div class="topbar-site-links">' +
-          '<a href="' + homeHref + '" class="topbar-site-pill" title="Return to Landing Page">← Home</a>' +
-          '<a href="' + publicMpHref + '" class="topbar-site-pill hide-mobile-pill" title="Open Public Marketplace">Marketplace ↗</a>' +
+          '<a href="orders.html" class="topbar-site-pill" title="Supply Chain Orders">Orders</a>' +
+          '<a href="guest-handoff.html" class="topbar-site-pill" style="border-color:var(--border-gold);color:var(--gold-light);" title="Driver / Warehouse Guest Handoff">Guest Handoff ⚡</a>' +
+          '<a href="index.html" class="topbar-site-pill" title="Blueprint Overview Hub">Blueprint Hub ↗</a>' +
         '</div>' +
         '<div class="role-switcher" role="group" aria-label="Switch Role">' +
           '<button type="button" class="role-switch-btn ' + (role === 'client' ? 'active' : '') + '" data-switch-role="client">Client</button>' +

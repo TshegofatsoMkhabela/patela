@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Route Plan Builder (ROUTE-01)</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/blueprint.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-force-role="client" data-page="route-builder" data-breadcrumb="Route Plan Builder">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content">
+        <!-- Top Header -->
+        <section class="welcome-header" aria-label="Route Builder Header">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+              <span class="section-label" style="color:var(--gold);margin-bottom:0;">ROUTE TOPOLOGY BUILDER · ROUTE-01</span>
+              <span class="badge badge-gold">Route-Agnostic Engine</span>
+              <span class="badge badge-neutral">Plan Version v1.2</span>
+            </div>
+            <h1 class="page-title" style="font-size:1.85rem;">Custody Route Graph &amp; Node Configurator</h1>
+            <p class="page-subtitle">Build the journey your goods will take. Add or remove stops as needed; Patela does not impose a fixed number of handoffs.</p>
+          </div>
+          <div class="welcome-actions">
+            <button type="button" class="btn btn-secondary" id="route-validate-btn">Validate Graph</button>
+            <button type="button" class="btn btn-secondary" id="route-save-draft-btn">Save Version</button>
+            <a href="payment-builder.html" class="btn btn-primary">Sync with Payment Plan (PAY-01) →</a>
+          </div>
+        </section>
+
+        <!-- Template Selector Ribbon (Section 4.3 ROUTE-01) -->
+        <section class="card" style="margin-bottom:24px;padding:18px 24px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
+            <div>
+              <span class="meta-text" style="text-transform:uppercase;font-size:0.7rem;">Architectural Route Templates</span>
+              <div style="font-size:0.95rem;font-weight:600;color:var(--text-primary);margin-top:2px;">Select Baseline Corridor Topology</div>
+            </div>
+            <span class="badge badge-neutral">Graph Constraints: Min 2 Nodes · Zero Cycles</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:10px;">
+            <button type="button" class="btn btn-sm btn-ghost" style="text-align:left;height:auto;padding:10px 14px;border:1px solid var(--border-neutral);">
+              <div style="font-weight:600;color:var(--text-primary);">Simple Direct</div>
+              <div class="meta-text" style="font-size:0.68rem;">1 Origin &rarr; 1 Destination</div>
+            </button>
+            <button type="button" class="btn btn-sm btn-ghost" style="text-align:left;height:auto;padding:10px 14px;border:1px solid var(--border-neutral);">
+              <div style="font-weight:600;color:var(--text-primary);">Direct + Carrier</div>
+              <div class="meta-text" style="font-size:0.68rem;">Origin &rarr; Truck &rarr; Dest</div>
+            </button>
+            <button type="button" class="btn btn-sm btn-secondary active" style="text-align:left;height:auto;padding:10px 14px;border-color:var(--border-gold);">
+              <div style="font-weight:600;color:var(--gold-light);">Multi-Hop Transit</div>
+              <div class="meta-text" style="font-size:0.68rem;">Origin &rarr; Hub &rarr; Rail &rarr; Dest</div>
+            </button>
+            <button type="button" class="btn btn-sm btn-ghost" style="text-align:left;height:auto;padding:10px 14px;border:1px solid var(--border-neutral);">
+              <div style="font-weight:600;color:var(--text-primary);">Split Shipment</div>
+              <div class="meta-text" style="font-size:0.68rem;">1 Origin &rarr; 2+ Dest Parcels</div>
+            </button>
+            <button type="button" class="btn btn-sm btn-ghost" style="text-align:left;height:auto;padding:10px 14px;border:1px solid var(--border-neutral);">
+              <div style="font-weight:600;color:var(--text-primary);">Hub and Spoke</div>
+              <div class="meta-text" style="font-size:0.68rem;">Central Bonded Staging</div>
+            </button>
+            <button type="button" class="btn btn-sm btn-ghost" disabled style="text-align:left;height:auto;padding:10px 14px;opacity:0.5;">
+              <div style="font-weight:600;">Cross-Border</div>
+              <div class="meta-text" style="font-size:0.68rem;">Post-MVP Roadmap</div>
+            </button>
+          </div>
+        </section>
+
+        <!-- Interactive Node Graph Editor -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:24px;margin-bottom:32px;">
+          <!-- Left: Node Configuration Cards -->
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+              <h2 style="font-size:1.1rem;font-weight:600;margin:0;">Configured Nodes (4 Stops)</h2>
+              <button type="button" class="btn btn-sm btn-secondary" id="add-node-btn">+ Add Node</button>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:14px;" id="node-list-container">
+              <!-- Node 1 -->
+              <div class="card-elevated" style="border-left:3px solid var(--success);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span class="mono" style="font-weight:600;color:var(--gold);font-size:0.75rem;">NODE-01 · Origin Mine</span>
+                  <span class="badge badge-success">Completed</span>
+                </div>
+                <div style="font-weight:600;color:var(--text-primary);">Richards Bay Bauxite Plant</div>
+                <div class="meta-text" style="font-size:0.75rem;">Accountable: Highveld Logistics (Supplier)</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;font-size:0.72rem;">
+                  <div class="meta-text">Proof: Dual QR + Weighbridge</div>
+                  <div class="meta-text">Signers: Mine Operator + Driver</div>
+                </div>
+              </div>
+
+              <!-- Node 2 -->
+              <div class="card-elevated" style="border-left:3px solid var(--success);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span class="mono" style="font-weight:600;color:var(--gold);font-size:0.75rem;">NODE-02 · Transit Hub</span>
+                  <span class="badge badge-success">Completed</span>
+                </div>
+                <div style="font-weight:600;color:var(--text-primary);">Durban Inland Logistics Hub (Terminal 4)</div>
+                <div class="meta-text" style="font-size:0.75rem;">Accountable: Durban Bonded Terminal Hub</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;font-size:0.72rem;">
+                  <div class="meta-text">Proof: Two-Party Guest Token</div>
+                  <div class="meta-text">Signers: Inward Clerk + Outward Carrier</div>
+                </div>
+              </div>
+
+              <!-- Node 3 -->
+              <div class="card-elevated" style="border-left:3px solid var(--gold);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span class="mono" style="font-weight:600;color:var(--gold);font-size:0.75rem;">NODE-03 · Primary Destination</span>
+                  <span class="badge badge-gold">Active Waypoint</span>
+                </div>
+                <div style="font-weight:600;color:var(--text-primary);">City Deep Container Terminal (Depot A)</div>
+                <div class="meta-text" style="font-size:0.75rem;">Accountable: Anglo-Bavarian Depot Receiving</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;font-size:0.72rem;">
+                  <div class="meta-text">Proof: Consignee Seal Receipt</div>
+                  <div class="meta-text">Signers: Consignee Manager (Sarah K.)</div>
+                </div>
+              </div>
+
+              <!-- Node 4 -->
+              <div class="card-elevated" style="border-left:3px solid var(--error);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span class="mono" style="font-weight:600;color:var(--error);font-size:0.75rem;">NODE-04 · Secondary Destination</span>
+                  <span class="badge badge-error">Quarantined (Dispute)</span>
+                </div>
+                <div style="font-weight:600;color:var(--text-primary);">Pretoria East Industrial Warehouse</div>
+                <div class="meta-text" style="font-size:0.75rem;">Accountable: Trans-Logistics Distribution</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;font-size:0.72rem;">
+                  <div class="meta-text">Proof: Quarantined Receipt</div>
+                  <div class="meta-text">Signers: Arbitrator + Terminal Clerk</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Transit Legs & Carrier Booking -->
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+              <h2 style="font-size:1.1rem;font-weight:600;margin:0;">Transport Legs &amp; Carriers</h2>
+              <a href="partner-directory.html" class="btn btn-sm btn-secondary">Assign Carrier (PART-02)</a>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <!-- Leg 1 -->
+              <div class="card-elevated">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span class="mono" style="font-weight:600;font-size:0.75rem;">LEG-01: Node 01 &rarr; Node 02</span>
+                  <span class="badge badge-success">Completed</span>
+                </div>
+                <div style="font-weight:600;color:var(--text-primary);">Trans-Kalahari Haulage Ltd</div>
+                <div class="meta-text" style="font-size:0.75rem;">Road Haulage · 34-Ton Tri-Axle · Rate: R 420/Ton</div>
+              </div>
+
+              <!-- Leg 2 -->
+              <div class="card-elevated" style="border-color:var(--border-gold);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span class="mono" style="font-weight:600;font-size:0.75rem;color:var(--gold);">LEG-02: Node 02 &rarr; Node 03</span>
+                  <span class="badge badge-gold">In Transit</span>
+                </div>
+                <div style="font-weight:600;color:var(--text-primary);">Trans-Kalahari Driver (Thabo M.)</div>
+                <div class="meta-text" style="font-size:0.75rem;">Active Leg · En route to Johannesburg Depot</div>
+              </div>
+
+              <!-- Leg 3 -->
+              <div class="card-elevated" style="border-color:var(--border-error);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span class="mono" style="font-weight:600;font-size:0.75rem;color:var(--error);">LEG-03: Node 02 &rarr; Node 04</span>
+                  <span class="badge badge-error">Held</span>
+                </div>
+                <div style="font-weight:600;color:var(--text-primary);">Durban Express Drayage</div>
+                <div class="meta-text" style="font-size:0.75rem;">Quarantined at Durban Terminal due to Seal Exception</div>
+              </div>
+            </div>
+
+            <!-- Live Validation Box (Section 4.3 ROUTE-01) -->
+            <div class="conservation-validator-box valid" style="margin-top:20px;">
+              <div>
+                <div style="font-weight:600;font-size:0.85rem;color:var(--success);">✓ Route Graph Validated Cleanly</div>
+                <div class="meta-text" style="font-size:0.75rem;margin-top:2px;">
+                  Zero orphaned nodes · All legs connected · Accountable signers defined · No graph cycles detected.
+                </div>
+              </div>
+              <span class="badge badge-success">RFC-Graph OK</span>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/patella-blueprint.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/interactions.js"></script>
+  <script>
+    document.getElementById('route-validate-btn').addEventListener('click', function () {
+      window.PatelaUI.toast('Route Graph Validated', 'All 4 nodes and 3 legs conform to Patela graph invariance.');
+    });
+    document.getElementById('route-save-draft-btn').addEventListener('click', function () {
+      window.PatelaUI.toast('Route Version Preserved', 'Saved route draft v1.2. Hash bound to current agreement.');
+    });
+  </script>
+</body>
+</html>

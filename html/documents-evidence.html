@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Documents &amp; Evidence Vault (DOC-01)</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/blueprint.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-force-role="client" data-page="documents-evidence" data-breadcrumb="Documents &amp; Evidence (DOC-01)">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content">
+        <!-- Top Header -->
+        <section class="welcome-header" aria-label="Documents Header">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+              <span class="section-label" style="color:var(--gold);margin-bottom:0;">DOCUMENT REPOSITORY · DOC-01</span>
+              <span class="badge badge-gold">Byte Hashed &amp; Anchored</span>
+              <span class="badge badge-neutral">Order ORD-2026-8941</span>
+            </div>
+            <h1 class="page-title" style="font-size:1.85rem;">Cryptographic Document &amp; Evidence Vault</h1>
+            <p class="page-subtitle">Keep supporting invoices, weighbridge slips, and handoff photos bound to the exact order, plan version, or custody node.</p>
+          </div>
+          <div class="welcome-actions">
+            <a href="auditor-trail.html#verifier" class="btn btn-secondary">Open Byte Verifier (AUD-02)</a>
+            <button type="button" class="btn btn-primary" id="upload-doc-btn">+ Upload &amp; Hash Document</button>
+          </div>
+        </section>
+
+        <!-- AI Invoice OCR Advisory Disclosure (Section 4.5 & 6) -->
+        <div class="trust-boundary-card" style="margin-bottom:24px;">
+          <div style="color:var(--gold);font-size:1.3rem;">🤖</div>
+          <div>
+            <strong>AI &amp; OCR Verification Invariant (Section 4.5 &amp; 6):</strong>
+            Automated OCR and AI document extractions are strictly advisory suggestions for user convenience. <strong>AI extraction never autonomously modifies commercial terms, routes, or payment releases without verified human review and signature.</strong>
+          </div>
+        </div>
+
+        <!-- Document Upload & Drag-Drop Box -->
+        <section class="card" style="margin-bottom:28px;">
+          <div class="drop-zone-verifier" id="doc-drop-zone">
+            <div style="font-size:2.2rem;color:var(--gold);margin-bottom:8px;">📁</div>
+            <h3 style="font-size:1.1rem;font-weight:600;margin:0 0 6px;color:var(--text-primary);">
+              Drag &amp; drop document or photo to calculate SHA-256 hash
+            </h3>
+            <p class="meta-text" style="max-width:54ch;margin:0 auto 14px;">
+              Supports PDF, JPG, PNG, TIFF up to 25MB. Bytes are hashed locally in browser and anchored to the active shipment timeline.
+            </p>
+            <input type="file" id="real-doc-file-input" style="display:none;" />
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('real-doc-file-input').click()">
+              Browse Local File
+            </button>
+          </div>
+        </section>
+
+        <!-- Stored Documents Table (Section 4.5 DOC-01) -->
+        <section class="card-flush">
+          <div style="padding:20px 24px;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+            <div>
+              <h2 style="font-size:1.1rem;margin:0;font-weight:500;">Order Documents &amp; Forensic References</h2>
+              <div class="meta-text" style="margin-top:2px;">All documents hashed with exact byte references</div>
+            </div>
+            <span class="badge badge-gold">3 Documents Anchored</span>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Document Name &amp; Category</th>
+                  <th>Uploader &amp; Timestamp</th>
+                  <th>Cryptographic SHA-256 Hash</th>
+                  <th>Base Sepolia Anchor</th>
+                  <th>AI Extraction Status</th>
+                  <th class="right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Document 1: Commercial Invoice with AI OCR -->
+                <tr>
+                  <td>
+                    <div style="font-weight:600;color:var(--text-primary);">commercial_tax_invoice_inv8941.pdf</div>
+                    <div class="meta-text" style="font-size:0.7rem;">Commercial Tax Invoice · 428 KB</div>
+                  </td>
+                  <td>
+                    <div>Highveld Logistics Accounts</div>
+                    <div class="meta-text" style="font-size:0.7rem;">10 Nov 2026 10:15 SAST</div>
+                  </td>
+                  <td>
+                    <span class="hash-pill" title="Exact byte SHA-256">0x8f3c7e41…8e0f12</span>
+                  </td>
+                  <td>
+                    <span class="badge badge-neutral">Block #19482103</span>
+                  </td>
+                  <td>
+                    <span class="badge badge-gold" title="R 485,000 detected · Advisory only">AI Suggested · Verified</span>
+                  </td>
+                  <td class="right">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="alert('Document content preview verified. SHA-256 hash matches Base Sepolia anchor.')">Inspect</button>
+                  </td>
+                </tr>
+
+                <!-- Document 2: Weighbridge Certificate -->
+                <tr>
+                  <td>
+                    <div style="font-weight:600;color:var(--text-primary);">weighbridge_certificate_mine_node01.pdf</div>
+                    <div class="meta-text" style="font-size:0.7rem;">Weight &amp; Moisture Assay Slip · 184 KB</div>
+                  </td>
+                  <td>
+                    <div>Richards Bay Mine Weighmaster</div>
+                    <div class="meta-text" style="font-size:0.7rem;">11 Nov 2026 08:35 SAST</div>
+                  </td>
+                  <td>
+                    <span class="hash-pill" title="Exact byte SHA-256">0x41ab982c…21a1</span>
+                  </td>
+                  <td>
+                    <span class="badge badge-neutral">Block #19482450</span>
+                  </td>
+                  <td>
+                    <span class="meta-text">Manual Assay</span>
+                  </td>
+                  <td class="right">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="alert('Weighbridge certificate matches 120.4 MT gross bauxite dispatch.')">Inspect</button>
+                  </td>
+                </tr>
+
+                <!-- Document 3: Two-Party Handoff Receipt -->
+                <tr>
+                  <td>
+                    <div style="font-weight:600;color:var(--text-primary);">two_party_guest_handoff_receipt_leg1.pdf</div>
+                    <div class="meta-text" style="font-size:0.7rem;">Signed Custody Receipt · 98 KB</div>
+                  </td>
+                  <td>
+                    <div>Patela Automated Custody Notary</div>
+                    <div class="meta-text" style="font-size:0.7rem;">12 Nov 2026 14:18 SAST</div>
+                  </td>
+                  <td>
+                    <span class="hash-pill" title="Exact byte SHA-256">0x1e847128…bcda12</span>
+                  </td>
+                  <td>
+                    <span class="badge badge-neutral">Block #19483012</span>
+                  </td>
+                  <td>
+                    <span class="meta-text">Notary Signed</span>
+                  </td>
+                  <td class="right">
+                    <a href="guest-handoff.html" class="btn btn-secondary btn-sm">View Event</a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/patella-blueprint.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/interactions.js"></script>
+  <script>
+    document.getElementById('real-doc-file-input').addEventListener('change', async function (e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      var hash = await window.PatelaBlueprint.sha256File(file);
+      window.PatelaUI.toast('Document Hashed', file.name + ' computed SHA-256: ' + hash.substring(0, 18) + '…');
+    });
+  </script>
+</body>
+</html>

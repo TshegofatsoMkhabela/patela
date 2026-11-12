@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Escrow Funding &amp; Settlement (PAY-02)</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/blueprint.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-force-role="client" data-page="escrow-funding" data-breadcrumb="Escrow Funding (PAY-02)">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content">
+        <!-- Top Header -->
+        <section class="welcome-header" aria-label="Funding Header">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+              <span class="section-label" style="color:var(--gold);margin-bottom:0;">LICENSED SETTLEMENT VAULT · PAY-02</span>
+              <span class="badge badge-success">Escrow Funded &amp; Locked</span>
+              <span class="badge badge-neutral">Base Sepolia Vault</span>
+            </div>
+            <h1 class="page-title" style="font-size:1.85rem;">Escrow Deposit &amp; Conversion Lifecycle</h1>
+            <p class="page-subtitle">Fund orders through authorized South African financial partners. Patela displays verified settlement state; licensed institutions handle money movement.</p>
+          </div>
+          <div class="welcome-actions">
+            <button type="button" class="btn btn-secondary" id="refresh-funding-btn">Refresh Vault Status</button>
+            <a href="order-detail.html" class="btn btn-primary">Return to Order ORD-8941 →</a>
+          </div>
+        </section>
+
+        <!-- 5-Stage Lifecycle Visual Pipeline (Section 3.1 & 4.3 PAY-02) -->
+        <section class="card" style="margin-bottom:28px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
+            <div>
+              <div class="section-label" style="color:var(--gold);">SETTLEMENT TIMELINE (SECTION 4.3)</div>
+              <h2 style="font-size:1.15rem;margin:4px 0 0;font-weight:600;">5-Step Fiat-to-Escrow Conversion Audit</h2>
+            </div>
+            <span class="badge badge-success">Stage 5 of 5 Complete</span>
+          </div>
+
+          <div class="escrow-pipeline-bar">
+            <!-- Step 1 -->
+            <div class="escrow-step-item done">
+              <div class="escrow-step-circle">✓</div>
+              <div class="escrow-step-label">1. Deposit Initiated</div>
+              <div class="meta-text" style="font-size:0.68rem;margin-top:2px;">EFT Reference Issued</div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="escrow-step-item done">
+              <div class="escrow-step-circle">✓</div>
+              <div class="escrow-step-label">2. Rand Received</div>
+              <div class="meta-text" style="font-size:0.68rem;margin-top:2px;">Standard Bank Trust</div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="escrow-step-item done">
+              <div class="escrow-step-circle">✓</div>
+              <div class="escrow-step-label">3. Conversion Pending</div>
+              <div class="meta-text" style="font-size:0.68rem;margin-top:2px;">ZAR &rarr; Stablecoin</div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="escrow-step-item done">
+              <div class="escrow-step-circle">✓</div>
+              <div class="escrow-step-label">4. Stablecoin Minted</div>
+              <div class="meta-text" style="font-size:0.68rem;margin-top:2px;">26,500 USDC Gateway</div>
+            </div>
+
+            <!-- Step 5 -->
+            <div class="escrow-step-item done">
+              <div class="escrow-step-circle">✓</div>
+              <div class="escrow-step-label">5. Escrow Locked</div>
+              <div class="meta-text" style="font-size:0.68rem;margin-top:2px;">Smart Contract Vault</div>
+            </div>
+          </div>
+
+          <!-- Trust & Regulatory Disclosure (Section 1.1 & 11.1) -->
+          <div class="trust-boundary-card">
+            <div style="color:var(--gold);font-size:1.3rem;">🏦</div>
+            <div>
+              <strong>Custody &amp; Regulatory Truth (Section 11.1):</strong>
+              Patela is a non-custodial technology platform and does not hold customer South African Rand. Fiat balances are held in an independent client trust account with a licensed South African bank (Standard Bank, FSP #11287) and converted via an authorized liquidity venue before locking into smart contracts.
+            </div>
+          </div>
+        </section>
+
+        <!-- Two Columns: Deposit Instructions & Fee Disclosure -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:24px;margin-bottom:32px;">
+          <!-- Left: Bank Transfer Details -->
+          <div class="card">
+            <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:18px;">Deposit Reference &amp; Account Details</h2>
+
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div style="padding:14px;background:var(--surface-subtle);border-radius:var(--radius-sm);border:1px solid var(--border-subtle);">
+                <span class="meta-text" style="font-size:0.7rem;text-transform:uppercase;">Amount Locked in Escrow</span>
+                <div class="metric-value tabular" style="font-size:1.5rem;color:var(--gold-light);margin-top:4px;">
+                  R 485,000.00 <span class="metric-unit">ZAR</span>
+                </div>
+                <div class="meta-text" style="font-size:0.72rem;margin-top:2px;">Equivalent: 26,500.00 USDC (Fixed conversion rate: 18.30 ZAR/USDC)</div>
+              </div>
+
+              <div>
+                <label class="form-label">Beneficiary Account Name</label>
+                <input type="text" class="input" value="Standard Bank Patela Escrow Client Trust" readonly />
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div>
+                  <label class="form-label">Bank &amp; Branch</label>
+                  <input type="text" class="input" value="Standard Bank (051001)" readonly />
+                </div>
+                <div>
+                  <label class="form-label">Account Type</label>
+                  <input type="text" class="input" value="Designated Trust Account" readonly />
+                </div>
+              </div>
+
+              <div>
+                <label class="form-label">Unique Settlement Reference (Idempotency Key)</label>
+                <div style="display:flex;gap:8px;">
+                  <input type="text" class="input mono" value="PAT-EFT-8941-ZAR" readonly style="color:var(--gold);" />
+                  <button type="button" class="btn btn-secondary btn-sm" id="copy-ref-btn">Copy</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Fee Transparency & Blockchain Proof -->
+          <div class="card">
+            <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:18px;">Transparent Fee Disclosure &amp; Proof</h2>
+
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div class="table-container" style="border:1px solid var(--border-neutral);border-radius:var(--radius-sm);">
+                <table class="data-table">
+                  <tbody>
+                    <tr>
+                      <td>Order Escrow Principal</td>
+                      <td class="right tabular" style="font-weight:600;color:var(--text-primary);">R 485,000.00</td>
+                    </tr>
+                    <tr>
+                      <td>Bank Settlement Fee (0.35%)</td>
+                      <td class="right tabular">R 1,697.50</td>
+                    </tr>
+                    <tr>
+                      <td>Liquidity Venue Spread (0.15%)</td>
+                      <td class="right tabular">R 727.50</td>
+                    </tr>
+                    <tr>
+                      <td>Network Gas Cost (Base Sepolia)</td>
+                      <td class="right tabular" style="color:var(--success);">R 0.00 (Subsidized)</td>
+                    </tr>
+                    <tr style="border-top:1px solid var(--border-neutral);font-weight:600;">
+                      <td>Total Deposited &amp; Reconciled</td>
+                      <td class="right tabular" style="color:var(--gold-light);">R 487,425.00</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Technical Blockchain Audit Panel -->
+              <div style="padding:14px;background:var(--surface-subtle);border-radius:var(--radius-sm);border:1px solid var(--border-subtle);margin-top:6px;">
+                <div style="font-size:0.75rem;font-weight:600;color:var(--text-primary);margin-bottom:8px;">Technical Settlement Metadata (PAY-03)</div>
+                <div style="display:flex;flex-direction:column;gap:6px;font-size:0.72rem;">
+                  <div style="display:flex;justify-content:space-between;">
+                    <span class="meta-text">Vault Contract:</span>
+                    <span class="mono" style="color:var(--gold-light);">0x84532B5e7834571A914856a938D4d6a894B83e20</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;">
+                    <span class="meta-text">Network:</span>
+                    <span>Base Sepolia Testnet (Chain ID 84532)</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;">
+                    <span class="meta-text">Lock Transaction:</span>
+                    <span class="mono" style="color:var(--gold-light);">0x81c4e92b…491a02</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;">
+                    <span class="meta-text">Reconciliation Status:</span>
+                    <span style="color:var(--success);">✓ Vault Matches Internal Ledger</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/patella-blueprint.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/interactions.js"></script>
+  <script>
+    document.getElementById('refresh-funding-btn').addEventListener('click', function () {
+      window.PatelaUI.toast('Vault Reconciled', 'Base Sepolia smart contract confirmed with Standard Bank trust balance.');
+    });
+    document.getElementById('copy-ref-btn').addEventListener('click', function () {
+      window.PatelaUI.toast('Reference Copied', 'PAT-EFT-8941-ZAR copied to clipboard.');
+    });
+  </script>
+</body>
+</html>

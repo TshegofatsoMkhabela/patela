@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patela — Create Order / RFQ (ORD-01)</title>
+  <link rel="stylesheet" href="assets/css/design-system.css" />
+  <link rel="stylesheet" href="assets/css/dashboard.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/blueprint.css" />
+  <link rel="stylesheet" href="assets/css/responsive.css" />
+</head>
+<body data-force-role="client" data-page="orders" data-breadcrumb="Create Order / RFQ">
+  <div class="app-shell">
+    <aside class="sidebar" id="app-sidebar"></aside>
+
+    <div class="main-wrapper">
+      <header class="topbar" id="app-topbar"></header>
+
+      <main class="main-content">
+        <section class="welcome-header" aria-label="Create Order Header">
+          <div>
+            <div class="section-label" style="color:var(--gold);">BUYER WORKSPACE · ORD-01</div>
+            <h1 class="page-title">Initiate Order or RFQ Tender</h1>
+            <p class="page-subtitle">Describe what you need supplied, where it must go, and how the procurement will be conducted.</p>
+          </div>
+          <div class="welcome-actions">
+            <button type="button" class="btn btn-secondary" id="save-draft-btn">Save Draft</button>
+            <a href="route-builder.html" class="btn btn-primary">Continue to Route Setup →</a>
+          </div>
+        </section>
+
+        <!-- Form Layout -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:24px;margin-bottom:32px;">
+          <!-- Left Column: Scope & Commercial Details -->
+          <div class="card">
+            <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:18px;">1. Commercial Terms &amp; Goods Scope</h2>
+
+            <div style="display:flex;flex-direction:column;gap:16px;">
+              <div>
+                <label class="form-label" for="order-title">Order Reference / Title</label>
+                <input type="text" class="input" id="order-title" value="Bulk Industrial Bauxite Delivery (Richards Bay → City Deep)" />
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div>
+                  <label class="form-label" for="cargo-type">Commodity / Cargo Type</label>
+                  <input type="text" class="input" id="cargo-type" value="Industrial Bauxite Ore" />
+                </div>
+                <div>
+                  <label class="form-label" for="cargo-qty">Quantity &amp; Units</label>
+                  <input type="text" class="input" id="cargo-qty" value="120 Metric Tons" />
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div>
+                  <label class="form-label" for="est-budget-zar">Estimated Value (ZAR)</label>
+                  <input type="text" class="input" id="est-budget-zar" value="485,000.00" />
+                </div>
+                <div>
+                  <label class="form-label" for="incoterm-select">Delivery Terms (Incoterms)</label>
+                  <select class="input" id="incoterm-select">
+                    <option value="DAP" selected>DAP — Delivered at Place</option>
+                    <option value="FCA">FCA — Free Carrier</option>
+                    <option value="CPT">CPT — Carriage Paid To</option>
+                    <option value="EXW">EXW — Ex Works</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="form-label" for="cargo-quality">Quality Specifications &amp; Lab Standards</label>
+                <textarea class="input" id="cargo-quality" rows="3">Al2O3 >= 48.0%, SiO2 <= 3.5%, Moisture content <= 4.2%. Independent lab assay required at origin weighbridge.</textarea>
+              </div>
+
+              <!-- Workflow Selector (Direct vs Tender Trail) -->
+              <div style="border-top:1px solid var(--border-subtle);padding-top:16px;">
+                <label class="form-label">Procurement Workflow</label>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                  <label class="card-elevated" style="cursor:pointer;display:block;">
+                    <input type="radio" name="order-flow" value="tender" checked style="accent-color:var(--gold);" />
+                    <div style="font-weight:600;font-size:0.85rem;margin-top:4px;">Tender Trail (RFQ)</div>
+                    <div class="meta-text" style="font-size:0.72rem;margin-top:2px;">Publish sealed-bid tender with scoring rubric.</div>
+                  </label>
+                  <label class="card-elevated" style="cursor:pointer;display:block;">
+                    <input type="radio" name="order-flow" value="direct" style="accent-color:var(--gold);" />
+                    <div style="font-weight:600;font-size:0.85rem;margin-top:4px;">Direct Supplier</div>
+                    <div class="meta-text" style="font-size:0.72rem;margin-top:2px;">Directly assign verified partner on known terms.</div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Destinations, Split Parcels & Governance -->
+          <div class="card">
+            <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:18px;">2. Logistics &amp; Consignment Mapping</h2>
+
+            <div style="display:flex;flex-direction:column;gap:16px;">
+              <div>
+                <label class="form-label">Origin Location (Node 01)</label>
+                <input type="text" class="input" value="Richards Bay Mine Extraction Plant, KwaZulu-Natal" />
+              </div>
+
+              <div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <label class="form-label" style="margin-bottom:0;">Split Consignment Parcels</label>
+                  <button type="button" class="btn-ghost btn-sm" style="font-size:0.72rem;">+ Add Parcel</button>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                  <div class="card-elevated" style="padding:12px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                      <span class="mono" style="color:var(--gold);font-weight:600;font-size:0.75rem;">Parcel A (80 MT)</span>
+                      <span class="meta-text">Allocated: R 363,750.00</span>
+                    </div>
+                    <input type="text" class="input" style="font-size:0.8rem;" value="Destination: City Deep Container Terminal (Depot A), Johannesburg" />
+                  </div>
+
+                  <div class="card-elevated" style="padding:12px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                      <span class="mono" style="color:var(--gold);font-weight:600;font-size:0.75rem;">Parcel B (40 MT)</span>
+                      <span class="meta-text">Allocated: R 121,250.00</span>
+                    </div>
+                    <input type="text" class="input" style="font-size:0.8rem;" value="Destination: Pretoria East Industrial Warehouse, Silverton" />
+                  </div>
+                </div>
+              </div>
+
+              <div style="border-top:1px solid var(--border-subtle);padding-top:16px;">
+                <label class="form-label">Supporting Documents Upload</label>
+                <div class="drop-zone-verifier" style="padding:20px;border-width:1px;">
+                  <div style="color:var(--gold);margin-bottom:4px;">📄</div>
+                  <div style="font-size:0.8rem;color:var(--text-primary);">Click or drag purchase orders, specifications, or assays</div>
+                  <div class="meta-text" style="font-size:0.7rem;margin-top:4px;">Automatic byte-level SHA-256 hash calculated upon upload</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Next Action Bar -->
+        <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+          <div>
+            <div style="font-weight:600;color:var(--text-primary);">Ready to configure Route Plan?</div>
+            <div class="meta-text">Route stops, carrier legs, and payment tranches will be generated from these parameters.</div>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <a href="orders.html" class="btn btn-secondary">Cancel</a>
+            <a href="route-builder.html" class="btn btn-primary">Proceed to Route Builder (ROUTE-01) →</a>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/demo-data.js"></script>
+  <script src="assets/js/patella-blueprint.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/interactions.js"></script>
+  <script>
+    document.getElementById('save-draft-btn').addEventListener('click', function () {
+      window.PatelaUI.toast('Draft Saved', 'Order specification draft saved to local workspace.');
+    });
+  </script>
+</body>
+</html>

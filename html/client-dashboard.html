@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="assets/css/design-system.css" />
   <link rel="stylesheet" href="assets/css/dashboard.css" />
   <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/blueprint.css" />
   <link rel="stylesheet" href="assets/css/responsive.css" />
 </head>
 <body data-force-role="client" data-page="overview" data-breadcrumb="Overview">
@@ -24,10 +25,32 @@
             <p class="page-subtitle">Here's what's happening with your projects.</p>
           </div>
           <div class="welcome-actions">
-            <a href="analytics.html" class="btn btn-secondary">View analytics</a>
+            <a href="orders.html" class="btn btn-secondary">Orders &amp; RFQ</a>
             <a href="post-job.html" class="btn btn-primary">+ Post a job</a>
           </div>
         </section>
+
+        <!-- Supply Chain Active Custody Banner -->
+        <div class="card" style="margin-bottom:24px;border-color:var(--border-gold);background:linear-gradient(135deg, rgba(255,226,178,0.06) 0%, rgba(12,19,32,0.9) 100%);padding:18px 22px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;">
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                <span class="badge badge-gold">Active Custody Leg 2</span>
+                <span class="badge badge-success">Tranche 2 Releasable</span>
+              </div>
+              <div style="font-size:1.05rem;font-weight:600;color:var(--text-primary);">
+                ORD-2026-8941: Bulk Bauxite Delivery · R 485,000.00 ZAR
+              </div>
+              <div class="meta-text" style="font-size:0.75rem;margin-top:2px;">
+                Durban Port waypoint confirmed. Tranche 2 (R 145,500.00) is ready for release authorization.
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;">
+              <a href="order-detail.html" class="btn btn-secondary btn-sm">Inspect Order →</a>
+              <a href="payment-builder.html" class="btn btn-primary btn-sm">Authorize Release (PAY-01) →</a>
+            </div>
+          </div>
+        </div>
 
         <!-- B. Financial Summary (Maximum 4 Metric Cards, Clean & Spacious) -->
         <section class="metrics-grid" aria-label="Financial summary">
