@@ -7,7 +7,8 @@ import { buildApp } from "../src/app.js";
 import { evidenceHash, type Evidence } from "../src/orders.js";
 import { TestAuth, TestDatabase } from "./helpers.js";
 import {
-  DEMO_CHAIN_ID, ESCROW, TOKEN, TestChain, TestIntegrations, TestMail, approveBuyer, bearer, linkWallet, tokenFrom, zarp,
+  DEMO_CHAIN_ID, ESCROW, TOKEN, TestChain, TestIntegrations, TestMail, approveBuyer, approveCapability, bearer,
+  linkWallet, tokenFrom, zarp,
 } from "./demo-helpers.js";
 
 // Users: 0 buyer, 1 supplier, 2 driver, 3 outsider / platform admin.
@@ -88,6 +89,10 @@ test("demo flow: order, email invites, on-chain steps, QR handoffs and refund", 
     assert.equal(wrongPerson.statusCode, 403);
     const wrongWallet = await post(1, `/invitations/${supplierToken}/accept`, { walletAddress: driver.address });
     assert.equal(wrongWallet.statusCode, 409, "the wallet must be the one this user linked");
+    const unauthorizedSupplier = await post(1, `/invitations/${supplierToken}/accept`,
+      { walletAddress: supplier.address });
+    assert.equal(unauthorizedSupplier.statusCode, 403, "an unapproved supplier cannot accept");
+    await approveCapability(app, setAdmin, 1, 3, "2021/000002/07", "supplier");
     const accepted = await post(1, `/invitations/${supplierToken}/accept`, { walletAddress: supplier.address });
     assert.equal(accepted.statusCode, 200, accepted.body);
     assert.equal(accepted.json().status, "awaiting_chain");
@@ -136,6 +141,9 @@ test("demo flow: order, email invites, on-chain steps, QR handoffs and refund", 
     assert.equal(mail.sent.at(-1)?.to, emails[2]);
     const driverToken = tokenFrom(driverInvite.json().acceptUrl);
     assert.equal((await app.inject({ method: "GET", url: `/invitations/${driverToken}` })).json().role, "driver");
+    const unauthorizedDriver = await post(2, `/invitations/${driverToken}/accept`, { walletAddress: driver.address });
+    assert.equal(unauthorizedDriver.statusCode, 403, "an unapproved carrier cannot accept as driver");
+    await approveCapability(app, setAdmin, 2, 3, "2021/000003/07", "carrier");
     const driverAccepted = await post(2, `/invitations/${driverToken}/accept`, { walletAddress: driver.address });
     assert.equal(driverAccepted.statusCode, 200, driverAccepted.body);
     const wrongDriver = chain.add({ name: "DriverAssigned", orderId: 7n, driver: wallets[3].address });
@@ -167,6 +175,9 @@ test("demo flow: order, email invites, on-chain steps, QR handoffs and refund", 
     await setAdmin("member");
 
     // 12. Pickup: only the giver (supplier) opens the session; delivery cannot start first.
+    assert.equal((await post(1, `/orders/${order.id}/handoffs/1/session`, {
+      ...pickupSession, giverEvidence: { ...giverPickup, capturedAt: now() - 301 },
+    })).statusCode, 400, "stale giver evidence is rejected");
     assert.equal((await post(2, `/orders/${order.id}/handoffs/1/session`, pickupSession)).statusCode, 403);
     assert.equal((await post(2, `/orders/${order.id}/handoffs/2/session`,
       { ...pickupSession, nonce: NONCE(9), giverEvidence: evidence("giver", -26) })).statusCode, 409);
@@ -182,6 +193,10 @@ test("demo flow: order, email invites, on-chain steps, QR handoffs and refund", 
     const pickupHash = evidenceHash(giverPickup, receiverPickup);
     assert.equal((await post(1, `${sessionUrl}/receiver`,
       { receiverEvidence: receiverPickup, evidenceHash: pickupHash, receiverSig: SIG })).statusCode, 403);
+    const staleReceiver = { ...receiverPickup, capturedAt: now() - 301 };
+    assert.equal((await post(2, `${sessionUrl}/receiver`, {
+      receiverEvidence: staleReceiver, evidenceHash: evidenceHash(giverPickup, staleReceiver), receiverSig: SIG,
+    })).statusCode, 400, "stale receiver evidence is rejected");
     assert.equal((await post(2, `${sessionUrl}/receiver`,
       { receiverEvidence: receiverPickup, evidenceHash: NONCE(5), receiverSig: SIG })).statusCode, 400);
     assert.deepEqual((await get(1, sessionUrl)).json(), {}, "nothing to sign until the receiver scans");

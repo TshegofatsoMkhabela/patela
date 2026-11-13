@@ -65,7 +65,9 @@ async function rejectDuplicateCipc<T>(run: () => Promise<T>): Promise<T> {
 
 /**
  * Checks in one query that each user belongs to an approved organization with
- * the paired capability. Returns the first missing capability, or null.
+ * the paired capability. A capability is trading authorization: profile roles
+ * and unapproved organizations never satisfy it. Returns the first missing
+ * capability, or null.
  */
 export async function missingCapability(db: Queryable, required: ReadonlyArray<readonly [string, Capability]>) {
   const result = await db.query<{ user_id: string; capability: string }>(
