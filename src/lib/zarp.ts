@@ -76,3 +76,23 @@ export async function zarpBalance({ eth, account, token }: TokenArgs) {
   ]);
   return formatUnits(balance, Number(decimals));
 }
+
+/** Polls for the transaction receipt: true once mined, false if it never shows up. */
+export async function waitForReceipt(
+  eth: Eth,
+  hash: string,
+  { intervalMs = 2000, attempts = 30 } = {},
+): Promise<boolean> {
+  for (let i = 0; i < attempts; i += 1) {
+    const receipt = (await eth.request({
+      method: "eth_getTransactionReceipt",
+      params: [hash],
+    })) as { status?: string } | null;
+    if (receipt) {
+      if (receipt.status === "0x1") return true;
+      throw new Error("The test ZARP mint failed on-chain.");
+    }
+    if (i < attempts - 1) await new Promise((r) => setTimeout(r, intervalMs));
+  }
+  return false;
+}

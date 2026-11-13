@@ -1,5 +1,43 @@
 import { describe, expect, it } from "vitest";
-import { mintTestZarp, testZarpAddress, zarpBalance } from "@/lib/zarp";
+import { mintTestZarp, testZarpAddress, waitForReceipt, zarpBalance } from "@/lib/zarp";
+
+function receiptEth(receipts: Array<{ status: string } | null>) {
+  let polls = 0;
+  return {
+    get polls() {
+      return polls;
+    },
+    async request(args: { method: string }) {
+      if (args.method !== "eth_getTransactionReceipt") throw new Error(args.method);
+      polls += 1;
+      return receipts.shift() ?? null;
+    },
+  };
+}
+
+describe("waitForReceipt", () => {
+  it("given the mint is pending then confirms, when waiting, then it resolves true after polling", async () => {
+    const eth = receiptEth([null, null, { status: "0x1" }]);
+
+    expect(await waitForReceipt(eth, "0xhash", { intervalMs: 0, attempts: 5 })).toBe(true);
+    expect(eth.polls).toBe(3);
+  });
+
+  it("given the mint reverts, when waiting, then it throws", async () => {
+    const eth = receiptEth([{ status: "0x0" }]);
+
+    await expect(waitForReceipt(eth, "0xhash", { intervalMs: 0, attempts: 5 })).rejects.toThrow(
+      /failed/i,
+    );
+  });
+
+  it("given the mint never confirms, when waiting runs out, then it resolves false", async () => {
+    const eth = receiptEth([]);
+
+    expect(await waitForReceipt(eth, "0xhash", { intervalMs: 0, attempts: 3 })).toBe(false);
+    expect(eth.polls).toBe(3);
+  });
+});
 
 const BUYER = "0x1111111111111111111111111111111111111111";
 const TOKEN = "0x2222222222222222222222222222222222222222";

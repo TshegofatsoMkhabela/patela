@@ -1,4 +1,6 @@
 import { useEffect, useSyncExternalStore } from "react";
+import type { Eth } from "@/lib/wallet-link";
+import { BASE_SEPOLIA_HEX } from "@/lib/zarp";
 
 export const STABLECOINS = ["ZARP", "USDC", "USDT", "DAI", "PYUSD", "EURC"] as const;
 export type Coin = (typeof STABLECOINS)[number];
@@ -463,22 +465,31 @@ export const actions = {
 };
 
 /* ---------- Testnet wallet (Base Sepolia: Chain ID 84532 / 0x14a34) ---------- */
-const BASE_SEPOLIA = "0x14a34";
+const BASE_SEPOLIA = BASE_SEPOLIA_HEX;
 
-type Eth = { request: (a: { method: string; params?: unknown[] }) => Promise<unknown> };
+export const browserEthereum = () =>
+  typeof window === "undefined" ? undefined : (window as { ethereum?: Eth }).ethereum;
 
-export async function connectWallet(): Promise<{ ok: boolean; message: string }> {
-  const eth = (window as unknown as { ethereum?: Eth }).ethereum;
+type Wallet = NonNullable<State["wallet"]>;
+
+export async function connectWallet(): Promise<{
+  ok: boolean;
+  message: string;
+  wallet?: Wallet;
+}> {
+  const eth = browserEthereum();
   if (!eth) {
     const addr =
       "0x71C4" +
       Array.from(crypto.getRandomValues(new Uint8Array(3)), (b) => b.toString(16).padStart(2, "0"))
         .join("")
         .toUpperCase();
-    actions.setWallet({ address: addr, chain: "Base Sepolia (demo)", demo: true });
+    const wallet = { address: addr, chain: "Base Sepolia (demo)", demo: true };
+    actions.setWallet(wallet);
     return {
       ok: true,
       message: "Connected simulated wallet on Base Sepolia (Demo).",
+      wallet,
     };
   }
   try {
@@ -492,13 +503,20 @@ export async function connectWallet(): Promise<{ ok: boolean; message: string }>
       /* user may decline; still connected */
     }
     const chainId = (await eth.request({ method: "eth_chainId" })) as string;
-    actions.setWallet({
+    const onBaseSepolia = chainId.toLowerCase() === BASE_SEPOLIA;
+    const wallet = {
       address: accounts[0] ?? "",
-      chain:
-        chainId.toLowerCase() === BASE_SEPOLIA ? "Base Sepolia" : `Chain ${parseInt(chainId, 16)}`,
+      chain: onBaseSepolia ? "Base Sepolia" : `Chain ${parseInt(chainId, 16)}`,
       demo: false,
-    });
-    return { ok: true, message: "Wallet connected to Base Sepolia." };
+    };
+    actions.setWallet(wallet);
+    return {
+      ok: true,
+      message: onBaseSepolia
+        ? "Wallet connected to Base Sepolia."
+        : `Wallet connected on ${wallet.chain}. Switch to Base Sepolia for test ZARP.`,
+      wallet,
+    };
   } catch {
     return { ok: false, message: "Wallet connection was cancelled." };
   }
