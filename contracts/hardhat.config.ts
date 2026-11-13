@@ -1,30 +1,26 @@
-import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox";
-import * as dotenv from "dotenv";
+import hardhatToolboxViemPlugin from "@nomicfoundation/hardhat-toolbox-viem";
+import { configVariable, type HardhatUserConfig } from "hardhat/config";
 
-dotenv.config();
-
-const PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY || "0x0000000000000000000000000000000000000000000000000000000000000001";
-const RPC_URL = process.env.RPC_URL || "https://rpc.testnet.xrplevm.org";
-
+// Secrets are read with configVariable, from the Hardhat keystore or an
+// environment variable of the same name, only when a network command needs them.
+// Nothing secret is stored in this file.
 const config: HardhatUserConfig = {
+  plugins: [hardhatToolboxViemPlugin],
   solidity: {
-    version: "0.8.20",
+    version: "0.8.28",
     settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200,
-      },
+      optimizer: { enabled: true, runs: 200 },
     },
   },
   networks: {
-    hardhat: {},
-    testnet: {
-      url: RPC_URL,
-      accounts: [PRIVATE_KEY],
+    baseSepolia: {
+      type: "http",
+      chainType: "op",
+      chainId: 84532,
+      url: configVariable("BASE_SEPOLIA_RPC_URL"),
+      accounts: [configVariable("DEPLOYER_PRIVATE_KEY")],
     },
   },
 };
 
 export default config;
-
