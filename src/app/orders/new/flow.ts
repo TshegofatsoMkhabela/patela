@@ -9,7 +9,7 @@ import {
   type FundResult,
   type FundStep,
   type OrderParams,
-} from "@/lib/chain";
+} from "@/lib/escrow-chain";
 import { ZARP_DECIMALS } from "@/lib/contracts";
 
 export type StepKey = "save" | "create" | "record" | "approve" | "fund" | "verify";

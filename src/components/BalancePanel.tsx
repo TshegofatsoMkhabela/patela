@@ -4,7 +4,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { formatUnits } from "viem";
 import { ZARP_DECIMALS } from "@/lib/contracts";
-import { NETWORK, NETWORK_LABEL, createReadClient, readBalances } from "@/lib/chain";
+import { NETWORK, NETWORK_LABEL, createReadClient, readBalances } from "@/lib/escrow-chain";
 
 void React;
 

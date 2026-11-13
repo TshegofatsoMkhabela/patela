@@ -24,7 +24,7 @@ import {
   signWalletLink,
   splitTotal,
   type ChainClients,
-} from "./chain";
+} from "./escrow-chain";
 
 const ESCROW = "0xE5c0000000000000000000000000000000000001" as Address;
 const ZARP = "0x2a40000000000000000000000000000000000002" as Address;

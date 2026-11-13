@@ -9,7 +9,7 @@ export interface HttpApiEvent {
   cookies?: string[];
   body?: string;
   isBase64Encoded?: boolean;
-  requestContext: { http: { method: string }; domainName?: string };
+  requestContext: { http: { method: string; sourceIp: string }; domainName?: string };
 }
 
 export function createLambdaHandler(app: FastifyInstance) {
@@ -29,6 +29,7 @@ export function createLambdaHandler(app: FastifyInstance) {
       method: method as "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS",
       url: event.rawPath + (event.rawQueryString ? `?${event.rawQueryString}` : ""),
       headers,
+      remoteAddress: event.requestContext.http.sourceIp,
       payload: event.body === undefined ? undefined
         : event.isBase64Encoded ? Buffer.from(event.body, "base64") : event.body,
     });

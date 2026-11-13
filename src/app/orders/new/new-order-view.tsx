@@ -19,7 +19,7 @@ import {
   readBalances,
   signWalletLink,
   type ChainClients,
-} from "@/lib/chain";
+} from "@/lib/escrow-chain";
 import { ESCROW_ADDRESS } from "@/lib/contracts";
 import { STEP_LABELS, runOrderFlow, type FlowProgress, type FlowState, type StepKey } from "./flow";
 

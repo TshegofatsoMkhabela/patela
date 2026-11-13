@@ -6,7 +6,7 @@ import { SiteNav } from "@/components/SiteNav";
 import { BalancePanel } from "@/components/BalancePanel";
 import { ApiError, api, type OrderDetail } from "@/lib/api";
 import { ESCROW_ADDRESS } from "@/lib/contracts";
-import { NETWORK_LABEL, explorerTxUrl } from "@/lib/chain";
+import { NETWORK_LABEL, explorerTxUrl } from "@/lib/escrow-chain";
 import { isPaid, partyAddresses, timelineItems } from "./order-data";
 
 const ORDER_POLL_MS = 3000;

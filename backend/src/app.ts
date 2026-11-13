@@ -1,15 +1,17 @@
 import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 import { randomBytes } from "node:crypto";
-import rateLimit from "@fastify/rate-limit";
 import cors from "@fastify/cors";
 import { InvalidGoogleCredential, type AuthProvider, type Identity } from "./auth.js";
 import type { ChainVerifier } from "./chain.js";
 import type { Database } from "./db.js";
-import { PatelaService } from "./service.js";
-import { OnboardingService } from "./onboarding.js";
+import { BASE_CHAIN_ID, PatelaService, ZARP_BASE, ZARP_DECIMALS } from "./service.js";
+import { OrderService } from "./orders.js";
+import { OutboxMailer, type MailTransport } from "./email.js";
+import { OnboardingService, requireAdmin } from "./onboarding.js";
 import { DomainError, requiredEmail as email } from "./validation.js";
 import type { Address } from "viem";
 import type { ExternalIntegrations, Point } from "./integrations.js";
+import { addPostgresRateLimitHook } from "./rate-limit.js";
 
 export interface AppDependencies {
   db: Database;
@@ -18,6 +20,9 @@ export interface AppDependencies {
   escrowAddress: Address;
   publicOrigin: string;
   apiOrigin?: string;
+  allowedOrigins?: readonly string[];
+  cookieDomain?: string;
+  cookieSameSite?: "Lax" | "None" | "Strict";
   integrations?: ExternalIntegrations;
   chainId?: number;
   tokenAddress?: Address;
@@ -25,6 +30,10 @@ export interface AppDependencies {
   googleClientId?: string;
   enableGoogleCodeFlow?: boolean;
   enableAuthSmokePage?: boolean;
+  /** Sends queued emails; without one they stay in email_outbox. */
+  mailTransport?: MailTransport;
+  /** DEMO: also return one-time accept links in API responses, in case an email is slow on stage. */
+  demoMode?: boolean;
 }
 
 function objectBody(value: unknown): Record<string, unknown> {
@@ -43,14 +52,18 @@ function point(value: unknown): Point {
   return { lat, lng };
 }
 
-export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrigin = "http://localhost:4000", integrations,
+export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrigin = "http://localhost:4000",
+  allowedOrigins = [], cookieDomain, cookieSameSite = "Lax", integrations,
   chainId, tokenAddress, tokenDecimals, googleClientId, enableGoogleCodeFlow = true,
-  enableAuthSmokePage = false }: AppDependencies) {
+  enableAuthSmokePage = false, mailTransport, demoMode = false }: AppDependencies) {
   const app = Fastify({ logger: false, bodyLimit: 128 * 1024 });
   const secureCookie = new URL(apiOrigin).protocol === "https:" ? "; Secure" : "";
+  const domainCookie = cookieDomain ? `; Domain=${cookieDomain}` : "";
+  const browserOrigins = new Set([publicOrigin, apiOrigin, ...allowedOrigins]);
+  const originAllowed = (origin: string | undefined) => !origin || browserOrigins.has(origin);
   const callbackUrl = new URL("/auth/google/callback", apiOrigin);
   const cookie = (name: string, value: string, maxAge: number) =>
-    `${name}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secureCookie}`;
+    `${name}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=${cookieSameSite}; Max-Age=${maxAge}${domainCookie}${secureCookie}`;
   const sessionCookies = (session: { accessToken: string; refreshToken: string }) => [
     cookie("patela_access", session.accessToken, 3600),
     cookie("patela_refresh", session.refreshToken, 60 * 60 * 24 * 30),
@@ -63,13 +76,23 @@ export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrig
     catch { return undefined; }
   }
   void app.register(cors, {
-    origin: (origin, callback) => callback(null, !origin || origin === publicOrigin),
+    origin: (origin, callback) => callback(null, originAllowed(origin)),
     methods: ["GET", "POST", "PATCH"],
     allowedHeaders: ["Authorization", "Content-Type"],
     credentials: true,
   });
-  void app.register(rateLimit, { global: false });
-  const service = new PatelaService(db, chain, escrowAddress, chainId, tokenAddress, tokenDecimals);
+  addPostgresRateLimitHook(app, db);
+  const service = new PatelaService(db, chainId ?? BASE_CHAIN_ID);
+  const mailer = new OutboxMailer(db, mailTransport);
+  const orders = new OrderService({ db, chain, escrowAddress, chainId: chainId ?? BASE_CHAIN_ID,
+    tokenAddress: tokenAddress ?? ZARP_BASE, tokenDecimals: tokenDecimals ?? ZARP_DECIMALS, publicOrigin, demoMode });
+  // Any write may have queued email (sign-in codes, order and business invites, review decisions).
+  // Send it before the reply: a Lambda freezes once it has responded. A mail outage never fails the request.
+  app.addHook("onSend", async request => {
+    if (request.method !== "GET" && request.method !== "HEAD" && request.method !== "OPTIONS") {
+      await mailer.flush().catch(() => { /* Rows stay pending for the next flush. */ });
+    }
+  });
   const onboarding = new OnboardingService(db, publicOrigin);
 
   app.setErrorHandler((error, _request, reply) => {
@@ -87,7 +110,7 @@ export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrig
 
   async function requireUser(request: FastifyRequest, reply: FastifyReply): Promise<Identity> {
     const authorization = request.headers.authorization;
-    if (!authorization && request.headers.origin && request.headers.origin !== publicOrigin) {
+    if (!authorization && !originAllowed(request.headers.origin)) {
       throw new DomainError("Origin is not allowed for cookie authentication", 403);
     }
     let token = authorization?.startsWith("Bearer ") ? authorization.slice(7)
@@ -126,7 +149,7 @@ export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrig
     await service.ensureProfile(identity);
     reply.header("Cache-Control", "no-store");
     reply.header("Set-Cookie", sessionCookies(session));
-    return session;
+    return { authenticated: true, profile: await service.profile(identity.id) };
   });
   app.get("/auth/google/url", async (_request, reply) => {
     if (!enableGoogleCodeFlow) throw new DomainError("Google authorization-code sign-in is not configured", 503);
@@ -164,7 +187,7 @@ export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrig
   });
   app.post("/auth/google/id-token", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } },
     async (request, reply) => {
-      if (request.headers.origin !== apiOrigin && request.headers.origin !== publicOrigin) {
+      if (!request.headers.origin || !originAllowed(request.headers.origin)) {
         throw new DomainError("Origin is not allowed", 403);
       }
       if (!request.headers["content-type"]?.toLowerCase().startsWith("application/json")) {
@@ -217,7 +240,7 @@ export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrig
     return { authenticated: true, profile: await service.profile(user.id) };
   });
   app.post("/auth/logout", async (request, reply) => {
-    if (request.headers.origin && request.headers.origin !== publicOrigin) {
+    if (!originAllowed(request.headers.origin)) {
       throw new DomainError("Origin is not allowed", 403);
     }
     const access = request.headers.authorization?.startsWith("Bearer ")
@@ -283,72 +306,100 @@ export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrig
   });
   app.get("/admin/outbox", async (request, reply) => {
     const user = await requireUser(request, reply);
-    return onboarding.outbox(user.id);
+    await requireAdmin(db, user.id);
+    return mailer.outbox();
+  });
+  app.post("/admin/outbox/flush", async (request, reply) => {
+    const user = await requireUser(request, reply);
+    await requireAdmin(db, user.id);
+    await mailer.flush();
+    return mailer.outbox();
   });
 
   app.get("/dashboard", async (request, reply) => {
     const user = await requireUser(request, reply);
-    return { profile: await service.profile(user.id), orders: await service.listOrders(user.id) };
+    return { profile: await service.profile(user.id), orders: await orders.list(user.id) };
   });
   app.get("/orders", async (request, reply) => {
     const user = await requireUser(request, reply);
-    return { orders: await service.listOrders(user.id) };
+    return { orders: await orders.list(user.id) };
   });
-  app.post("/orders", async (request, reply) => {
+  app.post("/orders", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (request, reply) => {
     const user = await requireUser(request, reply);
-    const body = objectBody(request.body);
-    return service.createOrder(user.id, body.amountZarp, body.handoffs, body.refundAfterHours);
+    return orders.createOrder(user.id, objectBody(request.body));
   });
   app.get<{ Params: { id: string } }>("/orders/:id", async (request, reply) => {
     const user = await requireUser(request, reply);
-    return service.orderFor(user.id, request.params.id);
+    return orders.view(user.id, request.params.id);
   });
-  app.post<{ Params: { id: string } }>("/orders/:id/funding/verify", async (request, reply) => {
+  app.get<{ Params: { token: string } }>("/invitations/:token",
+    { config: { rateLimit: { max: 30, timeWindow: "1 minute" } } },
+    async request => orders.invitation(request.params.token));
+  app.post<{ Params: { token: string } }>("/invitations/:token/accept",
+    { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (request, reply) => {
     const user = await requireUser(request, reply);
-    return service.verifyFunding(user.id, request.params.id, objectBody(request.body).txHash);
+    return orders.acceptInvitation(user.id, request.params.token, objectBody(request.body).walletAddress);
   });
-  app.post<{ Params: { id: string } }>("/orders/:id/refund/verify", async (request, reply) => {
+  type OrderParams = { Params: { id: string } };
+  type StageParams = { Params: { id: string; stage: string } };
+  type SessionParams = { Params: { id: string; stage: string; sessionId: string } };
+  app.post<OrderParams>("/orders/:id/chain", async (request, reply) => {
     const user = await requireUser(request, reply);
-    return service.verifyRefund(user.id, request.params.id, objectBody(request.body).txHash);
+    const body = objectBody(request.body);
+    return orders.linkChain(user.id, request.params.id, body.chainOrderId, body.createTxHash);
   });
-  app.post<{ Params: { id: string } }>("/orders/:id/disputes", async (request, reply) => {
+  const txRoutes = {
+    "funding/verify": orders.verifyFunding,
+    "acceptance/verify": orders.verifyAcceptance,
+    "driver/verify": orders.verifyDriver,
+    "refund/verify": orders.verifyRefund,
+  } as const;
+  for (const [path, verify] of Object.entries(txRoutes)) {
+    app.post<OrderParams>(`/orders/:id/${path}`, async (request, reply) => {
+      const user = await requireUser(request, reply);
+      return verify.call(orders, user.id, request.params.id, objectBody(request.body).txHash);
+    });
+  }
+  app.post<OrderParams>("/orders/:id/driver-invite",
+    { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (request, reply) => {
     const user = await requireUser(request, reply);
-    return service.raiseDispute(user.id, request.params.id, objectBody(request.body).reason);
+    return orders.inviteDriver(user.id, request.params.id, objectBody(request.body).email);
+  });
+  app.post<StageParams>("/orders/:id/handoffs/:stage/session", async (request, reply) => {
+    const user = await requireUser(request, reply);
+    return orders.openSession(user.id, request.params.id, request.params.stage, objectBody(request.body));
+  });
+  app.get<SessionParams>("/orders/:id/handoffs/:stage/session/:sessionId", async (request, reply) => {
+    const user = await requireUser(request, reply);
+    const { id, stage, sessionId } = request.params;
+    return orders.sessionState(user.id, id, stage, sessionId);
+  });
+  app.post<SessionParams>("/orders/:id/handoffs/:stage/session/:sessionId/receiver", async (request, reply) => {
+    const user = await requireUser(request, reply);
+    const { id, stage, sessionId } = request.params;
+    return orders.submitReceiver(user.id, id, stage, sessionId, objectBody(request.body));
+  });
+  app.post<StageParams>("/orders/:id/handoffs/:stage/verify", async (request, reply) => {
+    const user = await requireUser(request, reply);
+    return orders.verifyHandoff(user.id, request.params.id, request.params.stage, objectBody(request.body).txHash);
+  });
+  app.post<OrderParams>("/orders/:id/disputes", async (request, reply) => {
+    const user = await requireUser(request, reply);
+    return orders.raiseDispute(user.id, request.params.id, objectBody(request.body).reason);
   });
   app.get("/admin/disputes", async (request, reply) => {
     const user = await requireUser(request, reply);
-    return { disputes: await service.listOpenDisputes(user.id) };
+    return { disputes: await orders.listOpenDisputes(user.id) };
   });
-  app.post<{ Params: { id: string } }>("/admin/disputes/:id/review", async (request, reply) => {
+  app.post<OrderParams>("/admin/disputes/:id/review", async (request, reply) => {
     const user = await requireUser(request, reply);
     const body = objectBody(request.body);
-    return service.reviewDispute(user.id, request.params.id, body.decision, body.note);
+    return orders.reviewDispute(user.id, request.params.id, body.decision, body.note);
   });
-  app.post<{ Params: { id: string; stage: string } }>(
-    "/orders/:id/handoffs/:stage/challenge", async (request, reply) => {
-      const user = await requireUser(request, reply);
-      return service.issueHandoff(user.id, request.params.id, request.params.stage);
-    },
-  );
-  app.post<{ Params: { id: string; stage: string } }>(
-    "/orders/:id/handoffs/:stage/submit", async (request, reply) => {
-      const user = await requireUser(request, reply);
-      const body = objectBody(request.body);
-      return service.submitHandoff(user.id, request.params.id, request.params.stage,
-        body.nonce, body.fromSignature, body.toSignature);
-    },
-  );
-  app.post<{ Params: { id: string; stage: string } }>(
-    "/orders/:id/handoffs/:stage/verify", async (request, reply) => {
-      const user = await requireUser(request, reply);
-      return service.verifyHandoff(user.id, request.params.id, request.params.stage,
-        objectBody(request.body).txHash);
-    },
-  );
   app.post<{ Params: { id: string } }>("/orders/:id/route",
     { config: { rateLimit: { max: 20, timeWindow: "1 minute" } } }, async (request, reply) => {
     const user = await requireUser(request, reply);
-    await service.orderFor(user.id, request.params.id);
+    await orders.requireParticipant(user.id, request.params.id);
     if (!integrations) throw new DomainError("Google Maps is not configured", 503);
     const body = objectBody(request.body);
     const origin = point(body.origin);

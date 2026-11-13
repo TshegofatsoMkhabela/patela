@@ -108,6 +108,9 @@ Resources:
           Value: !Ref ZarpAddress
         - Name: NEXT_PUBLIC_API_ORIGIN
           Value: !Ref ApiOrigin
+        # Same backend for the sign-in client (src/lib/patela-api.ts), so the session cookie is shared.
+        - Name: NEXT_PUBLIC_API_BASE_URL
+          Value: !Ref ApiOrigin
         - Name: NEXT_PUBLIC_WEB3AUTH_CLIENT_ID
           Value: !Ref Web3AuthClientId
         - Name: NEXT_PUBLIC_RPC_URL
@@ -136,6 +139,9 @@ Resources:
         - Name: NEXT_PUBLIC_ZARP_ADDRESS
           Value: !Ref ZarpAddress
         - Name: NEXT_PUBLIC_API_ORIGIN
+          Value: !Ref ApiOrigin
+        # Same backend for the sign-in client (src/lib/patela-api.ts), so the session cookie is shared.
+        - Name: NEXT_PUBLIC_API_BASE_URL
           Value: !Ref ApiOrigin
         - Name: NEXT_PUBLIC_WEB3AUTH_CLIENT_ID
           Value: !Ref Web3AuthClientId
