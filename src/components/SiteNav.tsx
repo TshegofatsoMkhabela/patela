@@ -24,12 +24,17 @@ function reportLink(outcome: LinkOutcome) {
   }
 }
 
-/** Testnet only: mints MockZARP to the connected wallet from the wallet itself. */
-function TestZarpButton({ address, className }: { address: string; className: string }) {
+/**
+ * Testnet only: mints MockZARP to the connected wallet from the wallet itself.
+ * Renders nothing unless a real wallet is on Base Sepolia and MockZARP is configured.
+ */
+export function TestZarpButton({ className = "pt-btn ghost" }: { className?: string }) {
+  const { wallet } = usePatela();
   const [busy, setBusy] = useState(false);
   const eth = browserEthereum();
-  if (!TEST_ZARP || !eth) return null;
+  if (!TEST_ZARP || !eth || !wallet || wallet.demo || wallet.chain !== "Base Sepolia") return null;
   const token = TEST_ZARP;
+  const address = wallet.address;
 
   async function mint() {
     if (!eth) return;
@@ -67,14 +72,9 @@ export function WalletButton({ className = "pt-btn ghost sm" }: { className?: st
   const { wallet } = usePatela();
   if (wallet)
     return (
-      <>
-        <button className={className} onClick={() => actions.setWallet(null)} title="Disconnect">
-          <span className="pt-dot" /> {shortAddr(wallet.address)} · {wallet.chain}
-        </button>
-        {!wallet.demo && wallet.chain === "Base Sepolia" && (
-          <TestZarpButton address={wallet.address} className={className} />
-        )}
-      </>
+      <button className={className} onClick={() => actions.setWallet(null)} title="Disconnect">
+        <span className="pt-dot" /> {shortAddr(wallet.address)} · {wallet.chain}
+      </button>
     );
   return (
     <button
