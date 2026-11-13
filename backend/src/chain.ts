@@ -15,7 +15,7 @@ export const escrowEventsAbi = parseAbi([
 ]);
 const balanceAbi = parseAbi(["function balanceOf(address) view returns (uint256)"]);
 
-export type EscrowEventName = (typeof escrowEventsAbi)[number]["name"];
+type EscrowEventName = (typeof escrowEventsAbi)[number]["name"];
 
 /** One decoded escrow log. Fields not carried by an event are undefined. */
 export type ChainEvent = {
@@ -80,6 +80,8 @@ export function decodeEscrowLogs(logs: readonly RawLog[], escrowAddress: Address
 
 export class BaseChainVerifier implements ChainVerifier {
   private readonly client;
+  /** The RPC's chain never changes for a container, so it is checked once. */
+  private chainChecked?: Promise<void>;
 
   constructor(
     rpcUrl: string,
@@ -92,10 +94,12 @@ export class BaseChainVerifier implements ChainVerifier {
   }
 
   async events(txHash: Hex): Promise<ChainEvent[]> {
-    if (await this.client.getChainId() !== this.chainId) throw new Error("RPC is connected to the wrong chain");
-    const receipt = await this.client.getTransactionReceipt({ hash: txHash });
+    this.chainChecked ??= this.client.getChainId().then(id => {
+      if (id !== this.chainId) throw new Error("RPC is connected to the wrong chain");
+    }).catch(error => { this.chainChecked = undefined; throw error; });
+    const [, receipt, currentBlock] = await Promise.all([this.chainChecked,
+      this.client.getTransactionReceipt({ hash: txHash }), this.client.getBlockNumber()]);
     if (receipt.status !== "success") throw new Error("Transaction reverted");
-    const currentBlock = await this.client.getBlockNumber();
     if (currentBlock - receipt.blockNumber + 1n < BigInt(this.confirmations)) {
       throw new Error("Transaction is not sufficiently confirmed");
     }

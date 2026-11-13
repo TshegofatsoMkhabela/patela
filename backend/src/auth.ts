@@ -1,6 +1,8 @@
 import { createHash, randomBytes, randomInt, randomUUID } from "node:crypto";
 import { CodeChallengeMethod, OAuth2Client } from "google-auth-library";
 import type { Database, Queryable } from "./db.js";
+import { queueEmail } from "./email.js";
+import { sha256Hex } from "./validation.js";
 
 export interface Identity { id: string; email: string }
 export interface Session { accessToken: string; refreshToken: string }
@@ -54,7 +56,7 @@ export class GoogleOidcProvider implements GoogleIdentityProvider {
   }
 }
 
-function hash(value: string): string { return createHash("sha256").update(value).digest("hex"); }
+const hash = sha256Hex;
 function token(): string { return randomBytes(32).toString("base64url"); }
 function emailKey(email: string): string { return email.trim().toLowerCase(); }
 
@@ -102,10 +104,7 @@ export class PostgresAuth implements AuthProvider {
          values ($1,$2,$3,now()+interval '10 minutes')`,
         [id, normalized, hash(`${id}:${code}`)],
       );
-      await db.query(
-        `insert into email_outbox (id,to_email,template,payload) values ($1,$2,'login_otp',$3::jsonb)`,
-        [randomUUID(), normalized, JSON.stringify({ code })],
-      );
+      await queueEmail(db, normalized, "login_otp", { code });
     });
   }
 

@@ -1,4 +1,5 @@
-import type { Database } from "./db.js";
+import { randomUUID } from "node:crypto";
+import type { Database, Queryable } from "./db.js";
 
 export type MailMessage = { to: string; subject: string; text: string };
 
@@ -8,12 +9,22 @@ export interface MailTransport {
 
 type Payload = Record<string, unknown>;
 const MAX_ATTEMPTS = 3;
-const BATCH = 20;
+/** Kept small because sending happens inside a user request: at most BATCH x timeout of waiting. */
+const BATCH = 5;
+
+export type EmailTemplate = "login_otp" | "order_supplier_invited" | "order_driver_invited" | "member_invited"
+  | "organization_submitted" | "organization_approved" | "organization_rejected";
+
+/** The one way to queue an email. The typed template keeps producers and renderEmail in step. */
+export async function queueEmail(db: Queryable, to: string, template: EmailTemplate, payload: Payload) {
+  await db.query("insert into email_outbox (id,to_email,template,payload) values ($1,$2,$3,$4)",
+    [randomUUID(), to, template, JSON.stringify(payload)]);
+}
 
 const str = (value: unknown) => (typeof value === "string" ? value : "");
 
 /** Plain-text bodies for every template the backend queues. */
-export function renderEmail(template: string, payload: Payload): { subject: string; text: string } {
+export function renderEmail(template: EmailTemplate, payload: Payload): { subject: string; text: string } {
   const link = str(payload.acceptUrl);
   switch (template) {
     case "order_supplier_invited":
@@ -34,6 +45,9 @@ export function renderEmail(template: string, payload: Payload): { subject: stri
     case "member_invited":
       return { subject: `Patela: join ${str(payload.legalName)}`,
         text: `You've been invited to join ${str(payload.legalName)} on Patela.\n\n${link}` };
+    case "organization_submitted":
+      return { subject: "Patela: your business is under review",
+        text: `We received ${str(payload.legalName)} for review. We will email you when it is decided.` };
     case "organization_approved":
       return { subject: "Patela: your business is approved",
         text: `${str(payload.legalName)} is approved on Patela and can now trade.` };
@@ -67,6 +81,18 @@ export class OutboxMailer {
 
   get enabled() { return Boolean(this.transport); }
 
+  /** Admin view of the outbox (DEMO: shows payloads, including accept links). */
+  async outbox() {
+    const result = await this.db.query(
+      `select id,to_email,template,payload,status,attempts,last_error,sent_at,created_at
+       from email_outbox order by created_at, id limit 200`,
+    );
+    return { demo: true, note: this.enabled
+      ? "Demo outbox: emails are sent through the configured Gmail SMTP account."
+      : "Demo outbox: no mail transport is configured, so these emails are queued but never delivered.",
+    emails: result.rows };
+  }
+
   async flush(): Promise<void> {
     if (!this.transport) return;
     const rows = (await this.db.query<{ id: string; to_email: string; template: string; payload: Payload }>(
@@ -81,7 +107,8 @@ export class OutboxMailer {
       const attempts = Number(claimed.rows[0]?.attempts);
       if (!attempts) continue;
       try {
-        await withTimeout(this.transport.send({ to: row.to_email, ...renderEmail(row.template, row.payload) }),
+        await withTimeout(this.transport.send({ to: row.to_email,
+          ...renderEmail(row.template as EmailTemplate, row.payload) }),
           this.timeoutMs);
         await this.db.query("update email_outbox set status='sent',sent_at=now(),last_error=null where id=$1",
           [row.id]);

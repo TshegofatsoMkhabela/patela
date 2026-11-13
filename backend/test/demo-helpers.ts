@@ -4,6 +4,7 @@ import type { Address, Hex } from "viem";
 import type { PrivateKeyAccount } from "viem/accounts";
 import type { ChainEvent, ChainVerifier } from "../src/chain.js";
 import type { MailMessage, MailTransport } from "../src/email.js";
+import type { ExternalIntegrations } from "../src/integrations.js";
 import { walletLinkTypedData } from "../src/service.js";
 
 export const DEMO_CHAIN_ID = 84532;
@@ -27,6 +28,12 @@ export class TestChain implements ChainVerifier {
     })));
     return txHash;
   }
+}
+
+export class TestIntegrations implements ExternalIntegrations {
+  async route() { return { distanceMeters: 250000, duration: "10800s", encodedPolyline: "test" }; }
+  async transcribe() { return "Box received"; }
+  async speak() { return Buffer.from("test mp3"); }
 }
 
 export class TestMail implements MailTransport {

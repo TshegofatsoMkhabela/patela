@@ -4,29 +4,18 @@ import test from "node:test";
 import { privateKeyToAccount } from "viem/accounts";
 import type { Address, Hex } from "viem";
 import { buildApp } from "../src/app.js";
-import type { ExternalIntegrations, Point } from "../src/integrations.js";
-import { PatelaService } from "../src/service.js";
+import { walletLinkTypedData } from "../src/service.js";
 import { TestAuth, TestDatabase } from "./helpers.js";
-import { TestChain } from "./demo-helpers.js";
+import { ESCROW as escrow, TestChain, TestIntegrations } from "./demo-helpers.js";
 
-const escrow = "0x1111111111111111111111111111111111111111" as Address;
 const wallets = [1, 2, 3, 4, 5].map(i =>
   privateKeyToAccount(`0x${i.toString(16).padStart(64, "0")}` as Hex));
 const ids: string[] = wallets.map(() => randomUUID());
-
-class TestIntegrations implements ExternalIntegrations {
-  async route(_origin: Point, _destination: Point) {
-    return { distanceMeters: 250000, duration: "10800s", encodedPolyline: "test" };
-  }
-  async transcribe(_audio: Buffer, _languageCode: string, _sampleRateHertz: number) { return "Box received"; }
-  async speak() { return Buffer.from("test mp3"); }
-}
 
 test("auth, sessions, wallet linking and CORS guard the API", async () => {
   const db = new TestDatabase();
   const auth = new TestAuth();
   const chain = new TestChain();
-  const service = new PatelaService(db);
   const app = buildApp({ db, auth, chain, escrowAddress: escrow,
     publicOrigin: "http://localhost:3000", integrations: new TestIntegrations(),
     googleClientId: "example-client-id", enableAuthSmokePage: true });
@@ -43,7 +32,7 @@ test("auth, sessions, wallet linking and CORS guard the API", async () => {
       });
       assert.equal(challenge.statusCode, 200);
       const response = challenge.json();
-      const signature = await wallets[i].signTypedData(service.walletLinkTypedData(
+      const signature = await wallets[i].signTypedData(walletLinkTypedData(8453,
         ids[i], wallets[i].address, response.typedData.message.nonce,
         Number(response.typedData.message.expiresAt),
       ));
@@ -174,8 +163,7 @@ test("auth, sessions, wallet linking and CORS guard the API", async () => {
       headers: { cookie: oauthCookies, origin: "https://untrusted.example" },
     });
     assert.equal(blockedCookieOrigin.statusCode, 403);
-    const testnetService = new PatelaService(db, 84532);
-    assert.equal(testnetService.walletLinkTypedData(ids[0], wallets[0].address,
+    assert.equal(walletLinkTypedData(84532, ids[0], wallets[0].address,
       `0x${"0".repeat(64)}`, 1).domain.chainId, 84532);
   } finally {
     await app.close();

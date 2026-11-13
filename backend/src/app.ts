@@ -8,7 +8,7 @@ import type { Database } from "./db.js";
 import { BASE_CHAIN_ID, PatelaService, ZARP_BASE, ZARP_DECIMALS } from "./service.js";
 import { OrderService } from "./orders.js";
 import { OutboxMailer, type MailTransport } from "./email.js";
-import { OnboardingService } from "./onboarding.js";
+import { OnboardingService, requireAdmin } from "./onboarding.js";
 import { DomainError, requiredEmail as email } from "./validation.js";
 import type { Address } from "viem";
 import type { ExternalIntegrations, Point } from "./integrations.js";
@@ -77,8 +77,15 @@ export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrig
   void app.register(rateLimit, { global: false });
   const service = new PatelaService(db, chainId ?? BASE_CHAIN_ID);
   const mailer = new OutboxMailer(db, mailTransport);
-  const orders = new OrderService(db, chain, escrowAddress, chainId ?? BASE_CHAIN_ID, tokenAddress ?? ZARP_BASE,
-    tokenDecimals ?? ZARP_DECIMALS, publicOrigin, mailer, demoMode);
+  const orders = new OrderService({ db, chain, escrowAddress, chainId: chainId ?? BASE_CHAIN_ID,
+    tokenAddress: tokenAddress ?? ZARP_BASE, tokenDecimals: tokenDecimals ?? ZARP_DECIMALS, publicOrigin, demoMode });
+  // Any write may have queued email (sign-in codes, order and business invites, review decisions).
+  // Send it before the reply: a Lambda freezes once it has responded. A mail outage never fails the request.
+  app.addHook("onSend", async request => {
+    if (request.method !== "GET" && request.method !== "HEAD" && request.method !== "OPTIONS") {
+      await mailer.flush().catch(() => { /* Rows stay pending for the next flush. */ });
+    }
+  });
   const onboarding = new OnboardingService(db, publicOrigin);
 
   app.setErrorHandler((error, _request, reply) => {
@@ -124,7 +131,6 @@ export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrig
   app.post("/auth/otp/request", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (request, reply) => {
     const body = objectBody(request.body);
     await auth.requestEmailOtp(email(body.email));
-    await mailer.flush().catch(() => { /* The code stays queued; the next flush retries it. */ });
     return { queued: true };
   });
   app.post("/auth/otp/verify", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (request, reply) => {
@@ -293,13 +299,14 @@ export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrig
   });
   app.get("/admin/outbox", async (request, reply) => {
     const user = await requireUser(request, reply);
-    return onboarding.outbox(user.id, mailer.enabled);
+    await requireAdmin(db, user.id);
+    return mailer.outbox();
   });
   app.post("/admin/outbox/flush", async (request, reply) => {
     const user = await requireUser(request, reply);
-    await onboarding.outbox(user.id, mailer.enabled);
+    await requireAdmin(db, user.id);
     await mailer.flush();
-    return onboarding.outbox(user.id, mailer.enabled);
+    return mailer.outbox();
   });
 
   app.get("/dashboard", async (request, reply) => {

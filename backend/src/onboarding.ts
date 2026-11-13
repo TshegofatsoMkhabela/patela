@@ -1,6 +1,7 @@
-import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import type { Database, Queryable } from "./db.js";
-import { DomainError, isUniqueViolation, requiredEmail, requiredText, requiredUuid } from "./validation.js";
+import { queueEmail } from "./email.js";
+import { DomainError, isUniqueViolation, requiredEmail, requiredText, requiredUuid, sha256Hex } from "./validation.js";
 
 type Row = Record<string, unknown>;
 
@@ -46,8 +47,12 @@ function businessDetails(body: Record<string, unknown>, partial: boolean) {
   return details;
 }
 
-function hashToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
+const hashToken = sha256Hex;
+
+/** Platform staff check shared by every admin route. */
+export async function requireAdmin(db: Queryable, userId: string): Promise<void> {
+  const role = (await db.query<Row>("select role from profiles where id=$1", [userId])).rows[0]?.role;
+  if (role !== "admin") throw new DomainError("Admin role required", 403);
 }
 
 /** Rethrows a duplicate CIPC number as a 409 instead of a server error. */
@@ -83,9 +88,7 @@ export class OnboardingService {
     return result.rows[0];
   }
 
-  private async requireAdmin(userId: string) {
-    if ((await this.profile(this.db, userId)).role !== "admin") throw new DomainError("Admin role required", 403);
-  }
+  private requireAdmin(userId: string) { return requireAdmin(this.db, userId); }
 
   /** The caller's view of one organization. Non-members get 404 so existence is not revealed. */
   private async membership(db: Queryable, userId: string, orgIdInput: unknown, lock = false): Promise<Row> {
@@ -105,13 +108,6 @@ export class OnboardingService {
       throw new DomainError("Organization owner or admin required", 403);
     }
     return org;
-  }
-
-  private async queueEmail(db: Queryable, to: string, template: string, payload: Row) {
-    await db.query(
-      "insert into email_outbox (id,to_email,template,payload) values ($1,$2,$3,$4)",
-      [randomUUID(), to, template, JSON.stringify(payload)],
-    );
   }
 
   async state(userId: string) {
@@ -175,7 +171,7 @@ export class OnboardingService {
          reviewed_by=null,reviewed_at=null,updated_at=now() where id=$1`, [org.id],
       );
       const submitter = await this.profile(db, userId);
-      await this.queueEmail(db, String(submitter.email), "organization_submitted",
+      await queueEmail(db, String(submitter.email), "organization_submitted",
         { organizationId: org.id, legalName: org.legal_name });
       return this.membership(db, userId, org.id);
     });
@@ -231,7 +227,7 @@ export class OnboardingService {
       );
       const acceptUrl = new URL("/invite", this.publicOrigin);
       acceptUrl.searchParams.set("token", token);
-      await this.queueEmail(db, email, "member_invited", {
+      await queueEmail(db, email, "member_invited", {
         organizationId: org.id, legalName: org.legal_name, memberRole: roleInput,
         acceptUrl: acceptUrl.toString(),
       });
@@ -266,17 +262,5 @@ export class OnboardingService {
         [invitation.id, userId]);
       return this.membership(db, userId, invitation.organization_id);
     });
-  }
-
-  async outbox(adminId: string, delivering = false) {
-    await this.requireAdmin(adminId);
-    const result = await this.db.query<Row>(
-      `select id,to_email,template,payload,status,attempts,last_error,sent_at,created_at
-       from email_outbox order by created_at, id limit 200`,
-    );
-    return { demo: true, note: delivering
-      ? "Demo outbox: emails are sent through the configured Gmail SMTP account."
-      : "Demo outbox: no mail transport is configured, so these emails are queued but never delivered.",
-    emails: result.rows };
   }
 }

@@ -4,8 +4,6 @@ import type { Identity } from "./auth.js";
 import type { Database } from "./db.js";
 import { DomainError, requiredAddress, requiredUuid, utcSeconds } from "./validation.js";
 
-export { DomainError };
-
 export const BASE_CHAIN_ID = 8453;
 export const ZARP_BASE = "0xb755506531786C8aC63B756BaB1ac387bACB0C04" as Address;
 export const ZARP_DECIMALS = 18;
@@ -68,9 +66,6 @@ export class PatelaService {
     return result.rows[0];
   }
 
-  walletLinkTypedData(userId: string, wallet: Address, challengeNonce: Hex, expiresAt: number) {
-    return walletLinkTypedData(this.chainId, userId, wallet, challengeNonce, expiresAt);
-  }
 
   async issueWalletChallenge(userId: string, walletInput: unknown) {
     const wallet = requiredAddress(walletInput);
@@ -82,7 +77,7 @@ export class PatelaService {
        values ($1,$2,$3,$4,$5)`,
       [id, requiredUuid(userId, "user ID"), wallet.toLowerCase(), challengeNonce, expiresAt.toISOString()],
     );
-    const typedData = this.walletLinkTypedData(userId, wallet, challengeNonce, Math.floor(expiresAt.getTime() / 1000));
+    const typedData = walletLinkTypedData(this.chainId, userId, wallet, challengeNonce, Math.floor(expiresAt.getTime() / 1000));
     return { challengeId: id, expiresAt: expiresAt.toISOString(), typedData: {
       ...typedData, message: { ...typedData.message, expiresAt: typedData.message.expiresAt.toString() },
     } };
@@ -101,7 +96,7 @@ export class PatelaService {
         throw new DomainError("Wallet challenge expired or used", 409);
       }
       const wallet = requiredAddress(challenge.wallet_address);
-      const typedData = this.walletLinkTypedData(
+      const typedData = walletLinkTypedData(this.chainId,
         userId, wallet, challenge.nonce as Hex, utcSeconds(challenge.expires_at),
       );
       const valid = await verifyTypedData({ ...typedData, address: wallet, signature: signatureInput as Hex });

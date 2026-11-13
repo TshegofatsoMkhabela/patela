@@ -1,12 +1,12 @@
-import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { isHex, keccak256, parseUnits, toBytes, zeroAddress, type Address, type Hex } from "viem";
 import type { ChainEvent, ChainVerifier } from "./chain.js";
 import type { Database, Queryable } from "./db.js";
-import type { OutboxMailer } from "./email.js";
-import { missingCapability } from "./onboarding.js";
+import { queueEmail } from "./email.js";
+import { missingCapability, requireAdmin } from "./onboarding.js";
 import {
-  DomainError, isUniqueViolation, requiredAddress, requiredEmail, requiredText, requiredTx, requiredUuid,
-  sameAddress,
+  DomainError, isUniqueViolation, requiredAddress, requiredBytes32, requiredEmail, requiredText, requiredTx,
+  requiredUuid, sameAddress, sha256Hex,
 } from "./validation.js";
 
 // Two-handoff demo orders (specs/INTERFACES.md §1, §4). The chain is the source of truth for money:
@@ -14,21 +14,27 @@ import {
 
 type Row = Record<string, unknown>;
 type Party = "buyer" | "supplier" | "driver";
+/** Order lifecycle, in order. Must match the orders_status_check list in migrations/004. */
+export type OrderStatus = "awaiting_supplier" | "awaiting_chain" | "awaiting_funding" | "funded" | "accepted"
+  | "driver_assigned" | "in_progress" | "delivered" | "refunded";
+type EventCheck = (event: ChainEvent, order: Row) => boolean;
 export type Evidence = { lat: number; lng: number; accuracyM: number; capturedAt: number; role: "giver" | "receiver" };
 
 const INVITE_DAYS = 7;
 const MAX_QR_SECONDS = 300;
 const AMOUNT = /^\d{1,12}(\.\d{1,2})?$/;
-const BYTES32 = /^0x[0-9a-f]{64}$/i;
 const UINT256 = /^[1-9]\d{0,77}$/;
-const DISPUTABLE = ["funded", "accepted", "driver_assigned", "in_progress"];
+const DISPUTABLE: readonly OrderStatus[] = ["funded", "accepted", "driver_assigned", "in_progress"];
+/** Who may see an order: platform admins and the order's participants. $1 is the order alias's user ID. */
+const VISIBLE = (userParam: string) => `((select role from profiles where id=${userParam})='admin'
+  or exists (select 1 from order_participants p where p.order_id=o.id and p.user_id=${userParam}))`;
 /** Who gives and receives at each stage, and the order status the stage starts from and moves to. */
 const STAGES = {
   1: { giver: "supplier", receiver: "driver", from: "driver_assigned", to: "in_progress" },
   2: { giver: "driver", receiver: "buyer", from: "in_progress", to: "delivered" },
-} as const satisfies Record<number, { giver: Party; receiver: Party; from: string; to: string }>;
+} as const satisfies Record<number, { giver: Party; receiver: Party; from: OrderStatus; to: OrderStatus }>;
 
-const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
+const hashToken = sha256Hex;
 const wei = (value: unknown) => BigInt(String(value ?? 0));
 const walletOf = (order: Row, party: Party) => order[`${party}_wallet_address`] as string | null;
 const idOf = (order: Row, party: Party) => order[`${party}_id`] as string | null;
@@ -47,38 +53,47 @@ function requiredEvidence(value: unknown, role: Evidence["role"]): Evidence {
     || !Number.isInteger(capturedAt) || capturedAt < 1_600_000_000 || raw.role !== role) {
     throw new DomainError(`Valid ${role} location evidence required`);
   }
-  // Rebuilt in the frozen key order so the hash never depends on how JSON or jsonb ordered the keys.
   return { lat, lng, accuracyM, capturedAt, role };
 }
 
-/** INTERFACES.md §3: keccak256 of the JSON array [giverEvidence, receiverEvidence]. */
+/**
+ * INTERFACES.md §3: keccak256 of the JSON array [giverEvidence, receiverEvidence]. Each object is rebuilt
+ * in the frozen key order, so the hash never depends on how JSON or jsonb ordered the keys.
+ */
 export function evidenceHash(giver: Evidence, receiver: Evidence): Hex {
-  return keccak256(toBytes(JSON.stringify([requiredEvidence(giver, "giver"), requiredEvidence(receiver, "receiver")])));
+  const canonical = ({ lat, lng, accuracyM, capturedAt, role }: Evidence) => ({ lat, lng, accuracyM, capturedAt, role });
+  return keccak256(toBytes(JSON.stringify([canonical(giver), canonical(receiver)])));
 }
 
+export type OrderServiceOptions = {
+  db: Database; chain?: ChainVerifier; escrowAddress: Address; chainId: number; tokenAddress: Address;
+  tokenDecimals: number; publicOrigin: string;
+  /** DEMO: also return one-time accept links in responses. */
+  demoMode?: boolean;
+};
+
+/** Queued emails are sent by the app's onSend hook (app.ts), not here. */
 export class OrderService {
-  constructor(
-    private readonly db: Database,
-    private readonly chain: ChainVerifier | undefined,
-    private readonly escrowAddress: Address,
-    private readonly chainId: number,
-    private readonly tokenAddress: Address,
-    private readonly tokenDecimals: number,
-    private readonly publicOrigin: string,
-    private readonly mailer?: OutboxMailer,
-    private readonly demoMode = false,
-  ) {}
+  private readonly db: Database;
+  private readonly chain?: ChainVerifier;
+  private readonly escrowAddress: Address;
+  private readonly chainId: number;
+  private readonly tokenAddress: Address;
+  private readonly tokenDecimals: number;
+  private readonly publicOrigin: string;
+  private readonly demoMode: boolean;
+
+  constructor(options: OrderServiceOptions) {
+    ({ db: this.db, chain: this.chain, escrowAddress: this.escrowAddress, chainId: this.chainId,
+      tokenAddress: this.tokenAddress, tokenDecimals: this.tokenDecimals, publicOrigin: this.publicOrigin } = options);
+    this.demoMode = options.demoMode ?? false;
+  }
 
   private zarp(value: unknown, label: string): bigint {
     if (typeof value !== "string" || !AMOUNT.test(value)) {
       throw new DomainError(`${label} must be a ZARP amount with at most two decimals`);
     }
     return parseUnits(value, this.tokenDecimals);
-  }
-
-  /** Sends queued emails before the response (a Lambda freezes after replying). A mail outage never fails the request. */
-  private async sendMail() {
-    try { await this.mailer?.flush(); } catch { /* Rows stay pending for the next flush. */ }
   }
 
   private demoLink(acceptUrl: string) {
@@ -95,9 +110,8 @@ export class OrderService {
     );
     const acceptUrl = new URL("/accept", this.publicOrigin);
     acceptUrl.searchParams.set("token", token);
-    await db.query("insert into email_outbox (id,to_email,template,payload) values ($1,$2,$3,$4)",
-      [randomUUID(), email, `order_${role}_invited`, JSON.stringify({ orderId, acceptUrl: acceptUrl.toString(),
-        ...(agreementText ? { agreementText } : {}) })]);
+    await queueEmail(db, email, role === "supplier" ? "order_supplier_invited" : "order_driver_invited",
+      { orderId, acceptUrl: acceptUrl.toString(), ...(agreementText ? { agreementText } : {}) });
     return acceptUrl.toString();
   }
 
@@ -138,7 +152,6 @@ export class OrderService {
       await db.query("insert into order_participants (order_id,user_id) values ($1,$2)", [id, userId]);
       return this.invite(db, id, "supplier", supplierEmail, userId, agreementText);
     });
-    await this.sendMail();
     return { id, agreementHash, refundDeadline, ...this.demoLink(acceptUrl) };
   }
 
@@ -193,7 +206,7 @@ export class OrderService {
         [invitation.id, userId]);
       return String(order.id);
     });
-    return this.view(userId, orderId);
+    return this.render((await this.db.query<Row>("select * from orders where id=$1", [orderId])).rows[0]);
   }
 
   async inviteDriver(userId: string, orderIdInput: unknown, emailInput: unknown) {
@@ -204,17 +217,13 @@ export class OrderService {
       throw new DomainError("Invite a driver after accepting the order on chain, and only once", 409);
     }
     const acceptUrl = await this.db.transaction(db => this.invite(db, String(order.id), "driver", email, userId));
-    await this.sendMail();
     return { invited: true, ...this.demoLink(acceptUrl) };
   }
 
-  private async participantOrder(userId: string, orderIdInput: unknown, db: Queryable = this.db): Promise<Row> {
+  private async participantOrder(userId: string, orderIdInput: unknown): Promise<Row> {
     const orderId = requiredUuid(orderIdInput, "order ID");
-    const order = (await db.query<Row>(
-      `select o.* from orders o where o.id=$1 and (
-         (select role from profiles where id=$2)='admin'
-         or exists (select 1 from order_participants p where p.order_id=o.id and p.user_id=$2))`,
-      [orderId, userId],
+    const order = (await this.db.query<Row>(
+      `select o.* from orders o where o.id=$1 and ${VISIBLE("$2")}`, [orderId, userId],
     )).rows[0];
     if (!order) throw new DomainError("Order not found", 404);
     return order;
@@ -240,21 +249,21 @@ export class OrderService {
 
   /**
    * Moves an order from one status to the next when a confirmed transaction holds every expected
-   * escrow event (each `expect` predicate needs its own event). Re-sending an already-recorded
-   * transaction returns the order unchanged, so a retried request after a timeout is harmless.
+   * escrow event (`expect` builds the checks from the loaded order; each check needs its own event).
+   * Re-sending an already-recorded transaction returns the order unchanged, so a retry is harmless.
    */
   private async advance(userId: string, orderIdInput: unknown, txHashInput: unknown, step: {
-    who: readonly Party[]; from: readonly string[]; to: string;
-    expect: ReadonlyArray<(event: ChainEvent, order: Row) => boolean>;
-    chainOrderId?: bigint; update?: string;
+    who: readonly Party[]; from: readonly OrderStatus[]; to: OrderStatus;
+    expect: (order: Row) => EventCheck[] | Promise<EventCheck[]>;
+    chainOrderId?: bigint; stagesDone?: 1 | 2;
   }) {
     const order = await this.participantOrder(userId, orderIdInput);
     this.requireParty(order, userId, step.who);
     const txHash = requiredTx(txHashInput).toLowerCase();
     const recorded = async (db: Queryable) => Boolean((await db.query(
       "select 1 from chain_events where order_id=$1 and tx_hash=$2 limit 1", [order.id, txHash])).rows[0]);
-    if (!step.from.includes(String(order.status))) {
-      if (await recorded(this.db)) return this.view(userId, String(order.id));
+    if (!step.from.includes(order.status as OrderStatus)) {
+      if (await recorded(this.db)) return this.render(order);
       throw new DomainError(`Order is ${order.status}, not ${step.from.join(" or ")}`, 409);
     }
     const chainOrderId = step.chainOrderId ?? (order.chain_order_id ? BigInt(String(order.chain_order_id)) : null);
@@ -262,7 +271,7 @@ export class OrderService {
     const events = (await this.receipt(txHash))
       .filter(e => e.chainId === this.chainId && e.orderId === chainOrderId);
     const used = new Set<number>();
-    for (const matches of step.expect) {
+    for (const matches of await step.expect(order)) {
       const index = events.findIndex((e, i) => !used.has(i) && matches(e, order));
       if (index < 0) throw new DomainError("The transaction does not contain the expected escrow event for this order", 409);
       used.add(index);
@@ -270,7 +279,7 @@ export class OrderService {
     try {
       await this.db.transaction(async db => {
         const locked = (await db.query<Row>("select status from orders where id=$1 for update", [order.id])).rows[0];
-        if (!step.from.includes(String(locked.status))) {
+        if (!step.from.includes(locked.status as OrderStatus)) {
           if (await recorded(db)) return;
           throw new DomainError(`Order is ${locked.status}, not ${step.from.join(" or ")}`, 409);
         }
@@ -283,14 +292,15 @@ export class OrderService {
           );
         }
         await db.query(`update orders set status=$2, chain_order_id=coalesce(chain_order_id,$3),
-          updated_at=now()${step.update ? `, ${step.update}` : ""} where id=$1`,
-        [order.id, step.to, chainOrderId.toString()]);
+          stages_done=coalesce($4,stages_done), updated_at=now() where id=$1`,
+        [order.id, step.to, chainOrderId.toString(), step.stagesDone ?? null]);
       });
     } catch (error) {
       if (isUniqueViolation(error)) throw new DomainError("That on-chain order is already linked to another order", 409);
       throw error;
     }
-    return this.view(userId, String(order.id));
+    // Access was checked above, so the fresh row is rendered without repeating it.
+    return this.render((await this.db.query<Row>("select * from orders where id=$1", [order.id])).rows[0]);
   }
 
   linkChain(userId: string, orderId: unknown, chainOrderIdInput: unknown, createTxHash: unknown) {
@@ -299,7 +309,7 @@ export class OrderService {
     }
     return this.advance(userId, orderId, createTxHash, {
       who: ["buyer"], from: ["awaiting_chain"], to: "awaiting_funding", chainOrderId: BigInt(chainOrderIdInput),
-      expect: [(e, o) => e.name === "OrderCreated" && e.amountWei === wei(o.amount_wei)
+      expect: () => [(e, o) => e.name === "OrderCreated" && e.amountWei === wei(o.amount_wei)
         && sameAddress(e.buyer, o.buyer_wallet_address) && sameAddress(e.supplier, o.supplier_wallet_address)
         && e.agreementHash?.toLowerCase() === String(o.agreement_hash).toLowerCase()],
     });
@@ -308,14 +318,14 @@ export class OrderService {
   verifyFunding(userId: string, orderId: unknown, txHash: unknown) {
     return this.advance(userId, orderId, txHash, {
       who: ["buyer"], from: ["awaiting_funding"], to: "funded",
-      expect: [(e, o) => e.name === "EscrowFunded" && e.amountWei === wei(o.amount_wei)],
+      expect: () => [(e, o) => e.name === "EscrowFunded" && e.amountWei === wei(o.amount_wei)],
     });
   }
 
   verifyAcceptance(userId: string, orderId: unknown, txHash: unknown) {
     return this.advance(userId, orderId, txHash, {
       who: ["supplier", "buyer"], from: ["funded"], to: "accepted",
-      expect: [(e, o) => e.name === "OrderAccepted" && sameAddress(e.supplier, o.supplier_wallet_address)
+      expect: () => [(e, o) => e.name === "OrderAccepted" && sameAddress(e.supplier, o.supplier_wallet_address)
         && e.agreementHash?.toLowerCase() === String(o.agreement_hash).toLowerCase()],
     });
   }
@@ -323,45 +333,47 @@ export class OrderService {
   verifyDriver(userId: string, orderId: unknown, txHash: unknown) {
     return this.advance(userId, orderId, txHash, {
       who: ["supplier"], from: ["accepted"], to: "driver_assigned",
-      expect: [(e, o) => e.name === "DriverAssigned" && Boolean(o.driver_wallet_address)
+      expect: () => [(e, o) => e.name === "DriverAssigned" && Boolean(o.driver_wallet_address)
         && sameAddress(e.driver, o.driver_wallet_address)],
     });
   }
 
-  async verifyHandoff(userId: string, orderId: unknown, stageInput: unknown, txHash: unknown) {
+  verifyHandoff(userId: string, orderId: unknown, stageInput: unknown, txHash: unknown) {
     const stage = requiredStage(stageInput);
     const { giver, receiver, from, to } = STAGES[stage];
-    const id = requiredUuid(orderId, "order ID");
-    const hashes = new Set((await this.db.query<Row>(
-      `select lower(evidence_hash) as h from handoff_sessions
-       where order_id=$1 and stage=$2 and evidence_hash is not null`, [id, stage],
-    )).rows.map(r => String(r.h)));
-    const splits = (await this.db.query<Row>("select * from orders where id=$1", [id])).rows[0] ?? {};
     const payments: ReadonlyArray<readonly [Party, string]> = stage === 1
       ? [["driver", "driver_at_pickup_wei"], ["supplier", "supplier_at_pickup_wei"]]
       : [["supplier", "supplier_at_delivery_wei"]];
     return this.advance(userId, orderId, txHash, {
-      who: [giver, receiver], from: [from], to, update: `stages_done=${stage}`,
-      expect: [
-        (e, o) => e.name === "HandoffVerified" && e.stage === stage && sameAddress(e.giver, walletOf(o, giver))
-          && sameAddress(e.receiver, walletOf(o, receiver)) && hashes.has(String(e.evidenceHash).toLowerCase()),
-        // A zero split moves no tokens, so the contract need not log a payment for it.
-        ...payments.filter(([, column]) => wei(splits[column]) > 0n).map(([party, column]) =>
-          (e: ChainEvent, o: Row) => e.name === "PaymentReleased" && e.stage === stage
-            && sameAddress(e.recipient, walletOf(o, party)) && e.amountWei === wei(o[column])),
-      ],
+      who: [giver, receiver], from: [from], to, stagesDone: stage,
+      expect: async order => {
+        const hashes = new Set((await this.db.query<Row>(
+          `select lower(evidence_hash) as h from handoff_sessions
+           where order_id=$1 and stage=$2 and evidence_hash is not null`, [order.id, stage],
+        )).rows.map(r => String(r.h)));
+        return [
+          (e, o) => e.name === "HandoffVerified" && e.stage === stage && sameAddress(e.giver, walletOf(o, giver))
+            && sameAddress(e.receiver, walletOf(o, receiver)) && hashes.has(String(e.evidenceHash).toLowerCase()),
+          // A zero split moves no tokens, so the contract need not log a payment for it.
+          ...payments.filter(([, column]) => wei(order[column]) > 0n).map(([party, column]): EventCheck =>
+            (e, o) => e.name === "PaymentReleased" && e.stage === stage
+              && sameAddress(e.recipient, walletOf(o, party)) && e.amountWei === wei(o[column])),
+        ];
+      },
     });
   }
 
-  async verifyRefund(userId: string, orderId: unknown, txHash: unknown) {
-    const released = (await this.db.query<Row>(
-      "select coalesce(sum(amount_wei),0) as paid from chain_events where order_id=$1 and event_name='PaymentReleased'",
-      [requiredUuid(orderId, "order ID")],
-    )).rows[0].paid;
+  verifyRefund(userId: string, orderId: unknown, txHash: unknown) {
     return this.advance(userId, orderId, txHash, {
       who: ["buyer"], from: DISPUTABLE, to: "refunded",
-      expect: [(e, o) => e.name === "OrderRefunded" && sameAddress(e.buyer, o.buyer_wallet_address)
-        && e.amountWei === wei(o.amount_wei) - wei(released)],
+      expect: async order => {
+        const released = (await this.db.query<Row>(
+          "select coalesce(sum(amount_wei),0) as paid from chain_events where order_id=$1 and event_name='PaymentReleased'",
+          [order.id],
+        )).rows[0].paid;
+        return [(e, o) => e.name === "OrderRefunded" && sameAddress(e.buyer, o.buyer_wallet_address)
+          && e.amountWei === wei(o.amount_wei) - wei(released)];
+      },
     });
   }
 
@@ -382,7 +394,7 @@ export class OrderService {
         : "Delivery can only start after pickup", 409);
     }
     if (await this.openDispute(this.db, order.id)) throw new DomainError("Handoffs are paused by an open dispute", 409);
-    if (typeof body.nonce !== "string" || !BYTES32.test(body.nonce)) throw new DomainError("Nonce must be 32 bytes hex");
+    const nonce = requiredBytes32(body.nonce, "nonce (32 bytes hex)");
     const expiresAt = Number(body.expiresAt);
     const now = Date.now() / 1000;
     if (!Number.isInteger(expiresAt) || expiresAt <= now || expiresAt > now + MAX_QR_SECONDS) {
@@ -394,7 +406,7 @@ export class OrderService {
       await this.db.query(
         `insert into handoff_sessions (id,order_id,stage,nonce,expires_at,giver_evidence)
          values ($1,$2,$3,$4,to_timestamp($5),$6)`,
-        [id, order.id, stage, body.nonce.toLowerCase(), expiresAt, JSON.stringify(giverEvidence)],
+        [id, order.id, stage, nonce.toLowerCase(), expiresAt, JSON.stringify(giverEvidence)],
       );
     } catch (error) {
       if (isUniqueViolation(error)) throw new DomainError("This QR nonce was already used", 409);
@@ -468,7 +480,11 @@ export class OrderService {
 
   /** GET /orders/:id — the order, its parties, on-chain timeline and four-wallet balances. */
   async view(userId: string, orderIdInput: unknown) {
-    const order = await this.participantOrder(userId, orderIdInput);
+    return this.render(await this.participantOrder(userId, orderIdInput));
+  }
+
+  private async render(order: Row) {
+    const balances = this.balances(order);
     const people = new Map((await this.db.query<Row>(
       "select id,email from profiles where id = any($1::uuid[])",
       [[order.buyer_id, order.supplier_id, order.driver_id].filter(Boolean)],
@@ -496,16 +512,14 @@ export class OrderService {
       agreementText: order.agreement_text, agreementHash: order.agreement_hash,
       refundDeadline: order.refund_deadline, stagesDone: order.stages_done, createdAt: order.created_at,
       parties: { buyer: party("buyer"), supplier: party("supplier", order.supplier_email), driver: party("driver") },
-      timeline, balances: await this.balances(order), disputes,
+      timeline, balances: await balances, disputes,
     };
   }
 
   async list(userId: string) {
     const result = await this.db.query<Row>(
       `select o.id,o.chain_order_id,o.amount_wei,o.status,o.refund_deadline,o.created_at from orders o
-       where (select role from profiles where id=$1)='admin'
-          or exists (select 1 from order_participants p where p.order_id=o.id and p.user_id=$1)
-       order by o.created_at desc limit 100`, [userId],
+       where ${VISIBLE("$1")} order by o.created_at desc limit 100`, [userId],
     );
     return result.rows.map(o => ({ id: o.id, chainOrderId: o.chain_order_id, totalWei: String(o.amount_wei),
       status: o.status, refundDeadline: o.refund_deadline, createdAt: o.created_at }));
@@ -517,7 +531,7 @@ export class OrderService {
     try {
       return await this.db.transaction(async db => {
         const locked = (await db.query<Row>("select status from orders where id=$1 for update", [order.id])).rows[0];
-        if (!DISPUTABLE.includes(String(locked.status))) {
+        if (!DISPUTABLE.includes(locked.status as OrderStatus)) {
           throw new DomainError("Only a funded order that is not finished can be disputed", 409);
         }
         return (await db.query<Row>(
@@ -532,20 +546,15 @@ export class OrderService {
     }
   }
 
-  private async requireAdmin(userId: string) {
-    const role = (await this.db.query<Row>("select role from profiles where id=$1", [userId])).rows[0]?.role;
-    if (role !== "admin") throw new DomainError("Admin role required", 403);
-  }
-
   async listOpenDisputes(adminId: string) {
-    await this.requireAdmin(adminId);
+    await requireAdmin(this.db, adminId);
     return (await this.db.query<Row>(
       "select id,order_id,raised_by,reason,created_at from disputes where status='open' order by created_at limit 100",
     )).rows;
   }
 
   async reviewDispute(adminId: string, disputeIdInput: unknown, decisionInput: unknown, noteInput: unknown) {
-    await this.requireAdmin(adminId);
+    await requireAdmin(this.db, adminId);
     const disputeId = requiredUuid(disputeIdInput, "dispute ID");
     if (!["release", "refund", "reject"].includes(String(decisionInput))) throw new DomainError("Invalid decision");
     const note = requiredText(noteInput, "Review note", 10, 2000);

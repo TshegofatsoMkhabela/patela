@@ -8,7 +8,8 @@ alter table orders alter column funding_deadline drop not null;
 alter table orders drop constraint if exists orders_status_check;
 alter table orders add constraint orders_status_check check (status in (
   'awaiting_supplier','awaiting_chain','awaiting_funding','funded','accepted',
-  'driver_assigned','in_progress','delivered','refunded','disputed'));
+  'driver_assigned','in_progress','delivered','refunded'));
+-- Disputes live in the disputes table; 'disputed' was never written, so it is dropped from the list.
 
 alter table orders add column if not exists supplier_email text;
 alter table orders add column if not exists supplier_id uuid references profiles(id);

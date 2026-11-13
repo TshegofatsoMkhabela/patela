@@ -4,11 +4,10 @@ import test from "node:test";
 import { keccak256, toBytes, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { buildApp } from "../src/app.js";
-import type { ExternalIntegrations } from "../src/integrations.js";
 import { evidenceHash, type Evidence } from "../src/orders.js";
 import { TestAuth, TestDatabase } from "./helpers.js";
 import {
-  DEMO_CHAIN_ID, ESCROW, TOKEN, TestChain, TestMail, approveBuyer, bearer, linkWallet, tokenFrom, zarp,
+  DEMO_CHAIN_ID, ESCROW, TOKEN, TestChain, TestIntegrations, TestMail, approveBuyer, bearer, linkWallet, tokenFrom, zarp,
 } from "./demo-helpers.js";
 
 // Users: 0 buyer, 1 supplier, 2 driver, 3 outsider / platform admin.
@@ -23,11 +22,6 @@ const now = () => Math.floor(Date.now() / 1000);
 const evidence = (role: Evidence["role"], lat: number): Evidence =>
   ({ lat, lng: 28.0473, accuracyM: 12, capturedAt: now(), role });
 
-const integrations: ExternalIntegrations = {
-  async route() { return { distanceMeters: 250000, duration: "10800s", encodedPolyline: "test" }; },
-  async transcribe() { return "Box received"; },
-  async speak() { return Buffer.from("test mp3"); },
-};
 
 test("demo flow: order, email invites, on-chain steps, QR handoffs and refund", async () => {
   const db = new TestDatabase();
@@ -35,7 +29,7 @@ test("demo flow: order, email invites, on-chain steps, QR handoffs and refund", 
   const chain = new TestChain();
   const mail = new TestMail();
   const app = buildApp({ db, auth, chain, escrowAddress: ESCROW, publicOrigin: "http://localhost:3000",
-    chainId: DEMO_CHAIN_ID, tokenAddress: TOKEN, tokenDecimals: 18, integrations,
+    chainId: DEMO_CHAIN_ID, tokenAddress: TOKEN, tokenDecimals: 18, integrations: new TestIntegrations(),
     mailTransport: mail, demoMode: true });
   const setAdmin = (role: string) => db.query("update profiles set role=$2 where id=$1", [ids[3], role]);
   const post = (user: number, url: string, payload: Record<string, unknown> = {}) =>
