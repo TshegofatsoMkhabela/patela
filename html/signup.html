@@ -124,23 +124,28 @@
             </label>
             <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:12px;">
               <div class="role-select-card selected" data-role="buyer" onclick="selectRole('buyer')">
-                <div style="font-size:1.25rem;margin-bottom:4px;">🏢 <strong>Commercial Buyer / Consignor</strong></div>
+                <div style="margin-bottom:6px;"><span class="badge badge-gold" style="font-size:0.7rem;padding:3px 8px;">CLIENT</span></div>
+                <div style="font-size:1.05rem;font-weight:600;margin-bottom:4px;color:#fff;">Commercial Buyer / Consignor</div>
                 <div style="font-size:0.8rem;color:var(--text-secondary);">Procuring commodities, funding escrow, managing split shipments.</div>
               </div>
               <div class="role-select-card" data-role="carrier" onclick="selectRole('carrier')">
-                <div style="font-size:1.25rem;margin-bottom:4px;">🚛 <strong>Freight Carrier / Fleet Operator</strong></div>
+                <div style="margin-bottom:6px;"><span class="badge badge-blue" style="font-size:0.7rem;padding:3px 8px;">WORKER</span></div>
+                <div style="font-size:1.05rem;font-weight:600;margin-bottom:4px;color:#fff;">Freight Carrier / Fleet Operator</div>
                 <div style="font-size:0.8rem;color:var(--text-secondary);">Haulage contractor, corridor bidding, driver dispatch.</div>
               </div>
               <div class="role-select-card" data-role="supplier" onclick="selectRole('supplier')">
-                <div style="font-size:1.25rem;margin-bottom:4px;">🏭 <strong>Commodity Supplier / Producer</strong></div>
+                <div style="margin-bottom:6px;"><span class="badge badge-blue" style="font-size:0.7rem;padding:3px 8px;">SUPPLIER</span></div>
+                <div style="font-size:1.05rem;font-weight:600;margin-bottom:4px;color:#fff;">Commodity Supplier / Producer</div>
                 <div style="font-size:0.8rem;color:var(--text-secondary);">Mine or plant, weighbridge dispatch, milestone payouts.</div>
               </div>
               <div class="role-select-card" data-role="driver" onclick="selectRole('driver')">
-                <div style="font-size:1.25rem;margin-bottom:4px;">🚚 <strong>Frontline Driver / Clerk</strong></div>
+                <div style="margin-bottom:6px;"><span class="badge badge-gold" style="font-size:0.7rem;padding:3px 8px;">DRIVER</span></div>
+                <div style="font-size:1.05rem;font-weight:600;margin-bottom:4px;color:#fff;">Frontline Driver / Clerk</div>
                 <div style="font-size:0.8rem;color:var(--text-secondary);">Physical cargo custody, mobile links with zero app install.</div>
               </div>
               <div class="role-select-card" data-role="auditor" onclick="selectRole('auditor')">
-                <div style="font-size:1.25rem;margin-bottom:4px;">🔍 <strong>Forensic Auditor / Inspector</strong></div>
+                <div style="margin-bottom:6px;"><span class="badge badge-neutral" style="font-size:0.7rem;padding:3px 8px;">AUDITOR</span></div>
+                <div style="font-size:1.05rem;font-weight:600;margin-bottom:4px;color:#fff;">Forensic Auditor / Inspector</div>
                 <div style="font-size:0.8rem;color:var(--text-secondary);">Compliance inspection, SHA-256 byte proofs, block verifier.</div>
               </div>
             </div>
@@ -213,8 +218,10 @@
 
       <!-- STAGE 3: Completed Profile Confirmation -->
       <section id="stage-completed" class="card" style="display:none;padding:48px 36px;text-align:center;">
-        <div style="width:72px;height:72px;border-radius:50%;background:rgba(255,228,182,0.18);border:1px solid rgba(255,228,182,0.6);display:grid;place-items:center;font-size:2rem;margin:0 auto 20px;color:#ffe2b2;">
-          ✓
+        <div style="width:72px;height:72px;border-radius:50%;background:rgba(255,228,182,0.18);border:1px solid rgba(255,228,182,0.6);display:grid;place-items:center;margin:0 auto 20px;color:#ffe2b2;">
+          <svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
         </div>
         <div class="section-label" style="color:var(--gold);">VERIFICATION COMPLETE</div>
         <h1 style="font-size:clamp(1.8rem,3.2vw,2.4rem);margin:6px 0 12px;font-weight:600;color:#fff;">
@@ -263,7 +270,7 @@
     const ROLE_CONFIGS = {
       buyer: {
         title: "Commercial Buyer / Consignor",
-        redirectUrl: "orders.html",
+        redirectUrl: "client-dashboard.html",
         steps: [
           {
             title: "Company & CIPC Registration",
@@ -314,7 +321,7 @@
       },
       carrier: {
         title: "Freight Logistics Carrier",
-        redirectUrl: "tender-trail.html",
+        redirectUrl: "worker-dashboard.html",
         steps: [
           {
             title: "Fleet Capacity & Configuration",
@@ -354,7 +361,7 @@
       },
       supplier: {
         title: "Commodity Supplier / Producer",
-        redirectUrl: "order-detail.html",
+        redirectUrl: "worker-dashboard.html",
         steps: [
           {
             title: "Commodity & Production Profile",
@@ -498,10 +505,12 @@
       document.getElementById("ob-progress-bar").style.width = ((currentStepIdx + 1) / total * 100) + "%";
       document.getElementById("ob-step-title").textContent = step.title;
       document.getElementById("ob-step-subtitle").textContent = step.subtitle;
-      document.getElementById("ob-next-btn").textContent = currentStepIdx === total - 1 ? "Complete Verification & Finish Setup ✓" : "Save & Next Step →";
+      document.getElementById("ob-next-btn").textContent = currentStepIdx === total - 1 ? "Complete Verification & Finish Setup →" : "Save & Next Step →";
 
       const container = document.getElementById("ob-fields-container");
       container.innerHTML = "";
+
+      const checkSvg = '<svg viewBox="0 0 16 16" width="12" height="12" stroke="#02060f" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5 L6.5 12 L13 4"/></svg>';
 
       step.fields.forEach(f => {
         const wrap = document.createElement("div");
@@ -545,13 +554,13 @@
           f.options.forEach(opt => {
             const item = document.createElement("div");
             item.className = "multi-choice-item" + (selected.includes(opt) ? " checked" : "");
-            item.innerHTML = '<span class="check-box-square">' + (selected.includes(opt) ? "✓" : "") + '</span><span>' + opt + '</span>';
+            item.innerHTML = '<span class="check-box-square">' + (selected.includes(opt) ? checkSvg : "") + '</span><span>' + opt + '</span>';
             item.addEventListener("click", () => {
               const idx = selected.indexOf(opt);
               if (idx >= 0) selected.splice(idx, 1);
               else selected.push(opt);
               item.className = "multi-choice-item" + (selected.includes(opt) ? " checked" : "");
-              item.querySelector(".check-box-square").textContent = selected.includes(opt) ? "✓" : "";
+              item.querySelector(".check-box-square").innerHTML = selected.includes(opt) ? checkSvg : "";
             });
             listWrap.appendChild(item);
           });
@@ -583,17 +592,20 @@
         renderStep();
       } else {
         // Complete!
+        const appRole = selectedRole === "buyer" ? "client" : (selectedRole === "auditor" ? "auditor" : "worker");
         const profile = {
           name: userData.name,
           email: userData.email,
           phone: userData.phone,
-          role: selectedRole,
+          role: appRole,
+          rawRole: selectedRole,
           roleTitle: cfg.title,
           extra: userData.extra,
           verified: true
         };
         try {
           localStorage.setItem("patela_auth_user", JSON.stringify(profile));
+          localStorage.setItem("patela_current_role", appRole);
         } catch(e) {}
 
         document.getElementById("stage-onboarding").style.display = "none";
@@ -619,3 +631,4 @@
   </script>
 </body>
 </html>
+

@@ -36,7 +36,12 @@
 
         <!-- Sealed Bid Safeguard Banner (Section 4.2 TEN-01) -->
         <div class="trust-boundary-card" style="margin-bottom:24px;">
-          <div style="color:var(--gold);font-size:1.3rem;">🔒</div>
+          <div style="color:var(--gold);line-height:1;display:flex;align-items:center;">
+            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
           <div>
             <strong>Confidentiality Invariant (Section 4.2 &amp; 6):</strong>
             All supplier bids were encrypted upon submission and sealed until deadline: <strong>2026-11-09 17:00 SAST</strong>. No competitor pricing or capacity was leaked prior to deadline unsealing. Scoring decisions produce an immutable audit trail.
@@ -162,7 +167,7 @@
                   <td>48 Hours</td>
                   <td class="meta-text">6x 34-Ton Tri-Axles (Satellite Tracked)</td>
                   <td class="tabular" style="font-weight:600;color:var(--success);">94.5 / 100</td>
-                  <td><span class="badge badge-success">✓ Awarded &amp; Contracted</span></td>
+                  <td><span class="badge badge-success">Awarded &amp; Contracted</span></td>
                   <td class="right">
                     <a href="order-detail.html" class="btn btn-primary btn-sm">Inspect Order →</a>
                   </td>
