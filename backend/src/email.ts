@@ -95,6 +95,17 @@ export class OutboxMailer {
     emails: result.rows };
   }
 
+  /** LOCAL DEMO inbox: queued emails, newest first, optionally for one address and template. */
+  async inbox(toEmail?: string, template?: string) {
+    const result = await this.db.query<{ id: string; to_email: string; template: string;
+      payload: Record<string, unknown>; created_at: string }>(
+      `select id,to_email,template,payload,created_at from email_outbox
+       where ($1::text is null or to_email=$1) and ($2::text is null or template=$2)
+       order by created_at desc, id desc limit 50`, [toEmail ?? null, template ?? null]);
+    return result.rows.map(row => ({ ...row,
+      payload: typeof row.payload === "string" ? JSON.parse(row.payload) as Record<string, unknown> : row.payload }));
+  }
+
   async flush(): Promise<void> {
     if (!this.transport) return;
     const started = Date.now();

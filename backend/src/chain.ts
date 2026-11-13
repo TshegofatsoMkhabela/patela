@@ -1,7 +1,7 @@
 import {
   createPublicClient, decodeEventLog, http, parseAbi, type Address, type Hex,
 } from "viem";
-import { base, baseSepolia } from "viem/chains";
+import { base, baseSepolia, hardhat } from "viem/chains";
 
 /** Frozen escrow events (specs/INTERFACES.md §2; the web app's copy is src/lib/contracts.ts). */
 export const escrowEventsAbi = parseAbi([
@@ -87,10 +87,11 @@ export class BaseChainVerifier implements ChainVerifier {
     rpcUrl: string,
     private readonly escrowAddress: Address,
     private readonly confirmations: number,
-    private readonly chainId: 8453 | 84532 = 8453,
+    private readonly chainId: 8453 | 84532 | 31337 = 8453,
     private readonly tokenAddress?: Address,
   ) {
-    this.client = createPublicClient({ chain: chainId === 8453 ? base : baseSepolia, transport: http(rpcUrl) });
+    const chain = chainId === 8453 ? base : chainId === 84532 ? baseSepolia : hardhat;
+    this.client = createPublicClient({ chain, transport: http(rpcUrl) });
   }
 
   async events(txHash: Hex): Promise<ChainEvent[]> {

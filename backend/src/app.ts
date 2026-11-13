@@ -34,6 +34,12 @@ export interface AppDependencies {
   mailTransport?: MailTransport;
   /** DEMO: also return one-time accept links in API responses, in case an email is slow on stage. */
   demoMode?: boolean;
+  /**
+   * LOCAL DEMO only (runtime: DEMO_MODE, no mail, loopback API): sign-in codes are returned by
+   * /auth/otp/request and every queued email is readable at /demo/inbox, and business onboarding
+   * is approved automatically. Never enable on a host other people can reach.
+   */
+  demoLocal?: boolean;
 }
 
 function objectBody(value: unknown): Record<string, unknown> {
@@ -55,7 +61,7 @@ function point(value: unknown): Point {
 export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrigin = "http://localhost:4000",
   allowedOrigins = [], cookieDomain, cookieSameSite = "Lax", integrations,
   chainId, tokenAddress, tokenDecimals, googleClientId, enableGoogleCodeFlow = true,
-  enableAuthSmokePage = false, mailTransport, demoMode = false }: AppDependencies) {
+  enableAuthSmokePage = false, mailTransport, demoMode = false, demoLocal = false }: AppDependencies) {
   const app = Fastify({ logger: false, bodyLimit: 128 * 1024 });
   const secureCookie = new URL(apiOrigin).protocol === "https:" ? "; Secure" : "";
   const domainCookie = cookieDomain ? `; Domain=${cookieDomain}` : "";
@@ -85,7 +91,7 @@ export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrig
   const service = new PatelaService(db, chainId ?? BASE_CHAIN_ID);
   const mailer = new OutboxMailer(db, mailTransport);
   const orders = new OrderService({ db, chain, escrowAddress, chainId: chainId ?? BASE_CHAIN_ID,
-    tokenAddress: tokenAddress ?? ZARP_BASE, tokenDecimals: tokenDecimals ?? ZARP_DECIMALS, publicOrigin, demoMode });
+    tokenAddress: tokenAddress ?? ZARP_BASE, tokenDecimals: tokenDecimals ?? ZARP_DECIMALS, publicOrigin, demoMode, demoAutoApprove: demoLocal });
   // Any write may have queued email (sign-in codes, order and business invites, review decisions).
   // Send it before the reply: a Lambda freezes once it has responded. A mail outage never fails the request.
   app.addHook("onSend", async request => {
@@ -93,7 +99,7 @@ export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrig
       await mailer.flush().catch(() => { /* Rows stay pending for the next flush. */ });
     }
   });
-  const onboarding = new OnboardingService(db, publicOrigin);
+  const onboarding = new OnboardingService(db, publicOrigin, demoLocal);
 
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof DomainError) {
@@ -137,8 +143,12 @@ export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrig
 
   app.post("/auth/otp/request", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (request, reply) => {
     const body = objectBody(request.body);
-    await auth.requestEmailOtp(email(body.email));
-    return { queued: true };
+    const address = email(body.email);
+    await auth.requestEmailOtp(address);
+    if (!demoLocal) return { queued: true };
+    const [latest] = await mailer.inbox(address, "login_otp");
+    reply.header("Cache-Control", "no-store");
+    return { queued: true, demo: true, code: (latest?.payload as { code?: string } | undefined)?.code };
   });
   app.post("/auth/otp/verify", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (request, reply) => {
     const body = objectBody(request.body);
@@ -314,6 +324,14 @@ export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrig
     await requireAdmin(db, user.id);
     await mailer.flush();
     return mailer.outbox();
+  });
+
+  // LOCAL DEMO inbox: what would have been emailed (codes, accept links), newest first.
+  app.get<{ Querystring: { email?: string } }>("/demo/inbox", async (request, reply) => {
+    if (!demoLocal) throw new DomainError("Not found", 404);
+    reply.header("Cache-Control", "no-store");
+    const address = request.query.email ? email(request.query.email) : undefined;
+    return { demo: true, emails: await mailer.inbox(address) };
   });
 
   app.get("/dashboard", async (request, reply) => {

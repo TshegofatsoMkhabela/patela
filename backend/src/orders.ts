@@ -3,7 +3,7 @@ import { isHex, keccak256, parseUnits, toBytes, zeroAddress, type Address, type 
 import type { ChainEvent, ChainVerifier } from "./chain.js";
 import type { Database, Queryable } from "./db.js";
 import { queueEmail } from "./email.js";
-import { missingCapability, requireAdmin } from "./onboarding.js";
+import { ensureDemoCapability, missingCapability, requireAdmin } from "./onboarding.js";
 import {
   DomainError, isUniqueViolation, requiredAddress, requiredBytes32, requiredEmail, requiredText, requiredTx,
   requiredUuid, sameAddress, sha256Hex,
@@ -77,6 +77,8 @@ export type OrderServiceOptions = {
   tokenDecimals: number; publicOrigin: string;
   /** DEMO: also return one-time accept links in responses. */
   demoMode?: boolean;
+  /** LOCAL DEMO: users without an approved business get an approved demo business at the trading gates. */
+  demoAutoApprove?: boolean;
 };
 
 /** Queued emails are sent by the app's onSend hook (app.ts), not here. */
@@ -89,11 +91,13 @@ export class OrderService {
   private readonly tokenDecimals: number;
   private readonly publicOrigin: string;
   private readonly demoMode: boolean;
+  private readonly demoAutoApprove: boolean;
 
   constructor(options: OrderServiceOptions) {
     ({ db: this.db, chain: this.chain, escrowAddress: this.escrowAddress, chainId: this.chainId,
       tokenAddress: this.tokenAddress, tokenDecimals: this.tokenDecimals, publicOrigin: this.publicOrigin } = options);
     this.demoMode = options.demoMode ?? false;
+    this.demoAutoApprove = options.demoAutoApprove ?? false;
   }
 
   private zarp(value: unknown, label: string): bigint {
@@ -141,6 +145,7 @@ export class OrderService {
     const buyer = (await this.db.query<Row>("select email,wallet_address from profiles where id=$1", [userId])).rows[0];
     if (!buyer?.wallet_address) throw new DomainError("Link your wallet before ordering", 409);
     if (supplierEmail === buyer.email) throw new DomainError("The supplier must be someone else");
+    if (this.demoAutoApprove) await ensureDemoCapability(this.db, userId, "buyer");
     if (await missingCapability(this.db, [[userId, "buyer"]])) {
       throw new DomainError("Your business must be approved as a buyer before ordering", 403);
     }
@@ -198,6 +203,7 @@ export class OrderService {
       const order = (await db.query<Row>("select * from orders where id=$1 for update", [invitation.order_id])).rows[0];
       const role = invitation.role as "supplier" | "driver";
       const capability = role === "supplier" ? "supplier" : "carrier";
+      if (this.demoAutoApprove) await ensureDemoCapability(db, userId, capability);
       if (await missingCapability(db, [[userId, capability]])) {
         throw new DomainError(`Your business must be approved as a ${capability} before accepting this order`, 403);
       }

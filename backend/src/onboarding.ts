@@ -81,8 +81,29 @@ export async function missingCapability(db: Queryable, required: ReadonlyArray<r
   return required.find(([userId, capability]) => !met.has(`${userId}:${capability}`))?.[1] ?? null;
 }
 
+/**
+ * LOCAL DEMO only: makes sure `userId` belongs to an approved business with `capability`, creating
+ * an approved "Demo business" (all capabilities, a made-up CIPC number) when it has none. Used
+ * instead of an admin review so the one-command demo can trade straight after sign-in.
+ */
+export async function ensureDemoCapability(db: Queryable, userId: string, capability: Capability) {
+  if (!(await missingCapability(db, [[userId, capability]]))) return;
+  const id = randomUUID();
+  const cipc = `2026/${String(randomBytes(4).readUInt32BE() % 1_000_000).padStart(6, "0")}/07`;
+  const email = (await db.query<Row>("select email from profiles where id=$1", [userId])).rows[0]?.email;
+  await db.query(
+    `insert into organizations (id,legal_name,registration_number,capabilities,status,created_by,submitted_at,reviewed_at)
+     values ($1,$2,$3,$4,'approved',$5,now(),now())`,
+    [id, `Demo business (${String(email ?? "demo user")})`, cipc, [...CAPABILITIES], userId],
+  );
+  await db.query("insert into organization_members (organization_id,user_id,member_role) values ($1,$2,'owner')",
+    [id, userId]);
+}
+
 export class OnboardingService {
-  constructor(private readonly db: Database, private readonly publicOrigin: string) {}
+  constructor(private readonly db: Database, private readonly publicOrigin: string,
+    /** LOCAL DEMO: a submitted business is approved at once instead of waiting for an admin. */
+    private readonly demoAutoApprove = false) {}
 
   private async profile(db: Queryable, userId: string): Promise<Row> {
     const result = await db.query<Row>("select id,email,full_name,role from profiles where id=$1", [userId]);
@@ -169,8 +190,9 @@ export class OnboardingService {
         throw new DomainError("Only a draft or rejected business can be submitted", 409);
       }
       await db.query(
-        `update organizations set status='submitted',submitted_at=now(),rejection_reason=null,
-         reviewed_by=null,reviewed_at=null,updated_at=now() where id=$1`, [org.id],
+        `update organizations set status=$2,submitted_at=now(),rejection_reason=null,
+         reviewed_by=null,reviewed_at=${this.demoAutoApprove ? "now()" : "null"},updated_at=now() where id=$1`,
+        [org.id, this.demoAutoApprove ? "approved" : "submitted"],
       );
       const submitter = await this.profile(db, userId);
       await queueEmail(db, String(submitter.email), "organization_submitted",

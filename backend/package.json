@@ -4,9 +4,9 @@
   "description": "",
   "scripts": {
     "test": "tsx --test test/*.test.ts",
-    "dev": "node --env-file=.env --watch --import tsx src/server.ts",
-    "start": "node --env-file=.env --import tsx src/server.ts",
-    "migrate": "node --env-file=.env --import tsx src/migrate.ts",
+    "dev": "node --env-file-if-exists=.env --watch --import tsx src/server.ts",
+    "start": "node --env-file-if-exists=.env --import tsx src/server.ts",
+    "migrate": "node --env-file-if-exists=.env --import tsx src/migrate.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc -p tsconfig.build.json"
   },
