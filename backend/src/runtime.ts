@@ -19,7 +19,7 @@ export function createRuntime(env: NodeJS.ProcessEnv = process.env) {
     API_ORIGIN = "http://localhost:4000", CHAIN_CONFIRMATIONS = "3",
     GOOGLE_MAPS_SERVER_KEY, CHAIN_ID = "8453", TOKEN_ADDRESS, TOKEN_DECIMALS = "18",
     PG_POOL_MAX = "2", ENABLE_AUTH_SMOKE_PAGE = "false", DATABASE_SSL = "false",
-    SMTP_SECRET_ARN, DEMO_MODE = "false", COOKIE_DOMAIN, COOKIE_SAME_SITE = "Lax",
+    SMTP_SECRET_ARN, DEMO_MODE = "false", DEMO_LOCAL = "false", COOKIE_DOMAIN, COOKIE_SAME_SITE = "Lax",
   } = env;
   if (!DATABASE_URL) throw new Error("DATABASE_URL is required");
   // Google sign-in is optional: without a client ID the email-code sign-in still works.
@@ -62,9 +62,10 @@ export function createRuntime(env: NodeJS.ProcessEnv = process.env) {
     ? new BaseChainVerifier(BASE_RPC_URL, ESCROW_ADDRESS as Address, confirmations,
       chainId as (typeof SUPPORTED_CHAIN_IDS)[number], tokenAddress as Address)
     : undefined;
-  // LOCAL DEMO shortcuts (codes and links shown in the app, onboarding auto-approved) only when
-  // DEMO_MODE is on, no mail is configured and the API itself runs on this machine.
-  const demoLocal = DEMO_MODE === "true" && !SMTP_SECRET_ARN && LOOPBACK.has(new URL(API_ORIGIN).hostname);
+  // LOCAL DEMO shortcuts (codes and links shown in the app, onboarding auto-approved) need the
+  // explicit DEMO_LOCAL flag that only scripts/demo.mjs sets, plus DEMO_MODE, no mail and a
+  // loopback API origin. The flag matters: a deploy that omits API_ORIGIN defaults to localhost.
+  const demoLocal = DEMO_LOCAL === "true" && DEMO_MODE === "true" && !SMTP_SECRET_ARN && LOOPBACK.has(new URL(API_ORIGIN).hostname);
   const app = buildApp({
     db, auth, chain, escrowAddress: (ESCROW_ADDRESS ?? zeroAddress) as Address,
     publicOrigin, apiOrigin: API_ORIGIN, allowedOrigins, cookieDomain: COOKIE_DOMAIN,

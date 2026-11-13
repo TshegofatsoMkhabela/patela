@@ -232,6 +232,7 @@ async function main() {
     PORT: String(plan.apiPort),
     DATABASE_URL: databaseUrl,
     DEMO_MODE: "true",
+    DEMO_LOCAL: "true", // codes and links in responses, auto-approve: never set on a deployed API
     CHAIN_ID: String(chain.chainId),
     BASE_RPC_URL: env.BASE_RPC_URL || chain.rpcUrl,
     ESCROW_ADDRESS: chain.escrow,
@@ -301,7 +302,7 @@ async function main() {
     `  Maps: ${webEnv.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? "Google 3D map on" : "no NEXT_PUBLIC_GOOGLE_MAPS_API_KEY, map fallback"}`,
   );
   log(
-    `  Voice: ${backendEnv.GOOGLE_APPLICATION_CREDENTIALS ? "Google Speech on" : "no Google credentials, browser speech fallback"}`,
+    `  Voice: ${backendEnv.GOOGLE_APPLICATION_CREDENTIALS ? "Google Speech on for /voice/*" : "no Google credentials, /voice/* off (no voice UI yet)"}`,
   );
   log('Stop everything with "npm run demo:stop". Logs are in .demo/logs.');
 }

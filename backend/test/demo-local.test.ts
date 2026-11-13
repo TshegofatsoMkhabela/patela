@@ -85,7 +85,7 @@ test("Given local demo shortcuts, When a buyer with no business orders, Then an 
 const local = {
   DATABASE_URL: "postgres://patela:x@localhost:5432/patela", DEMO_MODE: "true", CHAIN_ID: "31337",
   BASE_RPC_URL: "http://127.0.0.1:8545", ESCROW_ADDRESS: ESCROW, TOKEN_ADDRESS: TOKEN, CHAIN_CONFIRMATIONS: "1",
-  PUBLIC_ORIGIN: "http://localhost:3001", API_ORIGIN: "http://localhost:4000",
+  PUBLIC_ORIGIN: "http://localhost:3001", API_ORIGIN: "http://localhost:4000", DEMO_LOCAL: "true",
 };
 
 test("Given the local demo env (chain 31337, no Google client ID), Then the runtime starts", async () => {
@@ -110,9 +110,11 @@ test("Given DATABASE_URL=pglite:memory, Then the runtime opens a migrated in-pro
   } finally { await app.close(); await db.close(); }
 });
 
-test("Given DEMO_MODE on a public API origin or with Gmail configured, Then the demo inbox stays off", async () => {
+test("Given DEMO_MODE on a public API origin, with Gmail, or without DEMO_LOCAL, Then the demo inbox stays off", async () => {
   for (const extra of [{ API_ORIGIN: "https://api.example", PUBLIC_ORIGIN: "https://demo.example" },
-    { SMTP_SECRET_ARN: "arn:aws:secretsmanager:af-south-1:123456789012:secret:patela-smtp" }]) {
+    { SMTP_SECRET_ARN: "arn:aws:secretsmanager:af-south-1:123456789012:secret:patela-smtp" },
+    // A Lambda with DEMO_MODE but no API_ORIGIN defaults to localhost: without DEMO_LOCAL it stays off.
+    { DEMO_LOCAL: undefined, API_ORIGIN: undefined }]) {
     const { app, db } = createRuntime({ ...local, ...extra });
     try {
       assert.equal((await app.inject({ method: "GET", url: "/demo/inbox" })).statusCode, 404);

@@ -62,8 +62,8 @@ Logs are in `.demo/logs`. If a port is taken, stop what is on it or set `DEMO_WE
 | Driver   | `driver@demo.patela.local`   | #3 `0x90F7…b906`             |
 
 - Sign-in codes and accept links are not emailed: the sign-in form fills the code in, and
-  `/demo-inbox` lists every code and link. This only happens with `DEMO_MODE`, no mail configured
-  and an API on localhost.
+  `/demo-inbox` lists every code and link. This only happens with `DEMO_MODE` plus `DEMO_LOCAL`
+  (set only by `npm run demo`), no mail configured and an API on localhost.
 - Businesses are approved automatically, so each persona can trade straight after signing in.
 - The demo wallets sign only on chain 31337. Their keys are Hardhat's public dev keys: never send
   real funds to them.
@@ -78,7 +78,7 @@ Logs are in `.demo/logs`. If a port is taken, stop what is on it or set `DEMO_WE
 2. Supplier (second window): open the accept link → sign in → **Use my demo wallet**. The buyer's
    page then creates and funds the escrow; the supplier clicks **Accept the order**, invites
    `driver@demo.patela.local` and waits.
-3. Driver (third window, or reuse the buyer's after signing out): open the driver link from
+3. Driver (a third profile or private window): open the driver link from
    `/demo-inbox` → sign in → **Use my demo wallet**. The supplier then clicks **Assign driver**.
 4. Pickup: supplier and driver open `/handoff/<orderId>/pickup`, pick their persona; the driver
    scans (or pastes) the supplier's QR, the supplier signs to release: driver +10%, supplier +40%.
@@ -88,7 +88,7 @@ Logs are in `.demo/logs`. If a port is taken, stop what is on it or set `DEMO_WE
 ### Plug in real services
 
 Copy `.env.demo.example` to `.env.demo` and fill in only what you want. Each key switches one thing
-on: Google Maps (3D buyer map, routes), Google Speech (`/voice/*`), Google sign-in, Gmail through
+on: Google Maps (3D buyer map, routes), Google Speech (`/voice/*` API; no voice UI yet), Google sign-in, Gmail through
 AWS Secrets Manager (turns the demo inbox off), or Base Sepolia contracts instead of the local chain.
 Restart with `npm run demo:stop && npm run demo`.
 
