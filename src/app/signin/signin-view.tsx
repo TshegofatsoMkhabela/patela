@@ -1,306 +1,215 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
+import { KeyRound, Mail } from "lucide-react";
 import { toast } from "sonner";
-import { SiteNav } from "@/components/SiteNav";
-import { Reveal } from "@/components/Reveal";
+import "@/styles/journey-auth.css";
 
-interface DemoAccount {
-  name: string;
-  role: string;
-  company: string;
-  icon: string;
-  email: string;
-  redirectUrl: string;
+type Method = "code" | "password";
+
+function GoogleMark() {
+  return (
+    <svg className="pa-social-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="#4285F4"
+        d="M21.35 12.25c0-.73-.06-1.42-.18-2.09H12v3.95h5.24a4.48 4.48 0 0 1-1.95 2.94v2.44h3.16c1.85-1.7 2.9-4.2 2.9-7.24Z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 21.5c2.64 0 4.85-.87 6.47-2.35l-3.16-2.44c-.88.59-2 .95-3.31.95-2.55 0-4.72-1.72-5.5-4.03H3.25v2.51A9.5 9.5 0 0 0 12 21.5Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M6.5 13.63a5.7 5.7 0 0 1 0-3.26V7.86H3.25a9.5 9.5 0 0 0 0 8.28l3.25-2.51Z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 6.34c1.44 0 2.72.5 3.74 1.46l2.8-2.8A9.1 9.1 0 0 0 12 2.5a9.5 9.5 0 0 0-8.75 5.36l3.25 2.51c.78-2.31 2.95-4.03 5.5-4.03Z"
+      />
+    </svg>
+  );
 }
 
-const DEMO_ACCOUNTS: DemoAccount[] = [
-  {
-    name: "Alex Vance",
-    role: "Commercial Buyer / Consignor",
-    company: "Anglo African Resources (Pty) Ltd",
-    icon: "🏢",
-    email: "alex@resources.co.za",
-    redirectUrl: "/html/orders.html",
-  },
-  {
-    name: "Dumisani Khumalo",
-    role: "Freight Fleet Operator",
-    company: "Trans-Limpopo Freight Logistics",
-    icon: "🚛",
-    email: "dumisani@translimpopo.co.za",
-    redirectUrl: "/html/tender-trail.html",
-  },
-  {
-    name: "Johan van der Merwe",
-    role: "Commodity Supplier",
-    company: "Witbank Minerals & Mining Co",
-    icon: "🏭",
-    email: "johan@witbankminerals.co.za",
-    redirectUrl: "/html/order-detail.html",
-  },
-  {
-    name: "Sipho Ndlovu",
-    role: "Frontline Driver / Clerk",
-    company: "Cross-Dock Heavy Articulated Driver",
-    icon: "🚚",
-    email: "sipho.driver@patella.demo",
-    redirectUrl: "/html/guest-handoff.html",
-  },
-  {
-    name: "Dr. Nomsa Mthembu",
-    role: "Forensic Auditor / Inspector",
-    company: "IRBA Registered Compliance Audit",
-    icon: "🔍",
-    email: "nomsa.audit@deloitte.demo",
-    redirectUrl: "/html/auditor-trail.html",
-  },
-];
+function MetaMaskMark() {
+  return (
+    <svg className="pa-social-icon" viewBox="0 0 32 32" aria-hidden="true">
+      <path fill="#E2761B" d="M29 3 18 11l2 5 8-3 1-10ZM3 3l11 8-2 5-8-3L3 3Z" />
+      <path fill="#F6851B" d="m28 13-8 3 2 6 6-1V13ZM4 13v8l6 1 2-6-8-3Z" />
+      <path fill="#763D16" d="m10 22 4 3 2-2-4-7-2 6Zm12 0-4 3-2-2 4-7 2 6Z" />
+      <path fill="#E4761B" d="m14 25-4-3-3 2 5 4 2-3Zm4 0 4-3 3 2-5 4-2-3Z" />
+      <path fill="#C0AD9E" d="m12 28 4 2 4-2-2-3h-4l-2 3Z" />
+      <path fill="#F6851B" d="m12 16 4 3 4-3-2-5h-4l-2 5Z" />
+    </svg>
+  );
+}
 
 export function SignInView() {
   const router = useRouter();
+  const [method, setMethod] = useState<Method>("code");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(true);
+  const [sentCode, setSentCode] = useState("");
+  const [code, setCode] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!email.trim() || !email.includes("@")) {
-      toast.error("Please enter a valid email address.");
-      return;
-    }
-    if (!password.trim()) {
-      toast.error("Please enter your password.");
-      return;
-    }
-
-    // Sign in demo session
+  function signIn() {
     const authUser = {
-      fullName: email.split("@")[0].toUpperCase(),
+      fullName: email.split("@")[0],
       email,
       role: "buyer",
-      roleTitle: "Commercial Consignor / Buyer",
+      roleTitle: "Commercial Buyer / Consignor",
       verified: true,
       signedInAt: new Date().toISOString(),
     };
     try {
       localStorage.setItem("patela_auth_user", JSON.stringify(authUser));
     } catch {
-      /* safe */
+      toast.error("This browser could not save the demo session.");
+      return;
     }
-
-    toast.success(`Welcome back! Signed in as ${email}.`);
+    toast.success("Signed in to the Patela demo workspace.");
     router.push("/html/orders.html");
   }
 
-  function handleDemoLogin(account: DemoAccount) {
-    const authUser = {
-      fullName: account.name,
-      email: account.email,
-      company: account.company,
-      role: account.role,
-      roleTitle: account.role,
-      verified: true,
-      signedInAt: new Date().toISOString(),
-    };
-    try {
-      localStorage.setItem("patela_auth_user", JSON.stringify(authUser));
-    } catch {
-      /* safe */
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast.error("Enter a valid email address.");
+      return;
     }
-
-    toast.success(`Signed in as ${account.name} (${account.role})`);
-    router.push(account.redirectUrl);
+    if (method === "password") {
+      if (!password) {
+        toast.error("Enter your password.");
+        return;
+      }
+      signIn();
+      return;
+    }
+    if (!sentCode) {
+      const nextCode = String(Math.floor(100000 + Math.random() * 900000));
+      setSentCode(nextCode);
+      toast.info(`Demo code: ${nextCode}. No email was sent.`);
+      return;
+    }
+    if (code !== sentCode) {
+      toast.error("That demo code does not match.");
+      return;
+    }
+    signIn();
   }
 
   return (
-    <div className="pt-app" style={{ minHeight: "100vh" }}>
-      <SiteNav />
-      <main className="pt-wrap" style={{ maxWidth: 940, padding: "40px 20px 100px" }}>
-        <Reveal>
-          <div style={{ textAlign: "center", marginBottom: 36 }}>
-            <span className="pt-eyebrow">Enterprise Supply Chain Portal</span>
-            <h1 className="pt-h2" style={{ margin: "10px auto 14px", maxWidth: "24ch" }}>
-              Sign in to your Patella workspace.
-            </h1>
-            <p className="pt-lead" style={{ margin: "0 auto", maxWidth: "56ch" }}>
-              Access active multi-hop orders, manage custody handoffs, review declarative escrow
-              tranches, and inspect the Base Sepolia auditor trail.
-            </p>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
-              gap: 28,
-            }}
-          >
-            {/* Standard Credentials Sign In */}
-            <form
-              className="pt-form pt-card"
-              onSubmit={handleSubmit}
-              style={{ padding: "36px 32px", marginTop: 0 }}
-            >
-              <div style={{ marginBottom: 20 }}>
-                <h2 style={{ fontSize: "1.25rem", margin: "0 0 4px", fontWeight: 600 }}>
-                  Account Credentials
-                </h2>
-                <p style={{ color: "#a2a9b8", fontSize: "0.875rem", margin: 0 }}>
-                  Enter your registered enterprise email and password.
-                </p>
-              </div>
-
-              <div className="pt-field">
-                <label htmlFor="si-email">Business Email or Phone</label>
+    <main className="pa-page">
+      <div className="pa-shell">
+        <Link href="/" className="pa-brand" aria-label="Patela home">
+          <Image src="/patela-logo.png" alt="Patela" width={252} height={41} priority />
+        </Link>
+        <h1>Sign in to your account</h1>
+        <div className="pa-card">
+          <form onSubmit={handleSubmit}>
+            <div className="pa-tabs" role="group" aria-label="Sign in method">
+              <button
+                type="button"
+                aria-pressed={method === "code"}
+                className={method === "code" ? "active" : ""}
+                onClick={() => {
+                  setMethod("code");
+                  setSentCode("");
+                  setCode("");
+                }}
+              >
+                <Mail size={17} /> Email code
+              </button>
+              <button
+                type="button"
+                aria-pressed={method === "password"}
+                className={method === "password" ? "active" : ""}
+                onClick={() => setMethod("password")}
+              >
+                <KeyRound size={17} /> Password
+              </button>
+            </div>
+            <label htmlFor="pa-email">Email</label>
+            <input
+              id="pa-email"
+              type="email"
+              autoComplete="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setSentCode("");
+                setCode("");
+              }}
+              required
+            />
+            {method === "password" ? (
+              <>
+                <label htmlFor="pa-password" className="pa-secondary-label">
+                  Password
+                </label>
                 <input
-                  id="si-email"
-                  type="email"
-                  className="pt-in"
-                  placeholder="name@company.co.za"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="pt-field">
-                <div
-                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-                >
-                  <label htmlFor="si-pw">Password</label>
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toast.info(
-                        "For testnet demo: use any password or click a quick persona below.",
-                      );
-                    }}
-                    style={{ fontSize: "0.8rem", color: "#ffe2b2", textDecoration: "underline" }}
-                  >
-                    Forgot password?
-                  </a>
-                </div>
-                <input
-                  id="si-pw"
+                  id="pa-password"
                   type="password"
-                  className="pt-in"
-                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "6px 0 16px" }}>
-                <input
-                  type="checkbox"
-                  id="rem"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                  style={{ accentColor: "#ffe2b2", width: 16, height: 16 }}
-                />
-                <label
-                  htmlFor="rem"
-                  style={{ fontSize: "0.85rem", color: "#a2a9b8", cursor: "pointer" }}
-                >
-                  Remember this device for 30 days
+                <p className="pa-help">This preview accepts any password for a demo session.</p>
+              </>
+            ) : sentCode ? (
+              <>
+                <label htmlFor="pa-code" className="pa-secondary-label">
+                  Demo code
                 </label>
-              </div>
-
-              <button
-                type="submit"
-                className="pt-btn"
-                style={{ width: "100%", justifyContent: "center", padding: "13px" }}
-              >
-                <span>Sign In to Workspace</span>
-                <span aria-hidden="true">→</span>
-              </button>
-
-              <div
-                style={{
-                  textAlign: "center",
-                  marginTop: 22,
-                  fontSize: "0.85rem",
-                  color: "#a2a9b8",
-                }}
-              >
-                Don&apos;t have an account yet?{" "}
-                <Link
-                  href="/signup"
-                  style={{ color: "#ffe2b2", fontWeight: 600, textDecoration: "underline" }}
-                >
-                  Sign up with progressive onboarding
-                </Link>
-              </div>
-            </form>
-
-            {/* Quick 1-Click Persona Logins */}
-            <div className="pt-card" style={{ padding: "36px 32px" }}>
-              <div style={{ marginBottom: 18 }}>
-                <span
-                  className="badge badge-gold"
-                  style={{ fontSize: "0.75rem", marginBottom: 8, display: "inline-block" }}
-                >
-                  Instant Demo Access
-                </span>
-                <h2 style={{ fontSize: "1.25rem", margin: "0 0 4px", fontWeight: 600 }}>
-                  1-Click Role Login
-                </h2>
-                <p style={{ color: "#a2a9b8", fontSize: "0.85rem", margin: 0 }}>
-                  Switch directly into any verified supply chain role to inspect their dedicated
-                  screens and controls:
+                <input
+                  id="pa-code"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  placeholder="Enter the 6-digit code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  required
+                />
+                <p className="pa-help">
+                  Demo code: <strong>{sentCode}</strong>. No email was sent.
                 </p>
-              </div>
-
-              <div style={{ display: "grid", gap: 10 }}>
-                {DEMO_ACCOUNTS.map((acc) => (
-                  <div
-                    key={acc.name}
-                    onClick={() => handleDemoLogin(acc)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "12px 14px",
-                      borderRadius: 12,
-                      border: "1px solid rgba(196, 214, 232, 0.14)",
-                      background: "rgba(255, 255, 255, 0.02)",
-                      cursor: "pointer",
-                      transition: "all 0.25s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "rgba(255, 228, 182, 0.5)";
-                      e.currentTarget.style.background = "rgba(255, 226, 178, 0.08)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "rgba(196, 214, 232, 0.14)";
-                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)";
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <span style={{ fontSize: "1.4rem" }}>{acc.icon}</span>
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: "0.9rem", color: "#fff" }}>
-                          {acc.name}
-                        </div>
-                        <div style={{ fontSize: "0.75rem", color: "#ffe2b2" }}>{acc.role}</div>
-                        <div style={{ fontSize: "0.7rem", color: "#7c8596" }}>{acc.company}</div>
-                      </div>
-                    </div>
-                    <span style={{ color: "#ffe2b2", fontSize: "0.85rem", fontWeight: 600 }}>
-                      Enter →
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+              </>
+            ) : (
+              <p className="pa-help">We&apos;ll show you a demo code. No email will be sent.</p>
+            )}
+            <button className="pa-submit" type="submit">
+              {method === "password" ? "Sign in" : sentCode ? "Verify code" : "Send code"}
+            </button>
+          </form>
+          <div className="pa-divider">
+            <span>Or continue with</span>
           </div>
-        </Reveal>
-      </main>
-    </div>
+          <div className="pa-social">
+            <button
+              type="button"
+              onClick={() => toast.info("Google sign-in is not connected in this demo.")}
+            >
+              <GoogleMark /> Continue with Google
+            </button>
+            <button
+              type="button"
+              onClick={() => toast.info("MetaMask sign-in is not connected in this demo.")}
+            >
+              <MetaMaskMark /> Continue with MetaMask
+            </button>
+          </div>
+        </div>
+        <p className="pa-signup">
+          Don&apos;t have an account? <Link href="/signup">Sign up</Link>
+        </p>
+        <p className="pa-demo">Patela product preview · Authentication is simulated</p>
+      </div>
+    </main>
   );
 }
