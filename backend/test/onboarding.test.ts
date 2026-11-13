@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import test from "node:test";
 import type { Address } from "viem";
 import { buildApp } from "../src/app.js";
+import { missingCapability } from "../src/onboarding.js";
 import { TestAuth, TestDatabase } from "./helpers.js";
 
 const escrow = "0x1111111111111111111111111111111111111111" as Address;
@@ -95,6 +96,8 @@ test("a new sign-up has no trading rights until a business is created and approv
     assert.equal(approved.statusCode, 200, approved.body);
     assert.equal(approved.json().status, "approved");
     assert.equal((await call("GET", "/onboarding", 0)).json().nextStep, "ready");
+    assert.equal(await missingCapability(db, [[ids[0], "supplier"]]), null);
+    assert.equal(await missingCapability(db, [[ids[0], "carrier"]]), "carrier");
     const reReview = await call("POST", `/admin/organizations/${org.id}/review`, 1, { decision: "reject",
       reason: "Second look at the same business." });
     assert.equal(reReview.statusCode, 409);

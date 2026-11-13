@@ -22,6 +22,8 @@ export type Evidence = { lat: number; lng: number; accuracyM: number; capturedAt
 
 const INVITE_DAYS = 7;
 const MAX_QR_SECONDS = 300;
+const MAX_EVIDENCE_AGE_SECONDS = MAX_QR_SECONDS;
+const MAX_EVIDENCE_FUTURE_SKEW_SECONDS = 30;
 const AMOUNT = /^\d{1,12}(\.\d{1,2})?$/;
 const UINT256 = /^[1-9]\d{0,77}$/;
 const DISPUTABLE: readonly OrderStatus[] = ["funded", "accepted", "driver_assigned", "in_progress"];
@@ -45,13 +47,18 @@ function requiredStage(value: unknown): 1 | 2 {
   return stage;
 }
 
-function requiredEvidence(value: unknown, role: Evidence["role"]): Evidence {
+function requiredEvidence(value: unknown, role: Evidence["role"], requireFresh = false): Evidence {
   const raw = (value && typeof value === "object" ? value : {}) as Record<string, unknown>;
   const [lat, lng, accuracyM, capturedAt] = [raw.lat, raw.lng, raw.accuracyM, raw.capturedAt].map(Number);
   if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180
     || !Number.isFinite(accuracyM) || accuracyM < 0 || accuracyM > 100_000
     || !Number.isInteger(capturedAt) || capturedAt < 1_600_000_000 || raw.role !== role) {
     throw new DomainError(`Valid ${role} location evidence required`);
+  }
+  const now = Math.floor(Date.now() / 1000);
+  if (requireFresh && (capturedAt < now - MAX_EVIDENCE_AGE_SECONDS
+    || capturedAt > now + MAX_EVIDENCE_FUTURE_SKEW_SECONDS)) {
+    throw new DomainError(`${role} location evidence must be freshly captured`);
   }
   return { lat, lng, accuracyM, capturedAt, role };
 }
@@ -190,6 +197,10 @@ export class OrderService {
       if (!sameAddress(me.wallet_address, wallet)) throw new DomainError("Link this wallet to your account first", 409);
       const order = (await db.query<Row>("select * from orders where id=$1 for update", [invitation.order_id])).rows[0];
       const role = invitation.role as "supplier" | "driver";
+      const capability = role === "supplier" ? "supplier" : "carrier";
+      if (await missingCapability(db, [[userId, capability]])) {
+        throw new DomainError(`Your business must be approved as a ${capability} before accepting this order`, 403);
+      }
       const taken = [order.buyer_wallet_address, order.supplier_wallet_address].some(w => sameAddress(w, wallet));
       if (taken) throw new DomainError(`The ${role} needs a wallet of their own`, 409);
       const ready = role === "supplier" ? order.status === "awaiting_supplier"
@@ -400,7 +411,7 @@ export class OrderService {
     if (!Number.isInteger(expiresAt) || expiresAt <= now || expiresAt > now + MAX_QR_SECONDS) {
       throw new DomainError(`QR expiry must be within the next ${MAX_QR_SECONDS} seconds`);
     }
-    const giverEvidence = requiredEvidence(body.giverEvidence, "giver");
+    const giverEvidence = requiredEvidence(body.giverEvidence, "giver", true);
     const id = randomUUID();
     try {
       await this.db.query(
@@ -448,8 +459,8 @@ export class OrderService {
     if (order.status !== STAGES[stage].from || await this.openDispute(this.db, order.id)) {
       throw new DomainError("This handoff can't be completed right now", 409);
     }
-    const receiverEvidence = requiredEvidence(body.receiverEvidence, "receiver");
-    const expected = evidenceHash(requiredEvidence(session.giver_evidence, "giver"), receiverEvidence);
+    const receiverEvidence = requiredEvidence(body.receiverEvidence, "receiver", true);
+    const expected = evidenceHash(requiredEvidence(session.giver_evidence, "giver", true), receiverEvidence);
     if (typeof body.evidenceHash !== "string" || body.evidenceHash.toLowerCase() !== expected) {
       throw new DomainError("Evidence hash does not match the two locations");
     }

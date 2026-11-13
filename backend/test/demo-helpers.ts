@@ -61,11 +61,11 @@ export async function linkWallet(app: FastifyInstance, user: number, userId: str
   assert.equal(linked.statusCode, 200, linked.body);
 }
 
-/** A platform admin (temporarily `admin`) approves a buyer business for `user`. */
-export async function approveBuyer(app: FastifyInstance, setRole: (role: string) => Promise<unknown>,
-  user: number, adminUser: number, cipc: string) {
+/** A platform admin (temporarily `admin`) approves one trading capability for `user`. */
+export async function approveCapability(app: FastifyInstance, setRole: (role: string) => Promise<unknown>,
+  user: number, adminUser: number, cipc: string, capability: "buyer" | "supplier" | "carrier") {
   const org = await app.inject({ method: "POST", url: "/organizations", headers: bearer(user),
-    payload: { legalName: "Demo Buyer (Pty) Ltd", registrationNumber: cipc, capabilities: ["buyer"] } });
+    payload: { legalName: `Demo ${capability} (Pty) Ltd`, registrationNumber: cipc, capabilities: [capability] } });
   assert.equal(org.statusCode, 200, org.body);
   await app.inject({ method: "POST", url: `/organizations/${org.json().id}/submit`, headers: bearer(user) });
   await setRole("admin");
@@ -74,5 +74,9 @@ export async function approveBuyer(app: FastifyInstance, setRole: (role: string)
   await setRole("member");
   assert.equal(approved.json().status, "approved", approved.body);
 }
+
+export const approveBuyer = (app: FastifyInstance, setRole: (role: string) => Promise<unknown>,
+  user: number, adminUser: number, cipc: string) =>
+  approveCapability(app, setRole, user, adminUser, cipc, "buyer");
 
 export const tokenFrom = (acceptUrl: string) => new URL(acceptUrl).searchParams.get("token") ?? "";
