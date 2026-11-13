@@ -1,6 +1,7 @@
 import { createHash, randomBytes, randomInt, randomUUID } from "node:crypto";
 import { CodeChallengeMethod, OAuth2Client } from "google-auth-library";
 import type { Database, Queryable } from "./db.js";
+import { DomainError } from "./validation.js";
 
 export interface Identity { id: string; email: string }
 export interface Session { accessToken: string; refreshToken: string }
@@ -129,7 +130,7 @@ export class PostgresAuth implements AuthProvider {
       );
       return this.session(db, userId);
     });
-    if (!result) throw new Error("OTP expired or invalid");
+    if (!result) throw new DomainError("That code is wrong or has expired. Request a new code if needed.", 401);
     return result;
   }
 
