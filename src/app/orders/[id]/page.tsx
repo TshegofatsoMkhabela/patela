@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { OrderView } from "./order-view";
 
 export const metadata: Metadata = {
-  title: "Order — Patella (testnet demo)",
+  title: "Order — Patella",
   description: "Escrow order timeline and live four-wallet balances.",
 };
 

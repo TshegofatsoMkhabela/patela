@@ -13,12 +13,14 @@ import {
   contractsConfigured,
   createAndFundOrder,
   getTestZarp,
-  isTestnet,
+  canMintTestToken,
+  NETWORK,
+  NETWORK_LABEL,
   readBalances,
   signWalletLink,
   type ChainClients,
 } from "@/lib/chain";
-import { CHAIN_ID, ESCROW_ADDRESS } from "@/lib/contracts";
+import { ESCROW_ADDRESS } from "@/lib/contracts";
 import { STEP_LABELS, runOrderFlow, type FlowProgress, type FlowState, type StepKey } from "./flow";
 
 const STATUS_ICON = { idle: "○", pending: "…", done: "✓", error: "✕" } as const;
@@ -87,7 +89,7 @@ export function NewOrderView() {
     try {
       const c = await connectMetaMask();
       setClients(c);
-      setWalletMsg({ text: "MetaMask connected on Base Sepolia." });
+      setWalletMsg({ text: `MetaMask connected on ${NETWORK.name}.` });
       void refreshZarp(c);
     } catch (err) {
       setWalletMsg({ text: contractErrorMessage(err), error: true });
@@ -124,7 +126,7 @@ export function NewOrderView() {
     try {
       await getTestZarp(clients);
       await refreshZarp(clients);
-      setWalletMsg({ text: "Minted 1,000 test ZARP to your wallet." });
+      setWalletMsg({ text: `Minted 1,000 test ${NETWORK.tokenSymbol} to your wallet.` });
     } catch (err) {
       setWalletMsg({ text: contractErrorMessage(err), error: true });
     } finally {
@@ -175,14 +177,14 @@ export function NewOrderView() {
       <SiteNav />
       <main className="pt-wrap" style={{ maxWidth: 900, padding: "40px 20px 100px" }}>
         <span className="badge badge-gold" style={{ fontSize: "0.85rem" }}>
-          Testnet demo · MockZARP on Base Sepolia · not real money
+          {NETWORK_LABEL}
         </span>
         <h1 className="pt-h2" style={{ margin: "12px 0 8px" }}>
           New escrow order
         </h1>
         <p className="pt-lead" style={{ margin: "0 0 28px", maxWidth: "60ch" }}>
-          Lock ZARP in escrow. Pickup pays the driver 10% and the supplier 40%; delivery pays the
-          supplier the remaining 50%.
+          Lock {NETWORK.tokenSymbol} in escrow. Pickup pays the driver 10% and the supplier 40%;
+          delivery pays the supplier the remaining 50%.
         </p>
 
         {!configured ? (
@@ -236,11 +238,14 @@ export function NewOrderView() {
           <h2 style={{ margin: "0 0 8px", fontSize: "1.15rem" }}>2. Wallet</h2>
           {clients ? (
             <p style={{ margin: "0 0 12px", fontFamily: "monospace" }}>
-              {clients.account} · {formatZarp(zarp)} ZARP {linked ? "· linked ✓" : ""}
+              {clients.account} · {formatZarp(zarp)} {NETWORK.tokenSymbol}{" "}
+              {linked ? "· linked ✓" : ""}
             </p>
           ) : (
             <p style={{ margin: "0 0 12px", color: "#a2a9b8" }}>
-              Connect the MetaMask extension. You need a little Base Sepolia ETH for gas.
+              Connect the MetaMask extension. You need a little CELO for gas and ZARm to fund the
+              order: on Celo Sepolia, get CELO from the Celo faucet and swap some for ZARm in the
+              Mento app.
             </p>
           )}
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -256,9 +261,9 @@ export function NewOrderView() {
                 {busy === "link" ? "Sign in MetaMask…" : "Link wallet to account"}
               </button>
             ) : null}
-            {clients && isTestnet(CHAIN_ID) && configured ? (
+            {clients && canMintTestToken() && configured ? (
               <button type="button" className="pt-btn" onClick={mint} disabled={busy !== null}>
-                {busy === "mint" ? "Minting…" : "Get test ZARP"}
+                {busy === "mint" ? "Minting…" : "Get test MockZARP"}
               </button>
             ) : null}
           </div>
@@ -306,7 +311,7 @@ export function NewOrderView() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <div className="pt-field">
-              <label htmlFor="o-total">Total (ZARP)</label>
+              <label htmlFor="o-total">Total ({NETWORK.tokenSymbol})</label>
               <input
                 id="o-total"
                 className="pt-in"

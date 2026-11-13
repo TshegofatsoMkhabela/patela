@@ -6,6 +6,7 @@ import { SiteNav } from "@/components/SiteNav";
 import { BalancePanel } from "@/components/BalancePanel";
 import { ApiError, api, type OrderDetail } from "@/lib/api";
 import { ESCROW_ADDRESS } from "@/lib/contracts";
+import { NETWORK_LABEL, explorerTxUrl } from "@/lib/chain";
 import { isPaid, partyAddresses, timelineItems } from "./order-data";
 
 const ORDER_POLL_MS = 3000;
@@ -139,7 +140,7 @@ export function OrderView({ id }: { id: string }) {
                   ) : null}
                   {t.txHash ? (
                     <a
-                      href={`https://sepolia.basescan.org/tx/${t.txHash}`}
+                      href={explorerTxUrl(t.txHash)}
                       target="_blank"
                       rel="noreferrer"
                       style={{
@@ -158,9 +159,7 @@ export function OrderView({ id }: { id: string }) {
           )}
         </section>
 
-        <p style={{ marginTop: 20, color: "#7c8596", fontSize: "0.9rem" }}>
-          Testnet demo · MockZARP on Base Sepolia · not real money
-        </p>
+        <p style={{ marginTop: 20, color: "#7c8596", fontSize: "0.9rem" }}>{NETWORK_LABEL}</p>
       </main>
     </div>
   );

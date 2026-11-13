@@ -19,7 +19,7 @@ export const STEP_LABELS: Record<StepKey, string> = {
   save: "Save order with Patela (agreement hash)",
   create: "Create order on-chain (MetaMask)",
   record: "Record on-chain order id",
-  approve: "Approve MockZARP for the escrow (MetaMask)",
+  approve: "Approve ZARm for the escrow (MetaMask)",
   fund: "Fund escrow (MetaMask)",
   verify: "Patela verifies funding and invites the supplier",
 };
@@ -70,9 +70,9 @@ export function refundDeadlineSeconds(value: number | string): bigint {
 function parseTotal(totalZarp: string): bigint {
   const trimmed = totalZarp.trim();
   if (!/^\d+(\.\d{1,18})?$/.test(trimmed))
-    throw new Error("Enter the order total as a ZARP amount, e.g. 100");
+    throw new Error("Enter the order total as a ZARm amount, e.g. 100");
   const wei = parseUnits(trimmed, ZARP_DECIMALS);
-  if (wei <= 0n) throw new Error("The order total must be more than 0 ZARP");
+  if (wei <= 0n) throw new Error("The order total must be more than 0 ZARm");
   return wei;
 }
 
