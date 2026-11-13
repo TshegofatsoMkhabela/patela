@@ -5,7 +5,24 @@ import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: [".next", "out", "build", "dist", "node_modules", "next-env.d.ts", "html/**"] },
+  {
+    ignores: [
+      ".next",
+      "out",
+      "build",
+      "dist",
+      "node_modules",
+      "next-env.d.ts",
+      "html/**",
+      // Static assets, including vendored minified libraries such as lottie.min.js.
+      "public/**",
+      // Generated output: Hardhat build files and the backend's compiled Lambda.
+      "contracts/artifacts/**",
+      "contracts/cache/**",
+      "backend/dist/**",
+      "infra/artifacts/**",
+    ],
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
