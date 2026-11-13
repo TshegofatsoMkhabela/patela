@@ -12,6 +12,18 @@ Parameters:
     Type: String
     Default: ''
     Description: Exact HTTPS web origin, or blank for an API-only OAuth test.
+  AllowedOrigins:
+    Type: String
+    Default: ''
+    Description: Optional comma-separated additional exact HTTPS web origins.
+  CookieDomain:
+    Type: String
+    Default: ''
+    Description: Optional shared parent domain for browser session cookies; blank keeps them host-only.
+  CookieSameSite:
+    Type: String
+    Default: Lax
+    AllowedValues: [Lax, None, Strict]
   GoogleClientId:
     Type: String
     Description: Google OAuth Web application client ID.
@@ -231,6 +243,9 @@ Resources:
           GOOGLE_OAUTH_CLIENT_SECRET: !If [HasGoogleClientSecret, !Sub '{{resolve:secretsmanager:${GoogleClientSecretArn}:SecretString}}', '']
           ENABLE_AUTH_SMOKE_PAGE: !Ref EnableAuthSmokePage
           PUBLIC_ORIGIN: !Ref PublicOrigin
+          ALLOWED_ORIGINS: !Ref AllowedOrigins
+          COOKIE_DOMAIN: !Ref CookieDomain
+          COOKIE_SAME_SITE: !Ref CookieSameSite
           PG_POOL_MAX: '2'
           CHAIN_ID: !Ref ChainId
           CHAIN_CONFIRMATIONS: !Ref ChainConfirmations

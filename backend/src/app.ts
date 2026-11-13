@@ -1,6 +1,5 @@
 import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 import { randomBytes } from "node:crypto";
-import rateLimit from "@fastify/rate-limit";
 import cors from "@fastify/cors";
 import { InvalidGoogleCredential, type AuthProvider, type Identity } from "./auth.js";
 import type { ChainVerifier } from "./chain.js";
@@ -12,6 +11,7 @@ import { OnboardingService, requireAdmin } from "./onboarding.js";
 import { DomainError, requiredEmail as email } from "./validation.js";
 import type { Address } from "viem";
 import type { ExternalIntegrations, Point } from "./integrations.js";
+import { addPostgresRateLimitHook } from "./rate-limit.js";
 
 export interface AppDependencies {
   db: Database;
@@ -20,6 +20,9 @@ export interface AppDependencies {
   escrowAddress: Address;
   publicOrigin: string;
   apiOrigin?: string;
+  allowedOrigins?: readonly string[];
+  cookieDomain?: string;
+  cookieSameSite?: "Lax" | "None" | "Strict";
   integrations?: ExternalIntegrations;
   chainId?: number;
   tokenAddress?: Address;
@@ -49,14 +52,18 @@ function point(value: unknown): Point {
   return { lat, lng };
 }
 
-export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrigin = "http://localhost:4000", integrations,
+export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrigin = "http://localhost:4000",
+  allowedOrigins = [], cookieDomain, cookieSameSite = "Lax", integrations,
   chainId, tokenAddress, tokenDecimals, googleClientId, enableGoogleCodeFlow = true,
   enableAuthSmokePage = false, mailTransport, demoMode = false }: AppDependencies) {
   const app = Fastify({ logger: false, bodyLimit: 128 * 1024 });
   const secureCookie = new URL(apiOrigin).protocol === "https:" ? "; Secure" : "";
+  const domainCookie = cookieDomain ? `; Domain=${cookieDomain}` : "";
+  const browserOrigins = new Set([publicOrigin, apiOrigin, ...allowedOrigins]);
+  const originAllowed = (origin: string | undefined) => !origin || browserOrigins.has(origin);
   const callbackUrl = new URL("/auth/google/callback", apiOrigin);
   const cookie = (name: string, value: string, maxAge: number) =>
-    `${name}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secureCookie}`;
+    `${name}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=${cookieSameSite}; Max-Age=${maxAge}${domainCookie}${secureCookie}`;
   const sessionCookies = (session: { accessToken: string; refreshToken: string }) => [
     cookie("patela_access", session.accessToken, 3600),
     cookie("patela_refresh", session.refreshToken, 60 * 60 * 24 * 30),
@@ -69,12 +76,12 @@ export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrig
     catch { return undefined; }
   }
   void app.register(cors, {
-    origin: (origin, callback) => callback(null, !origin || origin === publicOrigin),
+    origin: (origin, callback) => callback(null, originAllowed(origin)),
     methods: ["GET", "POST", "PATCH"],
     allowedHeaders: ["Authorization", "Content-Type"],
     credentials: true,
   });
-  void app.register(rateLimit, { global: false });
+  addPostgresRateLimitHook(app, db);
   const service = new PatelaService(db, chainId ?? BASE_CHAIN_ID);
   const mailer = new OutboxMailer(db, mailTransport);
   const orders = new OrderService({ db, chain, escrowAddress, chainId: chainId ?? BASE_CHAIN_ID,
@@ -103,7 +110,7 @@ export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrig
 
   async function requireUser(request: FastifyRequest, reply: FastifyReply): Promise<Identity> {
     const authorization = request.headers.authorization;
-    if (!authorization && request.headers.origin && request.headers.origin !== publicOrigin) {
+    if (!authorization && !originAllowed(request.headers.origin)) {
       throw new DomainError("Origin is not allowed for cookie authentication", 403);
     }
     let token = authorization?.startsWith("Bearer ") ? authorization.slice(7)
@@ -142,7 +149,7 @@ export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrig
     await service.ensureProfile(identity);
     reply.header("Cache-Control", "no-store");
     reply.header("Set-Cookie", sessionCookies(session));
-    return session;
+    return { authenticated: true, profile: await service.profile(identity.id) };
   });
   app.get("/auth/google/url", async (_request, reply) => {
     if (!enableGoogleCodeFlow) throw new DomainError("Google authorization-code sign-in is not configured", 503);
@@ -180,7 +187,7 @@ export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrig
   });
   app.post("/auth/google/id-token", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } },
     async (request, reply) => {
-      if (request.headers.origin !== apiOrigin && request.headers.origin !== publicOrigin) {
+      if (!request.headers.origin || !originAllowed(request.headers.origin)) {
         throw new DomainError("Origin is not allowed", 403);
       }
       if (!request.headers["content-type"]?.toLowerCase().startsWith("application/json")) {
@@ -233,7 +240,7 @@ export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrig
     return { authenticated: true, profile: await service.profile(user.id) };
   });
   app.post("/auth/logout", async (request, reply) => {
-    if (request.headers.origin && request.headers.origin !== publicOrigin) {
+    if (!originAllowed(request.headers.origin)) {
       throw new DomainError("Origin is not allowed", 403);
     }
     const access = request.headers.authorization?.startsWith("Bearer ")

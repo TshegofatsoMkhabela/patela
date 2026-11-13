@@ -65,7 +65,9 @@ test("auth, sessions, wallet linking and CORS guard the API", async () => {
       method: "POST", url: "/auth/otp/verify",
       payload: { email: "user0@example.test", code: "123456" },
     });
-    assert.equal(otpVerify.json().accessToken, "user-0");
+    assert.equal(otpVerify.json().authenticated, true);
+    assert.equal(otpVerify.json().profile.id, ids[0]);
+    assert.equal(otpVerify.json().accessToken, undefined, "browser auth does not expose session tokens");
     const google = await app.inject({ method: "GET", url: "/auth/google/url" });
     assert.equal(google.statusCode, 200);
     assert.equal(google.json().url, "https://accounts.google.com/test");
