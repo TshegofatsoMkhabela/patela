@@ -82,6 +82,11 @@ export function demoReview(s: Submission): { ok: boolean; text: string } {
 interface State {
   jobs: Job[];
   wallet: { address: string; chain: string; demo: boolean } | null;
+  /**
+   * Buyer dashboard: only the actions the buyer completed. The demo shipments themselves are
+   * re-seeded from page-load time (buyerView), so trucks are always mid-route.
+   */
+  buyerCompleted?: { id: string; at: number }[];
 }
 
 const KEY = "patela-demo-v1";
@@ -89,6 +94,7 @@ const DASHBOARD_KEY = "patela_proto_state_v3";
 
 function seed(): State {
   return {
+    buyerCompleted: [],
     wallet: null,
     jobs: [
       {
@@ -460,6 +466,13 @@ export const actions = {
   },
   setWallet(w: State["wallet"]) {
     set((s) => ({ ...s, wallet: w }));
+  },
+  /** Demo: review a handoff, confirm a delivery or approve a milestone on a buyer shipment. */
+  completeShipmentAction(shipmentId: string) {
+    set((s) => ({
+      ...s,
+      buyerCompleted: [...(s.buyerCompleted ?? []), { id: shipmentId, at: Date.now() }],
+    }));
   },
 };
 

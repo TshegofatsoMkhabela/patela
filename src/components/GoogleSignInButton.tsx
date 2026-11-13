@@ -31,7 +31,8 @@ export function GoogleSignInButton({
   callback.current = onCredential;
 
   useEffect(() => {
-    const google = (window as { google?: { accounts: { id: GoogleId } } }).google;
+    // Through unknown: @types/google.maps (from the Maps loader) also declares window.google.
+    const google = (window as unknown as { google?: { accounts: { id: GoogleId } } }).google;
     if (!clientId || !ready || !google || !target.current) return;
     google.accounts.id.initialize({
       client_id: clientId,
