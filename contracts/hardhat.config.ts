@@ -13,11 +13,32 @@ const config: HardhatUserConfig = {
     },
   },
   networks: {
+    // `npx hardhat node` (chain 31337), used by `npm run demo`; signs with the node's dev accounts.
+    localhost: {
+      type: "http",
+      chainType: "l1",
+      chainId: 31337,
+      url: "http://127.0.0.1:8545",
+    },
     baseSepolia: {
       type: "http",
       chainType: "op",
       chainId: 84532,
       url: configVariable("BASE_SEPOLIA_RPC_URL"),
+      accounts: [configVariable("DEPLOYER_PRIVATE_KEY")],
+    },
+    celoSepolia: {
+      type: "http",
+      chainType: "op",
+      chainId: 11142220,
+      url: configVariable("CELO_SEPOLIA_RPC_URL"),
+      accounts: [configVariable("DEPLOYER_PRIVATE_KEY")],
+    },
+    celo: {
+      type: "http",
+      chainType: "op",
+      chainId: 42220,
+      url: configVariable("CELO_RPC_URL"),
       accounts: [configVariable("DEPLOYER_PRIVATE_KEY")],
     },
   },

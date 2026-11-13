@@ -11,6 +11,7 @@ import { keccak256, parseUnits, toHex, type Address } from "viem";
 const { viem, networkHelpers } = await network.connect();
 
 const R = (n: string) => parseUnits(n, 18);
+const AGREEMENT_HASH = keccak256(toHex("20 crates delivered by Friday"));
 const handoffTypes = {
   Handoff: [
     { name: "orderId", type: "uint256" },
@@ -19,6 +20,7 @@ const handoffTypes = {
     { name: "receiver", type: "address" },
     { name: "nonce", type: "bytes32" },
     { name: "expiresAt", type: "uint256" },
+    { name: "evidenceHash", type: "bytes32" },
   ],
 } as const;
 
@@ -29,7 +31,7 @@ describe("Stage demo, end to end", () => {
     const chainId = await publicClient.getChainId();
     const zarp = await viem.deployContract("MockZARP");
     const registry = await viem.deployContract("PatellaRegistry");
-    const escrow = await viem.deployContract("PatellaEscrowAndLogistics", [zarp.address, registry.address]);
+    const escrow = await viem.deployContract("PatellaEscrowAndLogistics", [zarp.address, registry.address, R("10000")]);
     const bal = (a: Address) => zarp.read.balanceOf([a]);
     const wallets = async () => ({
       buyer: await bal(buyer.account.address),
@@ -53,16 +55,19 @@ describe("Stage demo, end to end", () => {
 
     // Beat 2: lock. A wrong split is rejected; the right order is funded.
     await viem.assertions.revertWithCustomError(
-      escrow.write.createOrder([supplier.account.address, R("10000"), R("1000"), R("4000"), R("4999"), deadline], { account: buyer.account }),
+      escrow.write.createOrder([supplier.account.address, R("10000"), R("1000"), R("4000"), R("4999"),
+        deadline, AGREEMENT_HASH], { account: buyer.account }),
       escrow,
       "SplitMismatch",
     );
-    await escrow.write.createOrder([supplier.account.address, R("10000"), R("1000"), R("4000"), R("5000"), deadline], { account: buyer.account });
+    await escrow.write.createOrder([supplier.account.address, R("10000"), R("1000"), R("4000"), R("5000"),
+      deadline, AGREEMENT_HASH], { account: buyer.account });
     const orderId = await escrow.read.orderCounter();
     await escrow.write.fundEscrow([orderId], { account: buyer.account });
     assert.deepEqual(await wallets(), { buyer: R("10000"), supplier: 0n, driver: 0n, escrow: R("10000") });
 
     // Beat 3: the supplier accepts and picks a driver.
+    await escrow.write.acceptOrder([orderId, AGREEMENT_HASH], { account: supplier.account });
     await escrow.write.assignDriver([orderId, driver.account.address], { account: supplier.account });
 
     // Beat 4: pickup. The supplier's screen shows a QR valid for 2 minutes; the
@@ -71,27 +76,31 @@ describe("Stage demo, end to end", () => {
     const pickup = {
       orderId, stage: 1, giver: supplier.account.address, receiver: driver.account.address,
       nonce: keccak256(toHex("qr-pickup")), expiresAt: now + 120n,
+      evidenceHash: keccak256(toHex("pickup-evidence")),
     };
     const pickupSigs = [await sign(supplier, pickup), await sign(driver, pickup)] as const;
     const pickupTx = await escrow.write.releaseHandoff(
-      [orderId, 1, pickup.nonce, pickup.expiresAt, ...pickupSigs], { account: sponsor.account },
+      [orderId, 1, pickup.nonce, pickup.expiresAt, pickup.evidenceHash, ...pickupSigs], { account: sponsor.account },
     );
     assert.deepEqual(await wallets(), { buyer: R("10000"), supplier: R("4000"), driver: R("1000"), escrow: R("5000") });
 
     // Beat 5: cheating. A screenshot of the old QR pays nothing; a stranger
     // signing both sides pays nothing.
     await viem.assertions.revertWithCustomError(
-      escrow.write.releaseHandoff([orderId, 1, pickup.nonce, pickup.expiresAt, ...pickupSigs], { account: cheater.account }),
+      escrow.write.releaseHandoff([orderId, 1, pickup.nonce, pickup.expiresAt, pickup.evidenceHash,
+        ...pickupSigs], { account: cheater.account }),
       escrow,
       "NonceUsed",
     );
     const fakeDelivery = {
       orderId, stage: 2, giver: driver.account.address, receiver: buyer.account.address,
       nonce: keccak256(toHex("qr-fake")), expiresAt: now + 120n,
+      evidenceHash: keccak256(toHex("delivery-evidence")),
     };
     await viem.assertions.revertWithCustomError(
       escrow.write.releaseHandoff(
-        [orderId, 2, fakeDelivery.nonce, fakeDelivery.expiresAt, await sign(cheater, fakeDelivery), await sign(cheater, fakeDelivery)],
+        [orderId, 2, fakeDelivery.nonce, fakeDelivery.expiresAt, fakeDelivery.evidenceHash,
+          await sign(cheater, fakeDelivery), await sign(cheater, fakeDelivery)],
         { account: cheater.account },
       ),
       escrow,
@@ -102,14 +111,16 @@ describe("Stage demo, end to end", () => {
     // Beat 6: delivery. The driver hands over; the shop owner scans and signs.
     const delivery = { ...fakeDelivery, nonce: keccak256(toHex("qr-delivery")) };
     await escrow.write.releaseHandoff(
-      [orderId, 2, delivery.nonce, delivery.expiresAt, await sign(driver, delivery), await sign(buyer, delivery)],
+      [orderId, 2, delivery.nonce, delivery.expiresAt, delivery.evidenceHash,
+        await sign(driver, delivery), await sign(buyer, delivery)],
       { account: sponsor.account },
     );
     assert.deepEqual(await wallets(), { buyer: R("10000"), supplier: R("9000"), driver: R("1000"), escrow: 0n });
 
     // Beat 7: a second order where the box never arrives; after the deadline the
     // buyer, and only the buyer, takes the money back.
-    await escrow.write.createOrder([supplier.account.address, R("10000"), R("1000"), R("4000"), R("5000"), deadline], { account: buyer.account });
+    await escrow.write.createOrder([supplier.account.address, R("10000"), R("1000"), R("4000"), R("5000"),
+      deadline, AGREEMENT_HASH], { account: buyer.account });
     const lostOrder = await escrow.read.orderCounter();
     await escrow.write.fundEscrow([lostOrder], { account: buyer.account });
     assert.equal(await bal(buyer.account.address), 0n);

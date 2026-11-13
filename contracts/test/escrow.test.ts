@@ -17,12 +17,13 @@ const SUPPLIER_AT_DELIVERY = ZARP("500"); // 50%
 const PICKUP = 1;
 const DELIVERY = 2;
 const ONE_DAY = 24n * 60n * 60n;
+const AGREEMENT_HASH = keccak256(toHex("20 crates delivered by Friday"));
 
 async function deployFixture() {
   const [deployer, buyer, supplier, driver, stranger, stranger2] = await viem.getWalletClients();
   const zarp = await viem.deployContract("MockZARP");
   const registry = await viem.deployContract("PatellaRegistry");
-  const escrow = await viem.deployContract("PatellaEscrowAndLogistics", [zarp.address, registry.address]);
+  const escrow = await viem.deployContract("PatellaEscrowAndLogistics", [zarp.address, registry.address, TOTAL]);
   await zarp.write.mint([buyer.account.address, TOTAL]);
   await zarp.write.approve([escrow.address, TOTAL], { account: buyer.account });
   const now = BigInt(await networkHelpers.time.latest());
@@ -33,7 +34,8 @@ type Fixture = Awaited<ReturnType<typeof deployFixture>>;
 
 async function createOrder(f: Fixture, supplierAtDelivery = SUPPLIER_AT_DELIVERY) {
   await f.escrow.write.createOrder(
-    [f.supplier.account.address, TOTAL, DRIVER_AT_PICKUP, SUPPLIER_AT_PICKUP, supplierAtDelivery, f.refundDeadline],
+    [f.supplier.account.address, TOTAL, DRIVER_AT_PICKUP, SUPPLIER_AT_PICKUP, supplierAtDelivery,
+      f.refundDeadline, AGREEMENT_HASH],
     { account: f.buyer.account },
   );
   return f.escrow.read.orderCounter();
@@ -42,11 +44,13 @@ async function createOrder(f: Fixture, supplierAtDelivery = SUPPLIER_AT_DELIVERY
 async function fundedOrderWithDriver(f: Fixture) {
   const orderId = await createOrder(f);
   await f.escrow.write.fundEscrow([orderId], { account: f.buyer.account });
+  await f.escrow.write.acceptOrder([orderId, AGREEMENT_HASH], { account: f.supplier.account });
   await f.escrow.write.assignDriver([orderId, f.driver.account.address], { account: f.supplier.account });
   return orderId;
 }
 
-type HandoffMessage = { orderId: bigint; stage: number; giver: Address; receiver: Address; nonce: `0x${string}`; expiresAt: bigint };
+type HandoffMessage = { orderId: bigint; stage: number; giver: Address; receiver: Address; nonce: `0x${string}`;
+  expiresAt: bigint; evidenceHash: `0x${string}` };
 
 async function signHandoff(
   f: Fixture,
@@ -71,6 +75,7 @@ async function signHandoff(
         { name: "receiver", type: "address" },
         { name: "nonce", type: "bytes32" },
         { name: "expiresAt", type: "uint256" },
+        { name: "evidenceHash", type: "bytes32" },
       ],
     },
     primaryType: "Handoff",
@@ -86,6 +91,7 @@ function pickupMessage(f: Fixture, orderId: bigint) {
     receiver: f.driver.account.address,
     nonce: keccak256(toHex(`pickup-${orderId}`)),
     expiresAt: f.refundDeadline,
+    evidenceHash: keccak256(toHex(`pickup-evidence-${orderId}`)),
   };
 }
 
@@ -97,12 +103,13 @@ function deliveryMessage(f: Fixture, orderId: bigint) {
     receiver: f.buyer.account.address,
     nonce: keccak256(toHex(`delivery-${orderId}`)),
     expiresAt: f.refundDeadline,
+    evidenceHash: keccak256(toHex(`delivery-evidence-${orderId}`)),
   };
 }
 
 async function release(f: Fixture, msg: HandoffMessage, giverSig: `0x${string}`, receiverSig: `0x${string}`) {
   return f.escrow.write.releaseHandoff(
-    [msg.orderId, msg.stage, msg.nonce, msg.expiresAt, giverSig, receiverSig],
+    [msg.orderId, msg.stage, msg.nonce, msg.expiresAt, msg.evidenceHash, giverSig, receiverSig],
     { account: f.stranger.account },
   );
 }
@@ -132,6 +139,28 @@ describe("PatellaEscrowAndLogistics — cycle 1", () => {
     assert.equal((await balance(f, f.escrow.address)) - escrowBefore, TOTAL);
   });
 
+  it("binds supplier acceptance to the stored agreement hash", async () => {
+    const f = await networkHelpers.loadFixture(deployFixture);
+    const orderId = await createOrder(f);
+    await f.escrow.write.fundEscrow([orderId], { account: f.buyer.account });
+
+    await viem.assertions.revertWithCustomError(
+      f.escrow.write.acceptOrder([orderId, keccak256(toHex("different agreement"))],
+        { account: f.supplier.account }),
+      f.escrow,
+      "AgreementMismatch",
+    );
+    await viem.assertions.revertWithCustomError(
+      f.escrow.write.acceptOrder([orderId, AGREEMENT_HASH], { account: f.stranger.account }),
+      f.escrow,
+      "NotSupplier",
+    );
+    await f.escrow.write.acceptOrder([orderId, AGREEMENT_HASH], { account: f.supplier.account });
+    const order = await f.escrow.read.orders([orderId]);
+    assert.equal(order[10], true);
+    assert.equal(order[11], AGREEMENT_HASH);
+  });
+
   it("lets only the supplier assign the driver, and only once", async () => {
     const f = await networkHelpers.loadFixture(deployFixture);
     const orderId = await createOrder(f);
@@ -143,6 +172,12 @@ describe("PatellaEscrowAndLogistics — cycle 1", () => {
       "NotSupplier",
     );
 
+    await viem.assertions.revertWithCustomError(
+      f.escrow.write.assignDriver([orderId, f.driver.account.address], { account: f.supplier.account }),
+      f.escrow,
+      "NotAccepted",
+    );
+    await f.escrow.write.acceptOrder([orderId, AGREEMENT_HASH], { account: f.supplier.account });
     await f.escrow.write.assignDriver([orderId, f.driver.account.address], { account: f.supplier.account });
     assert.equal(
       (await f.escrow.read.driverOf([orderId])).toLowerCase(),
@@ -167,7 +202,7 @@ describe("PatellaEscrowAndLogistics — cycle 1", () => {
 
     // Anyone may submit: here a third party pays the gas.
     await f.escrow.write.releaseHandoff(
-      [orderId, PICKUP, msg.nonce, msg.expiresAt, giverSig, receiverSig],
+      [orderId, PICKUP, msg.nonce, msg.expiresAt, msg.evidenceHash, giverSig, receiverSig],
       { account: f.stranger.account },
     );
 
@@ -185,7 +220,8 @@ describe("PatellaEscrowAndLogistics — cycle 1", () => {
     const escrowBefore = await balance(f, f.escrow.address);
 
     await viem.assertions.revertWithCustomError(
-      f.escrow.write.releaseHandoff([orderId, PICKUP, msg.nonce, msg.expiresAt, giverSig, receiverSig], {
+      f.escrow.write.releaseHandoff([orderId, PICKUP, msg.nonce, msg.expiresAt, msg.evidenceHash,
+        giverSig, receiverSig], {
         account: f.stranger.account,
       }),
       f.escrow,
@@ -242,7 +278,7 @@ describe("PatellaEscrowAndLogistics — cycle 2", () => {
     const orderId = await fundedOrderWithDriver(f);
     const msg = pickupMessage(f, orderId);
 
-    const otherChain = { chainId: 8453 }; // Base mainnet instead of the local chain
+    const otherChain = { chainId: 42220 }; // Celo mainnet instead of the local chain
     await viem.assertions.revertWithCustomError(
       release(f, msg, await signHandoff(f, f.supplier, msg, otherChain), await signHandoff(f, f.driver, msg, otherChain)),
       f.escrow,
@@ -270,6 +306,22 @@ describe("PatellaEscrowAndLogistics — cycle 2", () => {
 });
 
 describe("PatellaEscrowAndLogistics — cycle 3", () => {
+  it("lets the owner pause new money movement while keeping refunds available", async () => {
+    const f = await networkHelpers.loadFixture(deployFixture);
+    const orderId = await createOrder(f);
+    await f.escrow.write.fundEscrow([orderId], { account: f.buyer.account });
+    await f.escrow.write.setPaused([true], { account: f.deployer.account });
+
+    await viem.assertions.revertWithCustomError(
+      f.escrow.write.acceptOrder([orderId, AGREEMENT_HASH], { account: f.supplier.account }),
+      f.escrow,
+      "EnforcedPause",
+    );
+    await networkHelpers.time.increaseTo(f.refundDeadline);
+    await f.escrow.write.refund([orderId], { account: f.buyer.account });
+    assert.equal(await balance(f, f.escrow.address), 0n);
+  });
+
   it("returns everything not yet paid to the buyer, only to the buyer and only after the refund deadline", async () => {
     const f = await networkHelpers.loadFixture(deployFixture);
     const orderId = await fundedOrderWithDriver(f);
@@ -311,6 +363,7 @@ describe("PatellaEscrowAndLogistics — cycle 3", () => {
     const f = await networkHelpers.loadFixture(deployFixture);
     const orderId = await createOrder(f);
     await f.escrow.write.fundEscrow([orderId], { account: f.buyer.account });
+    await f.escrow.write.acceptOrder([orderId, AGREEMENT_HASH], { account: f.supplier.account });
     // The driver's wallet is a smart account owned by the driver's key.
     const driverWallet = await viem.deployContract("MockSmartWallet", [f.driver.account.address]);
     await f.escrow.write.assignDriver([orderId, driverWallet.address], { account: f.supplier.account });
@@ -325,6 +378,7 @@ describe("PatellaEscrowAndLogistics — cycle 3", () => {
     const f = await networkHelpers.loadFixture(deployFixture);
     const orderId = await createOrder(f);
     await f.escrow.write.fundEscrow([orderId], { account: f.buyer.account });
+    await f.escrow.write.acceptOrder([orderId, AGREEMENT_HASH], { account: f.supplier.account });
 
     await viem.assertions.revertWithCustomError(
       signedRelease(f, pickupMessage(f, orderId), f.supplier, f.driver),

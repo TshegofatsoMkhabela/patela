@@ -5,3 +5,4 @@ artifacts/
 
 deployments/default.json
 types/
+deployments/localhost.json
