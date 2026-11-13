@@ -139,8 +139,8 @@ export function SignInView() {
                 </h2>
                 <p style={{ color: "#a2a9b8", fontSize: "0.85rem", margin: 0 }}>
                   Switch directly into any verified supply chain role to inspect their dedicated
-                  screens and controls (demo preview only: stored in this browser, not signed in
-                  to Patela, and not used by the escrow order flow):
+                  screens and controls (demo preview only: stored in this browser, not signed in to
+                  Patela, and not used by the escrow order flow):
                 </p>
               </div>
 

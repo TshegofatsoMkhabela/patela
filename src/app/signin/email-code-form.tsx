@@ -56,9 +56,15 @@ export function EmailCodeForm() {
   }
 
   return (
-    <form className="pt-form pt-card" onSubmit={sent ? verifyCode : requestCode} style={{ padding: "36px 32px", marginTop: 0 }}>
+    <form
+      className="pt-form pt-card"
+      onSubmit={sent ? verifyCode : requestCode}
+      style={{ padding: "36px 32px", marginTop: 0 }}
+    >
       <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: "1.25rem", margin: "0 0 4px", fontWeight: 600 }}>Sign in with an email code</h2>
+        <h2 style={{ fontSize: "1.25rem", margin: "0 0 4px", fontWeight: 600 }}>
+          Sign in with an email code
+        </h2>
         <p style={{ color: "#a2a9b8", fontSize: "0.875rem", margin: 0 }}>
           We email you a one-time 6-digit code. New emails get an account automatically.
         </p>
@@ -85,8 +91,19 @@ export function EmailCodeForm() {
             <label htmlFor="si-code">6-digit code</label>
             <button
               type="button"
-              onClick={() => { setSent(false); setCode(""); setError(null); }}
-              style={{ background: "none", border: 0, color: "#ffe2b2", fontSize: "0.8rem", textDecoration: "underline", cursor: "pointer" }}
+              onClick={() => {
+                setSent(false);
+                setCode("");
+                setError(null);
+              }}
+              style={{
+                background: "none",
+                border: 0,
+                color: "#ffe2b2",
+                fontSize: "0.8rem",
+                textDecoration: "underline",
+                cursor: "pointer",
+              }}
             >
               Use another email
             </button>
@@ -109,17 +126,27 @@ export function EmailCodeForm() {
       ) : null}
 
       {error ? (
-        <p role="alert" style={{ color: "#ff9b8a", fontSize: "0.9rem", margin: "4px 0 12px" }}>{error}</p>
+        <p role="alert" style={{ color: "#ff9b8a", fontSize: "0.9rem", margin: "4px 0 12px" }}>
+          {error}
+        </p>
       ) : null}
 
-      <button type="submit" className="pt-btn" disabled={busy} style={{ width: "100%", justifyContent: "center", padding: "13px" }}>
+      <button
+        type="submit"
+        className="pt-btn"
+        disabled={busy}
+        style={{ width: "100%", justifyContent: "center", padding: "13px" }}
+      >
         <span>{busy ? "Please wait…" : sent ? "Verify code and sign in" : "Email me a code"}</span>
         <span aria-hidden="true">→</span>
       </button>
 
       <div style={{ textAlign: "center", marginTop: 22, fontSize: "0.85rem", color: "#a2a9b8" }}>
         Don&apos;t have an account yet?{" "}
-        <Link href="/signup" style={{ color: "#ffe2b2", fontWeight: 600, textDecoration: "underline" }}>
+        <Link
+          href="/signup"
+          style={{ color: "#ffe2b2", fontWeight: 600, textDecoration: "underline" }}
+        >
           Sign up
         </Link>
       </div>
