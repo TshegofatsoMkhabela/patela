@@ -15,6 +15,7 @@ const DRIVER_AT_PICKUP = ZARP("100"); // 10%
 const SUPPLIER_AT_PICKUP = ZARP("400"); // 40%
 const SUPPLIER_AT_DELIVERY = ZARP("500"); // 50%
 const PICKUP = 1;
+const DELIVERY = 2;
 const ONE_DAY = 24n * 60n * 60n;
 
 async function deployFixture() {
@@ -45,15 +46,23 @@ async function fundedOrderWithDriver(f: Fixture) {
   return orderId;
 }
 
+type HandoffMessage = { orderId: bigint; stage: number; giver: Address; receiver: Address; nonce: `0x${string}`; expiresAt: bigint };
+
 async function signHandoff(
   f: Fixture,
   signer: Fixture["buyer"],
-  message: { orderId: bigint; stage: number; giver: Address; receiver: Address; nonce: `0x${string}`; expiresAt: bigint },
+  message: HandoffMessage,
+  domainOverride: { chainId?: number; verifyingContract?: Address } = {},
 ) {
   const publicClient = await viem.getPublicClient();
   return signer.signTypedData({
     account: signer.account,
-    domain: { name: "Patela Escrow", version: "1", chainId: await publicClient.getChainId(), verifyingContract: f.escrow.address },
+    domain: {
+      name: "Patela Escrow",
+      version: "1",
+      chainId: domainOverride.chainId ?? (await publicClient.getChainId()),
+      verifyingContract: domainOverride.verifyingContract ?? f.escrow.address,
+    },
     types: {
       Handoff: [
         { name: "orderId", type: "uint256" },
@@ -80,7 +89,30 @@ function pickupMessage(f: Fixture, orderId: bigint) {
   };
 }
 
+function deliveryMessage(f: Fixture, orderId: bigint) {
+  return {
+    orderId,
+    stage: DELIVERY,
+    giver: f.driver.account.address,
+    receiver: f.buyer.account.address,
+    nonce: keccak256(toHex(`delivery-${orderId}`)),
+    expiresAt: f.refundDeadline,
+  };
+}
+
+async function release(f: Fixture, msg: HandoffMessage, giverSig: `0x${string}`, receiverSig: `0x${string}`) {
+  return f.escrow.write.releaseHandoff(
+    [msg.orderId, msg.stage, msg.nonce, msg.expiresAt, giverSig, receiverSig],
+    { account: f.stranger.account },
+  );
+}
+
+async function signedRelease(f: Fixture, msg: HandoffMessage, giver: Fixture["buyer"], receiver: Fixture["buyer"]) {
+  return release(f, msg, await signHandoff(f, giver, msg), await signHandoff(f, receiver, msg));
+}
+
 const balance = (f: Fixture, who: Address) => f.zarp.read.balanceOf([who]);
+const STATUS_COMPLETED = 4;
 
 describe("PatellaEscrowAndLogistics — cycle 1", () => {
   it("rejects creating an order whose splits don't add up to the total", async () => {
@@ -160,5 +192,79 @@ describe("PatellaEscrowAndLogistics — cycle 1", () => {
       "InvalidSignature",
     );
     assert.equal(await balance(f, f.escrow.address), escrowBefore);
+  });
+});
+
+describe("PatellaEscrowAndLogistics — cycle 2", () => {
+  it("pays the supplier the remaining 50% and completes the order when driver and buyer sign the delivery", async () => {
+    const f = await networkHelpers.loadFixture(deployFixture);
+    const orderId = await fundedOrderWithDriver(f);
+    await signedRelease(f, pickupMessage(f, orderId), f.supplier, f.driver);
+    const supplierBefore = await balance(f, f.supplier.account.address);
+
+    await signedRelease(f, deliveryMessage(f, orderId), f.driver, f.buyer);
+
+    assert.equal((await balance(f, f.supplier.account.address)) - supplierBefore, SUPPLIER_AT_DELIVERY);
+    assert.equal(await balance(f, f.escrow.address), 0n);
+    const order = await f.escrow.read.orders([orderId]);
+    assert.equal(order[order.length - 1], STATUS_COMPLETED);
+  });
+
+  it("rejects a handoff whose QR code was already used, and pays nothing the second time", async () => {
+    const f = await networkHelpers.loadFixture(deployFixture);
+    const orderId = await fundedOrderWithDriver(f);
+    const msg = pickupMessage(f, orderId);
+    const giverSig = await signHandoff(f, f.supplier, msg);
+    const receiverSig = await signHandoff(f, f.driver, msg);
+    await release(f, msg, giverSig, receiverSig);
+    const escrowBefore = await balance(f, f.escrow.address);
+
+    // The screenshot attack: the exact same signed handoff, submitted again.
+    await viem.assertions.revertWithCustomError(release(f, msg, giverSig, receiverSig), f.escrow, "NonceUsed");
+    assert.equal(await balance(f, f.escrow.address), escrowBefore);
+  });
+
+  it("rejects a handoff after its QR code has expired", async () => {
+    const f = await networkHelpers.loadFixture(deployFixture);
+    const orderId = await fundedOrderWithDriver(f);
+    const now = BigInt(await networkHelpers.time.latest());
+    const msg = { ...pickupMessage(f, orderId), expiresAt: now + 120n }; // valid for 2 minutes
+    const giverSig = await signHandoff(f, f.supplier, msg);
+    const receiverSig = await signHandoff(f, f.driver, msg);
+
+    await networkHelpers.time.increase(121);
+
+    await viem.assertions.revertWithCustomError(release(f, msg, giverSig, receiverSig), f.escrow, "HandoffExpired");
+  });
+
+  it("rejects signatures made for another chain or another contract", async () => {
+    const f = await networkHelpers.loadFixture(deployFixture);
+    const orderId = await fundedOrderWithDriver(f);
+    const msg = pickupMessage(f, orderId);
+
+    const otherChain = { chainId: 8453 }; // Base mainnet instead of the local chain
+    await viem.assertions.revertWithCustomError(
+      release(f, msg, await signHandoff(f, f.supplier, msg, otherChain), await signHandoff(f, f.driver, msg, otherChain)),
+      f.escrow,
+      "InvalidSignature",
+    );
+
+    const otherContract = { verifyingContract: f.zarp.address };
+    await viem.assertions.revertWithCustomError(
+      release(f, msg, await signHandoff(f, f.supplier, msg, otherContract), await signHandoff(f, f.driver, msg, otherContract)),
+      f.escrow,
+      "InvalidSignature",
+    );
+  });
+
+  it("rejects the delivery before the pickup has happened", async () => {
+    const f = await networkHelpers.loadFixture(deployFixture);
+    const orderId = await fundedOrderWithDriver(f);
+
+    await viem.assertions.revertWithCustomError(
+      signedRelease(f, deliveryMessage(f, orderId), f.driver, f.buyer),
+      f.escrow,
+      "StageOutOfOrder",
+    );
   });
 });

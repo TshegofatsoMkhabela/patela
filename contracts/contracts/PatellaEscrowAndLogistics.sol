@@ -43,6 +43,8 @@ contract PatellaEscrowAndLogistics is ReentrancyGuard, EIP712 {
 
     uint256 public orderCounter;
     mapping(uint256 => Order) public orders;
+    /// One-time QR codes: a nonce can release a handoff once, ever.
+    mapping(bytes32 => bool) public usedNonces;
 
     event OrderCreated(uint256 indexed orderId, address indexed buyer, address indexed supplier, uint256 total);
     event EscrowFunded(uint256 indexed orderId, uint256 amount);
@@ -58,6 +60,9 @@ contract PatellaEscrowAndLogistics is ReentrancyGuard, EIP712 {
     error DriverAlreadyAssigned();
     error InvalidState();
     error InvalidSignature();
+    error HandoffExpired();
+    error NonceUsed();
+    error StageOutOfOrder();
 
     constructor(address _zarpToken, address _registry) EIP712("Patela Escrow", "1") {
         zarpToken = IERC20(_zarpToken);
@@ -121,6 +126,9 @@ contract PatellaEscrowAndLogistics is ReentrancyGuard, EIP712 {
     ) external nonReentrant {
         Order storage o = orders[orderId];
         if (o.status != OrderStatus.Funded && o.status != OrderStatus.InTransit) revert InvalidState();
+        if (block.timestamp > expiresAt) revert HandoffExpired();
+        if (usedNonces[nonce]) revert NonceUsed();
+        if (stage != o.stagesDone + 1) revert StageOutOfOrder();
 
         (address giver, address receiver) = _partiesFor(o, stage);
         bytes32 digest = _hashTypedDataV4(
@@ -131,6 +139,7 @@ contract PatellaEscrowAndLogistics is ReentrancyGuard, EIP712 {
                 || !SignatureChecker.isValidSignatureNow(receiver, digest, receiverSig)
         ) revert InvalidSignature();
 
+        usedNonces[nonce] = true;
         o.stagesDone = stage;
         emit HandoffVerified(orderId, stage, giver, receiver);
 
