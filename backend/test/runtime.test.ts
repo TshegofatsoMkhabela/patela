@@ -36,6 +36,13 @@ test("runtime rejects unsupported chains and malformed token overrides", () => {
     /TOKEN_ADDRESS/);
 });
 
+test("runtime refuses half an on-chain setup: an RPC without an escrow, or an escrow without an RPC", () => {
+  const escrow = "0x1111111111111111111111111111111111111111";
+  assert.throws(() => createRuntime({ ...base, RPC_URL: "https://forno.celo-sepolia.celo-testnet.org" }),
+    /RPC_URL and ESCROW_ADDRESS/);
+  assert.throws(() => createRuntime({ ...base, ESCROW_ADDRESS: escrow }), /RPC_URL and ESCROW_ADDRESS/);
+});
+
 test("runtime accepts additional origins and an explicit cross-site cookie policy", async () => {
   await starts({ ALLOWED_ORIGINS: "https://demo.example.test, https://integration.example.test",
     COOKIE_DOMAIN: ".example.test", COOKIE_SAME_SITE: "None" });

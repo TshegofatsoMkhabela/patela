@@ -14,6 +14,68 @@ export const escrowEventsAbi = parseAbi([
   "event OrderRefunded(uint256 indexed orderId, address indexed buyer, uint256 amount)",
 ]);
 const balanceAbi = parseAbi(["function balanceOf(address) view returns (uint256)"]);
+const setupAbi = parseAbi([
+  "function symbol() view returns (string)",
+  "function decimals() view returns (uint8)",
+  "function paymentToken() view returns (address)",
+]);
+
+/** The read-only chain calls the setup check needs; small so tests can stub it. */
+export interface ChainReader {
+  chainId(): Promise<number>;
+  code(address: Address): Promise<Hex | undefined>;
+  read(address: Address, name: "symbol" | "decimals" | "paymentToken"): Promise<unknown>;
+}
+
+export function rpcChainReader(rpcUrl: string): ChainReader {
+  const client = createPublicClient({ transport: http(rpcUrl) });
+  return {
+    chainId: () => client.getChainId(),
+    code: address => client.getCode({ address }),
+    read: (address, functionName) => client.readContract({ address, abi: setupAbi, functionName }),
+  };
+}
+
+export type SetupCheck = { name: "chain" | "token" | "escrow"; ok: boolean; detail: string };
+
+/**
+ * Confirms the RPC, token and escrow agree before real money depends on them: the RPC is on the
+ * configured chain, the token is 18-decimal ZARm, and the escrow exists and pays out that token.
+ */
+export async function checkChainSetup(reader: ChainReader, expected: {
+  chainId: number; tokenAddress: Address; escrowAddress?: Address;
+}): Promise<SetupCheck[]> {
+  const run = async (name: SetupCheck["name"], check: () => Promise<string>): Promise<SetupCheck> => {
+    try { return { name, ok: true, detail: await check() }; }
+    catch (error) { return { name, ok: false, detail: error instanceof Error ? error.message : String(error) }; }
+  };
+  const { chainId, tokenAddress, escrowAddress } = expected;
+  return Promise.all([
+    run("chain", async () => {
+      const actual = await reader.chainId();
+      if (actual !== chainId) throw new Error(`RPC is on chain ${actual}, expected ${chainId}`);
+      return `RPC is on chain ${actual}`;
+    }),
+    run("token", async () => {
+      if (!await reader.code(tokenAddress)) throw new Error(`No contract at token ${tokenAddress}`);
+      const [symbol, decimals] = await Promise.all([reader.read(tokenAddress, "symbol"),
+        reader.read(tokenAddress, "decimals")]);
+      if (symbol !== "ZARm" || Number(decimals) !== 18) {
+        throw new Error(`Token ${tokenAddress} is ${String(symbol)}/${String(decimals)}, expected ZARm/18`);
+      }
+      return `${tokenAddress} is ZARm with 18 decimals`;
+    }),
+    run("escrow", async () => {
+      if (!escrowAddress) throw new Error("ESCROW_ADDRESS is not set");
+      if (!await reader.code(escrowAddress)) throw new Error(`No contract at escrow ${escrowAddress}`);
+      const paid = String(await reader.read(escrowAddress, "paymentToken"));
+      if (paid.toLowerCase() !== tokenAddress.toLowerCase()) {
+        throw new Error(`Escrow pays out ${paid}, not the configured token ${tokenAddress}`);
+      }
+      return `${escrowAddress} holds ${tokenAddress}`;
+    }),
+  ]);
+}
 
 type EscrowEventName = (typeof escrowEventsAbi)[number]["name"];
 

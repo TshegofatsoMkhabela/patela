@@ -52,6 +52,11 @@ export function createRuntime(env: NodeJS.ProcessEnv = process.env) {
   const db = new PgDatabase(DATABASE_URL, poolMax, DATABASE_SSL === "true");
   const auth = new PostgresAuth(db, new GoogleOidcProvider(GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET));
   const rpcUrl = RPC_URL || BASE_RPC_URL;
+  // Both or neither: with neither the API serves sign-in and onboarding only; half a setup would
+  // start fine and then fail every on-chain order step.
+  if (Boolean(rpcUrl) !== Boolean(ESCROW_ADDRESS)) {
+    throw new Error("Set both RPC_URL and ESCROW_ADDRESS to enable on-chain orders, or leave both blank");
+  }
   const chain = rpcUrl && ESCROW_ADDRESS
     ? new EvmChainVerifier(rpcUrl, ESCROW_ADDRESS as Address, confirmations,
       chainId as 42220 | 11142220, tokenAddress as Address)
