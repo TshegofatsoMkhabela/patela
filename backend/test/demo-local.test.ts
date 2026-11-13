@@ -119,3 +119,27 @@ test("Given DEMO_MODE on a public API origin or with Gmail configured, Then the 
     } finally { await app.close(); await db.close(); }
   }
 });
+
+test("Given a wallet linked to one account, When another account links it, Then it is a 409, not a 500", async () => {
+  const db = new TestDatabase();
+  const auth = new TestAuth();
+  const app = buildApp({ db, auth, escrowAddress: ESCROW, publicOrigin: "http://localhost:3001", chainId: 31337,
+    tokenAddress: TOKEN, tokenDecimals: 18, integrations: new TestIntegrations() });
+  try {
+    await db.migrate();
+    const wallet = privateKeyToAccount(`0x${"0c".repeat(32)}` as Hex);
+    const [first, second] = [randomUUID(), randomUUID()];
+    auth.users.set("user-0", { id: first, email: "one@demo.test" });
+    auth.users.set("user-1", { id: second, email: "two@demo.test" });
+    await linkWallet(app, 0, first, wallet, 31337);
+    const challenge = await app.inject({ method: "POST", url: "/wallet/challenge", headers: bearer(1),
+      payload: { wallet: wallet.address } });
+    const { challengeId, typedData } = challenge.json();
+    const { walletLinkTypedData } = await import("../src/service.js");
+    const signature = await wallet.signTypedData(walletLinkTypedData(31337, second, wallet.address,
+      typedData.message.nonce, Number(typedData.message.expiresAt)));
+    const linked = await app.inject({ method: "POST", url: "/wallet/link", headers: bearer(1),
+      payload: { challengeId, signature } });
+    assert.equal(linked.statusCode, 409, linked.body);
+  } finally { await app.close(); await db.close(); }
+});

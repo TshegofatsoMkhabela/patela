@@ -2,7 +2,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { isHex, verifyTypedData, type Address, type Hex } from "viem";
 import type { Identity } from "./auth.js";
 import type { Database } from "./db.js";
-import { DomainError, requiredAddress, requiredUuid, utcSeconds } from "./validation.js";
+import { DomainError, isUniqueViolation, requiredAddress, requiredUuid, utcSeconds } from "./validation.js";
 
 export const BASE_CHAIN_ID = 8453;
 export const ZARP_BASE = "0xb755506531786C8aC63B756BaB1ac387bACB0C04" as Address;
@@ -106,7 +106,10 @@ export class PatelaService {
         `update profiles set wallet_address=$2, updated_at=now() where id=$1
          returning id,email,full_name,role,wallet_address,created_at`,
         [userId, wallet.toLowerCase()],
-      );
+      ).catch(error => {
+        if (isUniqueViolation(error)) throw new DomainError("This wallet is already linked to another Patela account", 409);
+        throw error;
+      });
       return updated.rows[0];
     });
   }

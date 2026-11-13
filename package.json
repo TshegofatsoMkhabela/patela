@@ -8,7 +8,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "demo": "node scripts/demo.mjs",
+    "demo:stop": "node scripts/demo-stop.mjs",
+    "demo:smoke": "node scripts/demo-smoke.mjs",
+    "demo:install": "npm ci && npm ci --prefix backend && npm ci --prefix contracts"
   },
   "dependencies": {
     "@deck.gl/core": "^9.4.1",

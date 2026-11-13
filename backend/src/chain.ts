@@ -98,8 +98,9 @@ export class BaseChainVerifier implements ChainVerifier {
     this.chainChecked ??= this.client.getChainId().then(id => {
       if (id !== this.chainId) throw new Error("RPC is connected to the wrong chain");
     }).catch(error => { this.chainChecked = undefined; throw error; });
+    // cacheTime 0: viem otherwise reuses a head up to 4 s old, older than a just-mined receipt.
     const [, receipt, currentBlock] = await Promise.all([this.chainChecked,
-      this.client.getTransactionReceipt({ hash: txHash }), this.client.getBlockNumber()]);
+      this.client.getTransactionReceipt({ hash: txHash }), this.client.getBlockNumber({ cacheTime: 0 })]);
     if (receipt.status !== "success") throw new Error("Transaction reverted");
     if (currentBlock - receipt.blockNumber + 1n < BigInt(this.confirmations)) {
       throw new Error("Transaction is not sufficiently confirmed");
