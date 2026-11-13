@@ -4,11 +4,11 @@ import { InfoPage, Cards, Prose } from "@/components/InfoPage";
 export const metadata: Metadata = {
   title: "Trust & Security — Patella",
   description:
-    "How Patella protects supply chains: honest trust boundaries, Base Sepolia EscrowVault, KMS Release Authority, licensed bank client trust accounts, and isolated dispute holding.",
+    "How Patella protects supply chains: honest trust boundaries, Celo EscrowVault, cryptographic handoffs, and isolated dispute holding.",
   openGraph: {
     title: "Trust & Security — Patella",
     description:
-      "Honest trust disclosures, Base Sepolia smart-contract escrow, and licensed South African banking infrastructure.",
+      "Honest trust disclosures, Celo smart-contract escrow, and cryptographic custody evidence.",
     type: "website",
   },
   twitter: {
@@ -33,7 +33,7 @@ export default function SecurityPage() {
           },
           {
             t: "EscrowVault smart contract",
-            p: "Funds are held on Base Sepolia in an audited smart-contract vault governed by declarative code rules, not unilateral discretion.",
+            p: "ZARm is held on Celo in a smart-contract vault governed by declarative code rules, not unilateral discretion.",
           },
           {
             t: "KMS Release Authority",

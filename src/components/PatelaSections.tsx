@@ -139,14 +139,14 @@ export function PatelaSections() {
           <h2 className="pt-h2">Rand in, Rand out. Governed by code.</h2>
           <p className="pt-lead">
             Transact natively in South African Rand (ZAR), backed by licensed banking partners and
-            anchored on Base Sepolia.
+            anchored on Celo.
           </p>
         </Reveal>
         <div className="pt-chips">
           {[
             "ZAR (South African Rand)",
-            "ZARP (Rand Stablecoin)",
-            "Base Sepolia EVM",
+            "ZARm (Mento Rand Stablecoin)",
+            "Celo EVM",
             "Standard Bank Escrow Trust",
             "Two-Party Cryptographic Signatures",
             "CIPC Verified Profiles",

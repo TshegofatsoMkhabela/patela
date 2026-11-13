@@ -2,7 +2,7 @@
 
 This is the backend for Patela's proof-at-handoff demo. It contains no frontend and no escrow contract. It creates application profiles from verified Google identities or email OTP, stores first-party sessions in PostgreSQL, onboards businesses for admin approval, invites staff to a business, links wallets by signature, stores order data in PostgreSQL, issues short-lived handoff challenges, verifies both handoff signatures, and projects **confirmed escrow events** into dashboard data. It also exposes authenticated Google Routes and speech endpoints.
 
-The backend does not hold a private key or send a ZARP transaction. A wallet or relayer must submit the contract calls. `/verify` endpoints read transaction receipts and only then change payment/verification status.
+The backend does not hold a private key or send a ZARm transaction. A wallet or relayer submits contract calls. `/verify` endpoints read confirmed receipts before changing payment state.
 
 ## Run locally
 
@@ -13,7 +13,7 @@ Requirements: Node 22+, PostgreSQL, and a Google Cloud OAuth Web application cli
 3. In Google Cloud, create an OAuth client of type **Web application** and add the frontend's origin to Authorized JavaScript origins for Google Identity Services. For authorization-code sign-in, also add `${API_ORIGIN}/auth/google/callback` as an authorized redirect URI and configure its client secret. Configure the consent screen for the accounts that should sign in. No Supabase project is used.
 4. Run `npm run migrate` against the application database, then `npm run dev`. The migrator applies each `migrations/*.sql` file once, in name order, and records it in `schema_migrations`. `002_organizations.sql` resets old per-person trading roles (buyer, supplier, etc.) to `member`; trading rights now come from approved businesses.
 5. Create the first admin by signing in once, then changing that specific profile's `role` to `admin` directly in PostgreSQL. There is deliberately no public admin-registration endpoint.
-6. Set `CHAIN_ID=84532`, a deployed test token's `TOKEN_ADDRESS`, `TOKEN_DECIMALS`, `ESCROW_ADDRESS`, and a Base Sepolia `BASE_RPC_URL` for rehearsals. For real ZARP use `CHAIN_ID=8453`, `TOKEN_ADDRESS=0xb755506531786C8aC63B756BaB1ac387bACB0C04`, `TOKEN_DECIMALS=18`, and the separately verified Base escrow address.
+6. For rehearsals use Celo Sepolia (`CHAIN_ID=11142220`) with `RPC_URL` and the deployed escrow. For mainnet use `CHAIN_ID=42220`. The runtime selects canonical Mento ZARm unless `TOKEN_ADDRESS` explicitly overrides it.
 
 The backend binds to localhost by default. Deploy behind HTTPS with request limits and a trusted Postgres connection. Browser/PostgREST roles have no RLS policies for these tables; all application data access goes through this API.
 For Amazon RDS, set `DATABASE_SSL=true` and load the RDS CA certificate into Node's trust store. The Lambda stack sets `NODE_EXTRA_CA_CERTS=/var/runtime/ca-cert.pem`; local RDS connections need an appropriate CA bundle. The PostgreSQL client verifies the server certificate and hostname.
@@ -53,10 +53,10 @@ The backend does not check handoff signatures. Embedded wallets may be ERC-1271 
 
 ## External setup and live-money boundary
 
-- ZARP's [official blockchain list](https://docs.zarpstablecoin.com/zarp-stablecoin/blockchains) names its Base contract. [BaseScan lists 18 decimals](https://basescan.org/token/0xb755506531786c8ac63b756bab1ac387bacb0c04). Before sending real ZARP, test that the escrow contract can receive and transfer it on Base. ZARP's [terms](https://www.zarpstablecoin.com/terms/) restrict direct issuance/redemption to approved partners; this backend has no bank cash-out integration.
+- Mento publishes canonical ZARm addresses for Celo and Celo Sepolia. Buyers acquire ZARm separately; this backend has no mint, custody, swap, or bank cash-out integration.
 - Google Maps server calls need a separately restricted Routes API key. Google Speech clients use Application Default Credentials. Neither service can be exercised live without Google Cloud setup and billing.
 - Order and business emails go out through Gmail SMTP only when `SMTP_SECRET_ARN` is set (see above). Sign-in codes are sent the same way, from `POST /auth/otp/request`. Gmail may rate-limit or spam-folder automated mail; production should use a domain sender such as Amazon SES.
-- Do not use real funds with this backend until the separate escrow contract, upgrade and role controls, independent review, ZARP compatibility, failure recovery, and end-to-end Base transaction tests have passed.
+- Do not use real funds until the escrow has an independent review, operational limits, failure recovery, and a complete Celo Sepolia rehearsal.
 
 ## Verification
 
@@ -65,4 +65,4 @@ npm run typecheck
 npm test
 ```
 
-The tests use PGlite to run the real PostgreSQL migrations, Fastify request injection, test wallets that sign typed data, and a fake chain verifier. `demo-flow.test.ts` drives the whole two-handoff demo through the API: approval gate, split checks, supplier and driver email invites, one-time and wrong-person accept links, on-chain event matching at each step, dispute pause, QR session roles, stage order, replayed and expired QR codes, wrong payment amounts, the order view, a mail outage, and refund. `chain.test.ts` decodes ABI-encoded logs for the frozen events. The tests do **not** prove a live contract, Base Sepolia, Gmail, an OAuth provider, Google APIs, or the Lambda deployment.
+The tests use PGlite, Fastify injection, test wallets, and a fake chain verifier. They do not prove a live Celo deployment, production ZARm liquidity, Gmail, OAuth, Google APIs, or Lambda configuration.

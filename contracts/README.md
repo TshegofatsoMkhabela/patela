@@ -1,6 +1,6 @@
 # Patella Smart Contracts
 
-This directory contains the Solidity smart contracts powering the Patella decentralized procurement, tender, milestone escrow, and logistics verification protocol on the **XRPL EVM Sidechain**.
+This directory contains the Solidity smart contracts powering the Patella procurement, tender, ZARm escrow, and logistics verification protocol on **Celo**.
 
 ---
 
@@ -26,7 +26,7 @@ This directory contains the Solidity smart contracts powering the Patella decent
 Located in `contracts/contracts/`:
 
 ### 1. `MockZARP.sol`
-- **Purpose**: A mock ERC-20 token representing the South African Rand pegged stablecoin (**ZARP**) for testnet settlement.
+- **Purpose**: A local-test-only ERC-20 stand-in. Celo deployments use canonical Mento **ZARm** and never deploy this token.
 - **Key Functionality**:
   - Open minting (`mint(to, amount)`) for simulated buyers and escrow funding during testing.
 
@@ -51,10 +51,11 @@ Located in `contracts/contracts/`:
 - **Purpose**: Multi-milestone escrow vault with cryptographic two-party QR/signature handoff verification and dispute settlement.
 - **Key Functionality**:
   - `createOrder(...)`: Establishes milestone-based payments tied to handoff steps or delivery confirmations.
-  - `fundEscrow(...)`: Deposits ZARP tokens into escrow from the buyer.
-  - `recordTwoPartyHandoff(...)`: Verifies dual ECDSA signatures (`giver` and `receiver`) on-chain alongside geolocation photo hashes and single-use QR nonces. Handoff confirmations automatically trigger step-locked milestone payouts.
-  - `approveMilestone(...)`: Allows buyer to manually approve evidence and trigger milestone releases.
-  - `claimTimeoutRelease(...)`: Auto-releases milestone funds if an auto-approve window expires without disputes.
+  - `fundEscrow(...)`: Deposits approved ZARm tokens into escrow from the buyer.
+  - `acceptOrder(...)`: Requires the invited supplier to accept the exact agreement hash before driver assignment.
+  - `assignDriver(...)`: Fixes the invited driver for the pickup and delivery stages.
+  - `releaseHandoff(...)`: Verifies the giver and receiver's EIP-712 signatures, the evidence hash, expiry, and single-use nonce before releasing the stage's payments.
+  - `refund(...)`: Returns the unpaid balance to the buyer after the configured deadline.
   - `raiseDispute(...)` / `resolveDispute(...)`: Freezes funds and authorizes registry-appointed arbiters to disburse to supplier or refund buyer.
 
 ---
@@ -74,7 +75,7 @@ Located in `contracts/contracts/`:
 [Buyer Awards Tender] ──> [Order Created in PatellaEscrowAndLogistics]
                                     │
                                     ▼
-                             [Escrow Funded (ZARP)]
+                             [Escrow Funded (ZARm)]
                                     │
     ┌───────────────────────────────┴───────────────────────────────┐
     ▼                                                               ▼
@@ -109,19 +110,20 @@ The Hardhat environment depends on the following packages:
 ## Smart Contract Deployment
 
 ### Deployment Process
-1. **Compilation**: Hardhat parses Solidity source files in `contracts/contracts/`, runs the solc compiler (`0.8.20`), and outputs compiled artifacts in `contracts/artifacts/`.
-2. **Execution**: `contracts/scripts/deploy.ts` connects to the targeted network provider (e.g. XRPL EVM Testnet RPC) using the funded private key from `.env`.
-3. **Artifact Recording**: The script exports contract addresses and full ABIs into `contracts/deployments/latest.json`.
+1. **Compilation**: Hardhat parses Solidity source files in `contracts/contracts/`, runs the configured compiler, and writes artifacts under `contracts/artifacts/`.
+2. **Execution**: `contracts/scripts/deploy.ts` uses a funded deployer and the configured Celo RPC. Celo deployments bind escrow to canonical Mento ZARm after checking its bytecode, symbol, and decimals.
+3. **Artifact Recording**: The script exports the network, token, maximum order amount, contract addresses, and ABIs into `contracts/deployments/<network>.json`.
 
 ```bash
 # 1. Compile contracts
 npx hardhat compile
 
 # 2. Deploy locally to ephemeral Hardhat network
-npx hardhat run scripts/deploy.ts --network hardhat
+npx hardhat run scripts/deploy.ts
 
-# 3. Deploy to XRPL EVM Testnet
-npx hardhat run scripts/deploy.ts --network testnet
+# 3. Deploy to Celo Sepolia (requires CELO_SEPOLIA_RPC_URL,
+#    DEPLOYER_PRIVATE_KEY, and MAX_ORDER_ZARM)
+npx hardhat run scripts/deploy.ts --network celoSepolia
 ```
 
 ---
@@ -139,11 +141,11 @@ The ABI defines:
 ### How it is generated:
 When you run `npx hardhat compile`, Hardhat generates an artifact file for each contract under `contracts/artifacts/contracts/<ContractName>.sol/<ContractName>.json`. 
 
-Our deployment script extracts the ABI directly and bundles it into `contracts/deployments/latest.json`:
+Our deployment script extracts the ABI directly and bundles it into `contracts/deployments/<network>.json`:
 
 ```json
 {
-  "network": "testnet",
+  "network": "celoSepolia",
   "contracts": {
     "PatellaEscrowAndLogistics": {
       "address": "0x1234...abcd",
@@ -165,7 +167,7 @@ You can instantiate a contract instance in your Next.js application using `ether
 import { ethers } from "ethers";
 import deployments from "@/contracts/deployments/latest.json";
 
-// 1. Connect to the browser wallet (e.g., MetaMask or XRPL EVM Provider)
+// 1. Connect to a browser wallet on the configured Celo network
 const provider = new ethers.BrowserProvider(window.ethereum);
 const signer = await provider.getSigner();
 
@@ -182,17 +184,12 @@ console.log("Order status:", order.status);
 
 // 4. Send a transaction (state change)
 const tx = await escrowContract.fundEscrow(orderId);
-await tx.wait(); // Wait for confirmation on the XRPL EVM Sidechain
+await tx.wait(); // Wait for confirmation on Celo
 ```
 
 ### Integrating with the Patella Frontend Store
 
-Currently, Patella's frontend uses an in-memory/localStorage demo store in `src/lib/patela-store.ts`.
-
-To switch from simulated demo mode to live XRPL EVM contracts:
-1. Copy or symlink `contracts/deployments/latest.json` to `src/contracts/deployments.json`.
-2. Replace mock methods in `src/lib/patela-store.ts` (e.g., `fundJob`, `releaseMilestone`, `submitBid`) with asynchronous calls to `escrowContract` or `tenderTrailContract`.
-3. Read on-chain events (`HandoffVerified`, `MilestoneReleased`, `TenderAwarded`) via `contract.on(...)` or an indexer to synchronize UI state.
+The order flow uses `src/lib/order-escrow.ts` for Celo transactions and the backend order API for invitations and confirmed status progression. The older marketplace job demo in `src/lib/patela-store.ts` remains explicitly simulated and must not be treated as an on-chain balance source.
 
 ---
 
@@ -207,10 +204,10 @@ npx hardhat compile
 # Clean build artifacts & cache
 npx hardhat clean
 
-# Run deployment script on testnet
-npx hardhat run scripts/deploy.ts --network testnet
+# Run deployment script on Celo Sepolia
+npx hardhat run scripts/deploy.ts --network celoSepolia
 
 # Run deployment script locally
-npx hardhat run scripts/deploy.ts --network hardhat
+npx hardhat run scripts/deploy.ts
 ```
 

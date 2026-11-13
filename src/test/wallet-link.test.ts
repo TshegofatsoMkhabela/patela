@@ -10,7 +10,7 @@ const challenge = {
   challengeId: "5b0c2d7e-0000-4000-8000-000000000001",
   expiresAt: "2026-11-13T05:05:00.000Z",
   typedData: {
-    domain: { name: "Patela Wallet Link", version: "1", chainId: 84532 },
+    domain: { name: "Patela Wallet Link", version: "1", chainId: 11142220 },
     types: {
       WalletLink: [
         { name: "userId", type: "string" },
@@ -89,7 +89,7 @@ describe("linkWallet", () => {
   it("given a real key signs exactly what MetaMask is given, when the backend verifies it its own way, then it matches", async () => {
     const account = privateKeyToAccount(generatePrivateKey());
     const backendTyped = {
-      domain: { name: "Patela Wallet Link", version: "1", chainId: 84532 },
+      domain: { name: "Patela Wallet Link", version: "1", chainId: 11142220 },
       types: challenge.typedData.types,
       primaryType: "WalletLink" as const,
       message: {

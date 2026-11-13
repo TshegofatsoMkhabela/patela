@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "FAQ — Patella",
     description:
-      "Answers to common questions about Patella supply chain custody, Rand-to-ZARP escrow, driver guest handoffs, and dispute resolution.",
+      "Answers to common questions about Patella supply chain custody, ZARm escrow, driver guest handoffs, and dispute resolution.",
     type: "website",
   },
   twitter: {

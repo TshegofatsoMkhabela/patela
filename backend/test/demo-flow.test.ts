@@ -43,8 +43,8 @@ test("demo flow: order, email invites, on-chain steps, QR handoffs and refund", 
       await linkWallet(app, i, ids[i], wallets[i]);
     }
     const orderBody = {
-      supplierEmail: "Supplier@Example.test", totalZarp: "1000", driverAtPickupZarp: "100",
-      supplierAtPickupZarp: "400", supplierAtDeliveryZarp: "500.00", refundAfterHours: 48,
+      supplierEmail: "Supplier@Example.test", totalZar: "1000", driverAtPickupZar: "100",
+      supplierAtPickupZar: "400", supplierAtDeliveryZar: "500.00", refundAfterHours: 48,
       agreementText: AGREEMENT,
     };
 
@@ -53,9 +53,9 @@ test("demo flow: order, email invites, on-chain steps, QR handoffs and refund", 
     await approveBuyer(app, setAdmin, 0, 3, "2021/000001/07");
 
     // 2. Splits must add up to the total; nothing is stored or emailed otherwise.
-    const badSplit = await post(0, "/orders", { ...orderBody, supplierAtDeliveryZarp: "499.99" });
+    const badSplit = await post(0, "/orders", { ...orderBody, supplierAtDeliveryZar: "499.99" });
     assert.equal(badSplit.statusCode, 400, badSplit.body);
-    assert.equal((await post(0, "/orders", { ...orderBody, totalZarp: "1000.001" })).statusCode, 400);
+    assert.equal((await post(0, "/orders", { ...orderBody, totalZar: "1000.001" })).statusCode, 400);
     assert.equal((await db.query("select id from orders")).rows.length, 0);
     assert.equal((await db.query("select id from email_outbox where template like 'order_%'")).rows.length, 0);
 
@@ -265,8 +265,8 @@ test("demo flow: order, email invites, on-chain steps, QR handoffs and refund", 
 
     // 17. Refund: a second funded order returns everything unpaid to the buyer.
     mail.failing = true;
-    const second = await post(0, "/orders", { ...orderBody, totalZarp: "10", driverAtPickupZarp: "1",
-      supplierAtPickupZarp: "4", supplierAtDeliveryZarp: "5", refundAfterHours: 1 });
+    const second = await post(0, "/orders", { ...orderBody, totalZar: "10", driverAtPickupZar: "1",
+      supplierAtPickupZar: "4", supplierAtDeliveryZar: "5", refundAfterHours: 1 });
     assert.equal(second.statusCode, 200, "a mail outage does not block ordering");
     const queued = await db.query("select status from email_outbox where payload->>'orderId'=$1", [second.json().id]);
     assert.deepEqual(queued.rows.map(r => r.status), ["pending"]);

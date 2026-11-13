@@ -33,12 +33,12 @@ export const SOLUTIONS = [
   {
     to: "/html/auditor-trail.html",
     t: "Auditor trail",
-    d: "Read-only forensic event log and Base Sepolia block anchor verifier.",
+    d: "Read-only forensic event log and Celo block anchor verifier.",
   },
   {
     to: "/security",
     t: "Trust & security",
-    d: "Honest trust disclosures, Base Sepolia EscrowVault, and bank accounts.",
+    d: "Honest trust disclosures, Celo EscrowVault, and bank accounts.",
   },
   {
     to: "/signup",

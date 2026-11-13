@@ -152,7 +152,7 @@ const ROLES: RoleConfig[] = [
             options: [
               "Standard Bank Client Trust Account (Direct EFT)",
               "Ozow Instant Bank Settlement",
-              "ZARP Rand-Pegged Stablecoin (Base Sepolia)",
+              "Mento ZARm Stablecoin (Celo)",
             ],
             required: true,
           },
@@ -447,7 +447,7 @@ const ROLES: RoleConfig[] = [
     id: "auditor",
     title: "Forensic Auditor / Regulatory Inspector",
     badge: "Auditor & Inspector",
-    desc: "Read-only custody inspection, SHA-256 byte proof verification, Base Sepolia block checks.",
+    desc: "Read-only custody inspection, SHA-256 byte proof verification, and Celo block checks.",
     redirectUrl: "/html/auditor-trail.html",
     pill: "AUDITOR",
     badgeClass: "badge badge-neutral",
@@ -483,7 +483,7 @@ const ROLES: RoleConfig[] = [
             options: [
               "Bank Client Trust Account Solvency & Reconciliation",
               "Two-Party Custody Chain & Dual Digital Signatures",
-              "Document Byte Hashing & Base Sepolia Block Anchors",
+              "Document Byte Hashing & Celo Block Anchors",
               "Isolated Dispute Reserve Holding Compliance",
             ],
             required: true,

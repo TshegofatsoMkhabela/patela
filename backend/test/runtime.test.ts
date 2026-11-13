@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createRuntime } from "../src/runtime.js";
+import { ZARM_CELO, ZARM_CELO_SEPOLIA } from "../src/service.js";
 
 // The environment infra/backend-lambda.yaml produces. pg.Pool connects lazily, so no database is needed.
 const base = {
   DATABASE_URL: "postgres://patela:x@localhost:5432/patela", GOOGLE_OAUTH_CLIENT_ID: "client-id",
   PUBLIC_ORIGIN: "https://demo.example", API_ORIGIN: "https://api.example",
   PG_POOL_MAX: "2", CHAIN_CONFIRMATIONS: "3",
-  BASE_RPC_URL: "", ESCROW_ADDRESS: "", DEMO_MODE: "false",
+  RPC_URL: "", ESCROW_ADDRESS: "", DEMO_MODE: "false",
 };
 
 async function starts(extra: Record<string, string> = {}) {
@@ -16,20 +17,23 @@ async function starts(extra: Record<string, string> = {}) {
   await db.close();
 }
 
-test("the stack's mainnet defaults start: blank RPC and escrow, TOKEN_ADDRESS omitted", async () => {
-  await starts({ CHAIN_ID: "8453" });
+test("the stack's Celo mainnet defaults use the canonical ZARm token", async () => {
+  assert.equal(ZARM_CELO, "0x4c35853A3B4e647fD266f4de678dCc8fEC410BF6");
+  assert.equal(ZARM_CELO_SEPOLIA, "0x10CCfB235b0E1Ed394bACE4560C3ed016697687e");
+  await starts({ CHAIN_ID: "42220" });
 });
 
-test("the stack's demo settings start: Base Sepolia, MockZARP, Gmail secret, demo mode", async () => {
-  await starts({ CHAIN_ID: "84532", BASE_RPC_URL: "https://sepolia.base.org",
+test("the stack's demo settings start on Celo Sepolia with explicit overrides", async () => {
+  await starts({ CHAIN_ID: "11142220", RPC_URL: "https://forno.celo-sepolia.celo-testnet.org",
     ESCROW_ADDRESS: "0x1111111111111111111111111111111111111111",
     TOKEN_ADDRESS: "0x2222222222222222222222222222222222222222",
     SMTP_SECRET_ARN: "arn:aws:secretsmanager:af-south-1:123456789012:secret:patela-smtp", DEMO_MODE: "true" });
 });
 
-test("an empty TOKEN_ADDRESS, or Base Sepolia without one, stops startup (why the stack omits it)", () => {
-  assert.throws(() => createRuntime({ ...base, CHAIN_ID: "8453", TOKEN_ADDRESS: "" }), /TOKEN_ADDRESS/);
-  assert.throws(() => createRuntime({ ...base, CHAIN_ID: "84532" }), /TOKEN_ADDRESS/);
+test("runtime rejects unsupported chains and malformed token overrides", () => {
+  assert.throws(() => createRuntime({ ...base, CHAIN_ID: "8453" }), /Celo/);
+  assert.throws(() => createRuntime({ ...base, CHAIN_ID: "42220", TOKEN_ADDRESS: "not-an-address" }),
+    /TOKEN_ADDRESS/);
 });
 
 test("runtime accepts additional origins and an explicit cross-site cookie policy", async () => {

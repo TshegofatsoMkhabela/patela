@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "How it works — Patella",
     description:
-      "8-stage order-to-settlement coordination: multi-hop route graphs, guest-first mobile custody handoffs, and Base Sepolia EscrowVault.",
+      "8-stage order-to-settlement coordination: multi-hop route graphs, guest-first mobile custody handoffs, and Celo EscrowVault.",
     type: "website",
   },
   twitter: {
@@ -45,7 +45,7 @@ export default function HowItWorksPage() {
           {
             n: "STAGE 04",
             t: "Fund Rand escrow",
-            p: "Deposit ZAR into a licensed South African bank client trust account. The equivalent ZARP rand-stablecoin locks in EscrowVault on Base Sepolia.",
+            p: "Acquire Mento ZARm, approve the exact order total, and lock it in the EscrowVault on Celo.",
           },
           {
             n: "STAGE 05",

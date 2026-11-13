@@ -4,9 +4,11 @@ import type { Identity } from "./auth.js";
 import type { Database } from "./db.js";
 import { DomainError, requiredAddress, requiredUuid, utcSeconds } from "./validation.js";
 
-export const BASE_CHAIN_ID = 8453;
-export const ZARP_BASE = "0xb755506531786C8aC63B756BaB1ac387bACB0C04" as Address;
-export const ZARP_DECIMALS = 18;
+export const CELO_CHAIN_ID = 42220;
+export const CELO_SEPOLIA_CHAIN_ID = 11142220;
+export const ZARM_CELO = "0x4c35853A3B4e647fD266f4de678dCc8fEC410BF6" as Address;
+export const ZARM_CELO_SEPOLIA = "0x10CCfB235b0E1Ed394bACE4560C3ed016697687e" as Address;
+export const ZARM_DECIMALS = 18;
 
 type Row = Record<string, unknown>;
 
@@ -30,7 +32,7 @@ export function walletLinkTypedData(chainId: number, userId: string, wallet: Add
 
 /** Profiles and wallet linking. Orders live in orders.ts. */
 export class PatelaService {
-  constructor(private readonly db: Database, private readonly chainId = BASE_CHAIN_ID) {}
+  constructor(private readonly db: Database, private readonly chainId = CELO_SEPOLIA_CHAIN_ID) {}
 
   async ensureProfile(identity: Identity): Promise<Row> {
     const id = requiredUuid(identity.id, "user ID");

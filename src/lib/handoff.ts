@@ -190,6 +190,10 @@ const CONTRACT_ERROR_MESSAGES: Record<string, string> = {
   NotAccepted: "The supplier has not accepted the order yet",
   AgreementMismatch: "The agreement doesn't match the one the buyer funded",
   SplitMismatch: "Payment split doesn't add up to the total",
+  OrderTooLarge: "The order exceeds the escrow's current safety limit",
+  EnforcedPause: "Escrow activity is temporarily paused",
+  InvalidAddress: "A required wallet or contract address is invalid",
+  InvalidAmount: "A payment amount, deadline, nonce, or evidence hash is invalid",
   RefundTooEarly: "The refund deadline hasn't passed yet",
 };
 

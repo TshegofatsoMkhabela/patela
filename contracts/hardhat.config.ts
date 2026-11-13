@@ -13,11 +13,18 @@ const config: HardhatUserConfig = {
     },
   },
   networks: {
-    baseSepolia: {
+    celoSepolia: {
       type: "http",
       chainType: "op",
-      chainId: 84532,
-      url: configVariable("BASE_SEPOLIA_RPC_URL"),
+      chainId: 11142220,
+      url: configVariable("CELO_SEPOLIA_RPC_URL"),
+      accounts: [configVariable("DEPLOYER_PRIVATE_KEY")],
+    },
+    celo: {
+      type: "http",
+      chainType: "op",
+      chainId: 42220,
+      url: configVariable("CELO_RPC_URL"),
       accounts: [configVariable("DEPLOYER_PRIVATE_KEY")],
     },
   },

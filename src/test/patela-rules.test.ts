@@ -28,14 +28,14 @@ const supplyChainOrder: JobDraft = {
     { title: "Tranche 4: Final Discharge", amount: 97000 },
   ],
   budget: 485000,
-  coins: ["ZARP"],
+  coins: ["ZARm"],
 };
 
 describe("job posting and supply chain rules", () => {
   it("accepts a complete job", () => expect(validateJob(good)).toEqual([]));
-  it("accepts a ZARP-denominated multi-tranche supply chain order", () =>
+  it("accepts a ZARm-denominated multi-tranche supply chain order", () =>
     expect(validateJob(supplyChainOrder)).toEqual([]));
-  it("includes ZARP in the supported stablecoin list", () => expect(STABLECOINS).toContain("ZARP"));
+  it("includes ZARm in the supported stablecoin list", () => expect(STABLECOINS).toContain("ZARm"));
   it("enforces money conservation: sum of tranches must match total budget", () =>
     expect(validateJob({ ...supplyChainOrder, budget: 500000 }).join()).toMatch(/must match/));
   it("requires milestones to add up to the budget", () =>

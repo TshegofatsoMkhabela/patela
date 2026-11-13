@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { SiteNav, TestZarpButton, WalletButton } from "@/components/SiteNav";
+import { SiteNav, WalletButton, ZarmBalanceButton } from "@/components/SiteNav";
 import { Reveal } from "@/components/Reveal";
 import { actions, usePatela, type Job, type Milestone } from "@/lib/patela-store";
 
@@ -99,15 +99,23 @@ export function JobView() {
             {!job.funded &&
               (wallet ? (
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <TestZarpButton />
+                  <ZarmBalanceButton />
+                  <a
+                    className="pt-btn ghost"
+                    href="https://app.mento.org/"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Get ZARm
+                  </a>
                   <button
                     className="pt-btn"
                     onClick={() => {
                       actions.fund(job.id);
-                      toast.success("Demo escrow funded on testnet.");
+                      toast.info("Local UI simulation only; no ZARm moved.");
                     }}
                   >
-                    Lock {job.budget.toLocaleString()} {job.coins[0]} (testnet demo)
+                    Simulate lock of {job.budget.toLocaleString()} {job.coins[0]}
                   </button>
                 </div>
               ) : (

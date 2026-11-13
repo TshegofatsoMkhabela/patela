@@ -25,6 +25,24 @@ Parameters:
     Description: >
       Secrets Manager secret holding a GitHub token (plain string) with repo
       access. Amplify uses it once to add the deploy webhook to the repo.
+  WebChainId:
+    Type: String
+    Default: "11142220"
+    AllowedValues: ["11142220", "42220"]
+  ZarmAddress:
+    Type: String
+    Default: "0x10CCfB235b0E1Ed394bACE4560C3ed016697687e"
+    AllowedPattern: "^0x[0-9a-fA-F]{40}$"
+  EscrowAddress:
+    Type: String
+    Default: "0x0000000000000000000000000000000000000000"
+    AllowedPattern: "^0x[0-9a-fA-F]{40}$"
+  WebRpcUrl:
+    Type: String
+    Default: "https://forno.celo-sepolia.celo-testnet.org"
+  ApiOrigin:
+    Type: String
+    Default: ""
 
 Resources:
   PatelaApp:
@@ -75,6 +93,16 @@ Resources:
       EnvironmentVariables:
         - Name: NEXT_PUBLIC_SITE_URL
           Value: !Sub "https://${BranchName}.${PatelaApp.DefaultDomain}"
+        - Name: NEXT_PUBLIC_CHAIN_ID
+          Value: !Ref WebChainId
+        - Name: NEXT_PUBLIC_ZARM_ADDRESS
+          Value: !Ref ZarmAddress
+        - Name: NEXT_PUBLIC_ESCROW_ADDRESS
+          Value: !Ref EscrowAddress
+        - Name: NEXT_PUBLIC_RPC_URL
+          Value: !Ref WebRpcUrl
+        - Name: NEXT_PUBLIC_API_BASE_URL
+          Value: !Ref ApiOrigin
       Tags:
         - Key: project
           Value: patela
@@ -91,6 +119,16 @@ Resources:
       EnvironmentVariables:
         - Name: NEXT_PUBLIC_SITE_URL
           Value: !Sub "https://${DemoBranchName}.${PatelaApp.DefaultDomain}"
+        - Name: NEXT_PUBLIC_CHAIN_ID
+          Value: !Ref WebChainId
+        - Name: NEXT_PUBLIC_ZARM_ADDRESS
+          Value: !Ref ZarmAddress
+        - Name: NEXT_PUBLIC_ESCROW_ADDRESS
+          Value: !Ref EscrowAddress
+        - Name: NEXT_PUBLIC_RPC_URL
+          Value: !Ref WebRpcUrl
+        - Name: NEXT_PUBLIC_API_BASE_URL
+          Value: !Ref ApiOrigin
       Tags:
         - Key: project
           Value: patela

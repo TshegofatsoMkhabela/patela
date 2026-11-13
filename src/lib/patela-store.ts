@@ -1,7 +1,7 @@
 import { useEffect, useSyncExternalStore } from "react";
-import { BASE_SEPOLIA_HEX, type Eth } from "@/lib/chain";
+import { TARGET_CHAIN_HEX, TARGET_CHAIN_NAME, type Eth } from "@/lib/chain";
 
-export const STABLECOINS = ["ZARP", "USDC", "USDT", "DAI", "PYUSD", "EURC"] as const;
+export const STABLECOINS = ["ZARm", "USDC", "USDT", "DAI", "PYUSD", "EURC"] as const;
 export type Coin = (typeof STABLECOINS)[number];
 
 export type MilestoneStatus = "pending" | "submitted" | "reviewing" | "approved" | "changes";
@@ -132,7 +132,7 @@ function seed(): State {
           },
         ],
         budget: 485000,
-        coins: ["ZARP"],
+        coins: ["ZARm"],
         createdAt: 1793000000000,
         funded: true,
         txHash: "0x3f9e4b7a1c8d2054",
@@ -223,7 +223,7 @@ function syncToDashboardStore(current: State) {
           category: "UI/UX & Frontend",
           budget: j.budget,
           asset: j.coins[0] || "USDC",
-          network: "Base Sepolia",
+          network: "Celo",
           duration: "2 weeks",
           experience: "Senior",
           clientName: "Alex Morgan",
@@ -463,7 +463,7 @@ export const actions = {
   },
 };
 
-/* ---------- Testnet wallet (Base Sepolia: Chain ID 84532 / 0x14a34) ---------- */
+/* ---------- Celo wallet ---------- */
 
 export const browserEthereum = () =>
   typeof window === "undefined" ? undefined : (window as { ethereum?: Eth }).ethereum;
@@ -482,11 +482,11 @@ export async function connectWallet(): Promise<{
       Array.from(crypto.getRandomValues(new Uint8Array(3)), (b) => b.toString(16).padStart(2, "0"))
         .join("")
         .toUpperCase();
-    const wallet = { address: addr, chain: "Base Sepolia (demo)", demo: true };
+    const wallet = { address: addr, chain: `${TARGET_CHAIN_NAME} (demo)`, demo: true };
     actions.setWallet(wallet);
     return {
       ok: true,
-      message: "Connected simulated wallet on Base Sepolia (Demo).",
+      message: `Connected simulated wallet on ${TARGET_CHAIN_NAME} (Demo).`,
       wallet,
     };
   }
@@ -495,24 +495,24 @@ export async function connectWallet(): Promise<{
     try {
       await eth.request({
         method: "wallet_switchEthereumChain",
-        params: [{ chainId: BASE_SEPOLIA_HEX }],
+        params: [{ chainId: TARGET_CHAIN_HEX }],
       });
     } catch {
       /* user may decline; still connected */
     }
     const chainId = (await eth.request({ method: "eth_chainId" })) as string;
-    const onBaseSepolia = chainId.toLowerCase() === BASE_SEPOLIA_HEX;
+    const onTargetChain = chainId.toLowerCase() === TARGET_CHAIN_HEX;
     const wallet = {
       address: accounts[0] ?? "",
-      chain: onBaseSepolia ? "Base Sepolia" : `Chain ${parseInt(chainId, 16)}`,
+      chain: onTargetChain ? TARGET_CHAIN_NAME : `Chain ${parseInt(chainId, 16)}`,
       demo: false,
     };
     actions.setWallet(wallet);
     return {
       ok: true,
-      message: onBaseSepolia
-        ? "Wallet connected to Base Sepolia."
-        : `Wallet connected on ${wallet.chain}. Switch to Base Sepolia for test ZARP.`,
+      message: onTargetChain
+        ? `Wallet connected to ${TARGET_CHAIN_NAME}.`
+        : `Wallet connected on ${wallet.chain}. Switch to ${TARGET_CHAIN_NAME} to use ZARm escrow.`,
       wallet,
     };
   } catch {

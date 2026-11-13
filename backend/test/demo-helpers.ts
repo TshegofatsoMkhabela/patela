@@ -7,14 +7,14 @@ import type { MailMessage, MailTransport } from "../src/email.js";
 import type { ExternalIntegrations } from "../src/integrations.js";
 import { walletLinkTypedData } from "../src/service.js";
 
-export const DEMO_CHAIN_ID = 84532;
+export const DEMO_CHAIN_ID = 11142220;
 export const ESCROW = "0x1111111111111111111111111111111111111111" as Address;
 export const TOKEN = "0x2222222222222222222222222222222222222222" as Address;
 export const zarp = (rand: number) => BigInt(rand) * 10n ** 18n;
 
 type EventInput = Omit<ChainEvent, "chainId" | "txHash" | "logIndex" | "blockNumber" | "blockHash">;
 
-/** Stands in for Base Sepolia: each `add` is one confirmed transaction holding the given escrow events. */
+/** Stands in for Celo Sepolia: each `add` is one confirmed transaction holding the given escrow events. */
 export class TestChain implements ChainVerifier {
   readonly receipts = new Map<string, ChainEvent[]>();
   readonly balances = new Map<string, bigint>();

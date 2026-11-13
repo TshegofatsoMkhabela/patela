@@ -84,13 +84,13 @@ Deployment order:
 1. Upload the built ZIP to the private S3 artifact bucket.
 2. Deploy `infra/backend-lambda.yaml` with `CodeBucket`, `CodeKey`, and `GoogleClientId` parameters. Leave `GoogleClientSecretArn` empty for ID-token-only sign-in. Set `EnableAuthSmokePage=true` for the API-only live test and turn it off afterward. `PublicOrigin` may be blank for the API-only test; set it to the real HTTPS web origin when the frontend is deployed. Order and driver accept links are built from `PublicOrigin`, so the demo needs it set.
 
-   For the two-handoff demo (Base Sepolia), also set:
+   For the two-handoff rehearsal (Celo Sepolia), also set:
 
    | Parameter | Value |
    |---|---|
-   | `ChainId` | `84532` (the default `8453` is Base mainnet) |
-   | `BaseRpcUrl` | a Base Sepolia HTTPS RPC |
-   | `EscrowAddress`, `TokenAddress` | `PatellaEscrowAndLogistics` and `MockZARP` from `contracts/deployments/baseSepolia.json`. The stack refuses `84532` without `TokenAddress` |
+   | `ChainId` | `11142220` (`42220` is Celo mainnet) |
+   | `RpcUrl` | a Celo Sepolia HTTPS RPC |
+   | `EscrowAddress` | `PatellaEscrowAndLogistics` from `contracts/deployments/celoSepolia.json`; canonical ZARm is selected automatically |
    | `ChainConfirmations` | blocks to wait before trusting an event (default `3`) |
    | `SmtpSecretArn` | ARN of a Secrets Manager secret you create, holding `{"user":"<gmail address>","appPassword":"<app password>"}`. The Gmail account needs 2-step verification. The stack grants the API function read access to that secret only. Blank keeps emails queued and unsent |
    | `DemoMode` | `true` only for the demo: API responses also carry the one-time accept links, in case an email is slow |

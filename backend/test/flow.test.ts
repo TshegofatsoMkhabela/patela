@@ -4,7 +4,7 @@ import test from "node:test";
 import { privateKeyToAccount } from "viem/accounts";
 import type { Address, Hex } from "viem";
 import { buildApp } from "../src/app.js";
-import { walletLinkTypedData } from "../src/service.js";
+import { CELO_SEPOLIA_CHAIN_ID, walletLinkTypedData } from "../src/service.js";
 import { TestAuth, TestDatabase } from "./helpers.js";
 import { ESCROW as escrow, TestChain, TestIntegrations } from "./demo-helpers.js";
 
@@ -32,7 +32,7 @@ test("auth, sessions, wallet linking and CORS guard the API", async () => {
       });
       assert.equal(challenge.statusCode, 200);
       const response = challenge.json();
-      const signature = await wallets[i].signTypedData(walletLinkTypedData(8453,
+      const signature = await wallets[i].signTypedData(walletLinkTypedData(CELO_SEPOLIA_CHAIN_ID,
         ids[i], wallets[i].address, response.typedData.message.nonce,
         Number(response.typedData.message.expiresAt),
       ));
@@ -165,8 +165,8 @@ test("auth, sessions, wallet linking and CORS guard the API", async () => {
       headers: { cookie: oauthCookies, origin: "https://untrusted.example" },
     });
     assert.equal(blockedCookieOrigin.statusCode, 403);
-    assert.equal(walletLinkTypedData(84532, ids[0], wallets[0].address,
-      `0x${"0".repeat(64)}`, 1).domain.chainId, 84532);
+    assert.equal(walletLinkTypedData(CELO_SEPOLIA_CHAIN_ID, ids[0], wallets[0].address,
+      `0x${"0".repeat(64)}`, 1).domain.chainId, CELO_SEPOLIA_CHAIN_ID);
   } finally {
     await app.close();
     await db.close();

@@ -49,7 +49,7 @@ export default function ForClientsPage() {
           },
           {
             t: "Immutable audit trail",
-            p: "Every custody handoff, milestone event, and escrow movement is cryptographically anchored on Base Sepolia for external auditors.",
+            p: "Every custody handoff, milestone event, and escrow movement is cryptographically anchored on Celo for external auditors.",
           },
         ]}
       />
@@ -58,7 +58,7 @@ export default function ForClientsPage() {
           {
             h: "5-Stage Escrow Funding Pipeline",
             p: [
-              "When you fund an order on Patella, money follows a transparent, regulated 5-stage pipeline: (1) Buyer Initiated (ZAR via EFT/Ozow), (2) Bank Trust Account Received (Standard Bank Client Trust), (3) Treasury ZARP Mint/Transfer, (4) EscrowVault Contract Lock (Base Sepolia), and (5) Active Escrow Confirmed. You see exact exchange rates, zero hidden conversion fees, and real-time bank transaction references.",
+              "When you fund an order on Patella, your wallet approves the exact Mento ZARm total and locks it in the Celo EscrowVault. Patella confirms the on-chain transaction before the order becomes funded.",
             ],
           },
         ]}

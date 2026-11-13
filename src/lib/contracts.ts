@@ -1,12 +1,13 @@
 import { parseAbi, type Address } from "viem";
+import { TARGET_CHAIN_ID, TARGET_ZARM_ADDRESS } from "@/lib/chain";
 
 // Frozen contract interface shared by the web branches. Source of truth: specs/INTERFACES.md §2.
 // Change only together with that file and the contract.
 
-export const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? 84532);
+export const CHAIN_ID = TARGET_CHAIN_ID;
 export const ESCROW_ADDRESS = (process.env.NEXT_PUBLIC_ESCROW_ADDRESS ?? "") as Address;
-export const ZARP_ADDRESS = (process.env.NEXT_PUBLIC_ZARP_ADDRESS ?? "") as Address;
-export const ZARP_DECIMALS = 18;
+export const ZARM_ADDRESS = TARGET_ZARM_ADDRESS as Address;
+export const ZARM_DECIMALS = 18;
 
 export const PICKUP = 1;
 export const DELIVERY = 2;
@@ -29,6 +30,10 @@ export const escrowAbi = parseAbi([
   "event PaymentReleased(uint256 indexed orderId, uint8 stage, address indexed recipient, uint256 amount)",
   "event OrderRefunded(uint256 indexed orderId, address indexed buyer, uint256 amount)",
   "error SplitMismatch()",
+  "error OrderTooLarge()",
+  "error EnforcedPause()",
+  "error InvalidAddress()",
+  "error InvalidAmount()",
   "error NotBuyer()",
   "error NotSupplier()",
   "error NotAccepted()",
@@ -45,11 +50,10 @@ export const escrowAbi = parseAbi([
   "error RefundTooEarly()",
 ]);
 
-export const zarpAbi = parseAbi([
+export const zarmAbi = parseAbi([
   "function balanceOf(address) view returns (uint256)",
   "function approve(address spender, uint256 amount) returns (bool)",
   "function allowance(address owner, address spender) view returns (uint256)",
-  "function mint(address to, uint256 amount)",
 ]);
 
 export const handoffDomain = (verifyingContract: Address = ESCROW_ADDRESS) =>

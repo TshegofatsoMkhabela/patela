@@ -4,7 +4,7 @@ import cors from "@fastify/cors";
 import { InvalidGoogleCredential, type AuthProvider, type Identity } from "./auth.js";
 import type { ChainVerifier } from "./chain.js";
 import type { Database } from "./db.js";
-import { BASE_CHAIN_ID, PatelaService, ZARP_BASE, ZARP_DECIMALS } from "./service.js";
+import { CELO_SEPOLIA_CHAIN_ID, PatelaService, ZARM_CELO_SEPOLIA, ZARM_DECIMALS } from "./service.js";
 import { OrderService } from "./orders.js";
 import { OutboxMailer, type MailTransport } from "./email.js";
 import { OnboardingService, requireAdmin } from "./onboarding.js";
@@ -82,10 +82,11 @@ export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrig
     credentials: true,
   });
   addPostgresRateLimitHook(app, db);
-  const service = new PatelaService(db, chainId ?? BASE_CHAIN_ID);
+  const service = new PatelaService(db, chainId ?? CELO_SEPOLIA_CHAIN_ID);
   const mailer = new OutboxMailer(db, mailTransport);
-  const orders = new OrderService({ db, chain, escrowAddress, chainId: chainId ?? BASE_CHAIN_ID,
-    tokenAddress: tokenAddress ?? ZARP_BASE, tokenDecimals: tokenDecimals ?? ZARP_DECIMALS, publicOrigin, demoMode });
+  const orders = new OrderService({ db, chain, escrowAddress, chainId: chainId ?? CELO_SEPOLIA_CHAIN_ID,
+    tokenAddress: tokenAddress ?? ZARM_CELO_SEPOLIA, tokenDecimals: tokenDecimals ?? ZARM_DECIMALS,
+    publicOrigin, demoMode });
   // Any write may have queued email (sign-in codes, order and business invites, review decisions).
   // Send it before the reply: a Lambda freezes once it has responded. A mail outage never fails the request.
   app.addHook("onSend", async request => {

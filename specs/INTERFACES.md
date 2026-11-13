@@ -2,18 +2,19 @@
 
 The four parallel branches (contract, backend, web core, web handoff) build against this file.
 Change it only by agreement; any change is a commit to `dev` that all branches merge.
-Network: Base Sepolia (chain 84532), token MockZARP (18 decimals). Spec: `specs/SPEC-demo-order-flow.md`.
+Networks: Celo Sepolia (11142220) before release, Celo mainnet (42220) after audit. Payment token: canonical
+Mento ZARm (18 decimals). MockZARP is local-test-only. Spec: `specs/SPEC-demo-order-flow.md`.
 
 ## 1. Demo flow (who does what)
 
-1. Buyer signs in (backend session) and connects MetaMask (extension, Base Sepolia).
-2. Buyer gets test ZARP ("Get test ZARP" → `MockZARP.mint`, testnet only).
+1. Buyer signs in (backend session) and connects a wallet on the configured Celo network.
+2. Buyer acquires ZARm outside Patela; Patela displays balance and never exposes a production mint action.
 3. Buyer creates the order in the app → backend stores the agreement text, returns `agreementHash`,
    and emails the supplier an accept link `<site>/accept?token=…` (Gmail SMTP).
 4. Supplier opens the link, signs in with the email code → MetaMask Embedded Wallet is created and
    linked (`/wallet/link`) → `POST /invitations/:token/accept`. Now the supplier's address is known.
    (`createOrder` takes the supplier address, so the invite has to come before it.)
-5. Buyer's MetaMask calls `createOrder(...)` then `approve` + `fundEscrow(orderId)`; then the
+5. Buyer's wallet calls `createOrder(...)`, approves the exact ZARm total, and calls `fundEscrow(orderId)`; then the
    supplier calls `acceptOrder(orderId, agreementHash)` (gas sponsored).
 6. Supplier enters the driver's email → backend emails the driver → driver signs in the same way,
    gets a wallet → supplier calls `assignDriver(orderId, driverAddress)`.
@@ -25,7 +26,7 @@ Network: Base Sepolia (chain 84532), token MockZARP (18 decimals). Spec: `specs/
 
 ## 2. Contract — `PatellaEscrowAndLogistics` (owner: contract branch)
 
-EIP-712 domain: `{ name: "Patela Escrow", version: "1", chainId: 84532, verifyingContract: <escrow> }`
+EIP-712 domain: `{ name: "Patela Escrow", version: "1", chainId: <configured Celo chain>, verifyingContract: <escrow> }`
 
 ```solidity
 function createOrder(address supplier, uint256 total, uint256 driverAtPickup, uint256 supplierAtPickup,
@@ -39,6 +40,8 @@ function releaseHandoff(uint256 orderId, uint8 stage, bytes32 nonce, uint256 exp
 function refund(uint256 orderId) external;                           // buyer; after refundDeadline
 function raiseDispute(uint256 orderId) external;
 function resolveDispute(uint256 orderId, bool releaseToSupplier) external;
+function setPaused(bool value) external;                            // owner emergency control; refunds remain available
+function setMaxOrderAmount(uint256 amount) external;                // owner production exposure ceiling
 function driverOf(uint256 orderId) external view returns (address);
 function orders(uint256) external view returns (...);                // public getter, includes accepted flag + agreementHash
 ```
@@ -66,10 +69,10 @@ event DisputeResolved(uint256 indexed orderId, bool releasedToSupplier);
 
 Errors (the app shows a message per error): `SplitMismatch, NotBuyer, NotSupplier, NotAccepted, AgreementMismatch,
 DriverAlreadyAssigned, DriverNotAssigned, OrderNotFunded, OrderInDispute, InvalidState, InvalidSignature,
-HandoffExpired, NonceUsed, StageOutOfOrder, RefundTooEarly`.
+HandoffExpired, NonceUsed, StageOutOfOrder, RefundTooEarly, OrderTooLarge, EnforcedPause`.
 
-Deployment output (frozen shape): `contracts/deployments/baseSepolia.json`
-`{ network, chainId, deployedAt, contracts: { MockZARP|PatellaRegistry|PatellaTenderTrail|PatellaEscrowAndLogistics: { address, abi } } }`.
+Deployment output: `contracts/deployments/<network>.json`, including `paymentToken` and the registry, tender trail,
+escrow, and either local `MockZARP` or canonical external `ZARm` contract metadata.
 Until it exists, other branches use a local Hardhat deployment with the same shape.
 
 ## 3. Location evidence
@@ -92,7 +95,7 @@ All JSON; session cookie (`credentials: "include"`); errors `{ error: string }` 
 |---|---|---|---|
 | existing `/auth/otp/request`, `/auth/otp/verify`, `/auth/google/id-token`, `/auth/logout`, `/me` | — | — | web core |
 | `POST /wallet/challenge`, `POST /wallet/link` | existing | existing | both web |
-| `POST /orders` | `{ supplierEmail, totalZarp, driverAtPickupZarp, supplierAtPickupZarp, supplierAtDeliveryZarp, refundAfterHours, agreementText }` | `{ id, agreementHash, refundDeadline }` (sends supplier invite email; with `DEMO_MODE` also `acceptUrl`) | web core |
+| `POST /orders` | `{ supplierEmail, totalZar, driverAtPickupZar, supplierAtPickupZar, supplierAtDeliveryZar, refundAfterHours, agreementText }` | `{ id, agreementHash, refundDeadline }` (sends supplier invite email; with `DEMO_MODE` also `acceptUrl`) | web core |
 | `POST /orders/:id/chain` | `{ chainOrderId, createTxHash }` | order | web core |
 | `POST /orders/:id/funding/verify` | `{ txHash }` | order | web core |
 | `GET /orders/:id` | — | order + parties + timeline + balances | both web |
@@ -105,7 +108,6 @@ All JSON; session cookie (`credentials: "include"`); errors `{ error: string }` 
 | `GET /orders/:id/handoffs/:stage/session/:sessionId` | — | `{ receiverEvidence?, evidenceHash?, receiverSig? }` (giver polls) | web handoff |
 | `POST /orders/:id/handoffs/:stage/session/:sessionId/receiver` | `{ receiverEvidence, evidenceHash, receiverSig }` | `{ ok: true }` | web handoff (receiver) |
 | `POST /orders/:id/handoffs/:stage/verify` | `{ txHash }` | order | web handoff |
-| `POST /dev/mint` (testnet only, rate-limited) | `{ address }` | `{ txHash }` | web core (optional; web may mint directly) |
 
 The old `/orders/:id/handoffs/:stage/challenge` and `/submit` routes (server-issued nonce, server-side
 signature check) are removed: the contract checks signatures, the phone creates the nonce.
@@ -123,8 +125,7 @@ A screenshot of the QR is useless after use (nonce spent on-chain) or after 2 mi
 
 ## 6. Environment variables
 
-Web (per Amplify branch, set in `infra/amplify-hosting.yaml`): `NEXT_PUBLIC_CHAIN_ID=84532`,
-`NEXT_PUBLIC_ESCROW_ADDRESS`, `NEXT_PUBLIC_ZARP_ADDRESS`, `NEXT_PUBLIC_API_ORIGIN`,
+Web: `NEXT_PUBLIC_CHAIN_ID`, `NEXT_PUBLIC_ESCROW_ADDRESS`, `NEXT_PUBLIC_ZARM_ADDRESS`, `NEXT_PUBLIC_API_ORIGIN`,
 `NEXT_PUBLIC_WEB3AUTH_CLIENT_ID`, `NEXT_PUBLIC_RPC_URL`.
-Backend: `BASE_RPC_URL`, `ESCROW_ADDRESS`, `TOKEN_ADDRESS`, `TOKEN_DECIMALS=18`, `CHAIN_ID=84532`,
+Backend: `RPC_URL`, `ESCROW_ADDRESS`, optional `TOKEN_ADDRESS`, `TOKEN_DECIMALS=18`, `CHAIN_ID`,
 `CHAIN_CONFIRMATIONS`, `SMTP_SECRET_ARN` (Gmail user + app password, stored by the user), `PUBLIC_ORIGINS` (comma-separated).

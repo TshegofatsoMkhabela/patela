@@ -5,11 +5,16 @@ import { toast } from "sonner";
 import { HeroBar, VIDEO, POSTER } from "@/components/HeroBar";
 import { patelaApi } from "@/lib/patela-api";
 import { actions, browserEthereum, connectWallet, shortAddr, usePatela } from "@/lib/patela-store";
-import { isUserRejection, testZarpAddress, type Eth } from "@/lib/chain";
+import {
+  isUserRejection,
+  TARGET_CHAIN_NAME,
+  TARGET_ZARM_ADDRESS,
+  tokenAddress,
+  type Eth,
+} from "@/lib/chain";
 import { linkConnectedWallet, type LinkOutcome } from "@/lib/wallet-link";
 
-const TEST_ZARP = testZarpAddress(process.env.NEXT_PUBLIC_ZARP_TOKEN_ADDRESS);
-const MINT_AMOUNT = "1000";
+const ZARM = tokenAddress(TARGET_ZARM_ADDRESS);
 
 function reportLink(outcome: LinkOutcome) {
   switch (outcome.status) {
@@ -25,30 +30,24 @@ function reportLink(outcome: LinkOutcome) {
 }
 
 /**
- * Testnet only: mints MockZARP to the connected wallet from the wallet itself.
- * Renders nothing unless a real wallet is on Base Sepolia and MockZARP is configured.
+ * Shows the connected wallet's real ZARm balance. Acquisition happens through Mento;
+ * Patela never mints production payment tokens or holds a buyer's private key.
  */
-export function TestZarpButton({ className = "pt-btn ghost" }: { className?: string }) {
+export function ZarmBalanceButton({ className = "pt-btn ghost" }: { className?: string }) {
   const { wallet } = usePatela();
   const [busy, setBusy] = useState(false);
   const eth = browserEthereum();
-  if (!TEST_ZARP || !eth || !wallet || wallet.demo || wallet.chain !== "Base Sepolia") return null;
+  if (!ZARM || !eth || !wallet || wallet.demo || wallet.chain !== TARGET_CHAIN_NAME) return null;
 
-  async function mint(eth: Eth, token: string, address: string) {
+  async function showBalance(eth: Eth, token: string, address: string) {
     setBusy(true);
     try {
       // viem is only needed here, so it loads on click instead of on every page.
-      const { mintTestZarp, waitForReceipt, zarpBalance } = await import("@/lib/zarp");
-      const hash = await mintTestZarp({ eth, account: address, token, amount: MINT_AMOUNT });
-      toast.info(`Mint sent (${shortAddr(hash)}). Waiting for Base Sepolia to confirm…`);
-      if (await waitForReceipt(eth, hash)) {
-        const balance = await zarpBalance({ eth, account: address, token });
-        toast.success(`Test ZARP balance: ${balance}`);
-      } else {
-        toast.info("Mint not confirmed yet. Check MetaMask for its status.");
-      }
+      const { zarmBalance } = await import("@/lib/zarp");
+      const balance = await zarmBalance({ eth, account: address, token });
+      toast.success(`ZARm balance: ${balance}`);
     } catch (error) {
-      toast.error(isUserRejection(error) ? "Mint cancelled." : (error as Error).message);
+      toast.error(isUserRejection(error) ? "Request cancelled." : (error as Error).message);
     } finally {
       setBusy(false);
     }
@@ -57,11 +56,11 @@ export function TestZarpButton({ className = "pt-btn ghost" }: { className?: str
   return (
     <button
       className={className}
-      onClick={() => mint(eth, TEST_ZARP, wallet.address)}
+      onClick={() => showBalance(eth, ZARM, wallet.address)}
       disabled={busy}
-      title="Testnet only: MockZARP has no value"
+      title="Check your Mento ZARm balance"
     >
-      {busy ? "Minting…" : `Get ${MINT_AMOUNT} test ZARP`}
+      {busy ? "Checking…" : "ZARm balance"}
     </button>
   );
 }
@@ -83,7 +82,7 @@ export function WalletButton({ className = "pt-btn ghost sm" }: { className?: st
         if (r.wallet) reportLink(await linkConnectedWallet(patelaApi, browserEthereum(), r.wallet));
       }}
     >
-      Connect testnet wallet
+      Connect Celo wallet
     </button>
   );
 }

@@ -96,9 +96,9 @@ export class OrderService {
     this.demoMode = options.demoMode ?? false;
   }
 
-  private zarp(value: unknown, label: string): bigint {
+  private zarm(value: unknown, label: string): bigint {
     if (typeof value !== "string" || !AMOUNT.test(value)) {
-      throw new DomainError(`${label} must be a ZARP amount with at most two decimals`);
+      throw new DomainError(`${label} must be a ZARm amount with at most two decimals`);
     }
     return parseUnits(value, this.tokenDecimals);
   }
@@ -124,10 +124,13 @@ export class OrderService {
 
   async createOrder(userId: string, body: Record<string, unknown>) {
     const supplierEmail = requiredEmail(body.supplierEmail);
-    const total = this.zarp(body.totalZarp, "Total");
-    const driverAtPickup = this.zarp(body.driverAtPickupZarp, "Driver pickup payment");
-    const supplierAtPickup = this.zarp(body.supplierAtPickupZarp, "Supplier pickup payment");
-    const supplierAtDelivery = this.zarp(body.supplierAtDeliveryZarp, "Supplier delivery payment");
+    // The old *Zarp names remain a temporary API compatibility bridge for deployed clients.
+    const total = this.zarm(body.totalZar ?? body.totalZarp, "Total");
+    const driverAtPickup = this.zarm(body.driverAtPickupZar ?? body.driverAtPickupZarp, "Driver pickup payment");
+    const supplierAtPickup = this.zarm(body.supplierAtPickupZar ?? body.supplierAtPickupZarp,
+      "Supplier pickup payment");
+    const supplierAtDelivery = this.zarm(body.supplierAtDeliveryZar ?? body.supplierAtDeliveryZarp,
+      "Supplier delivery payment");
     if (total <= 0n) throw new DomainError("Total must be positive");
     if (driverAtPickup + supplierAtPickup + supplierAtDelivery !== total) {
       throw new DomainError("The three payments must add up to the total");

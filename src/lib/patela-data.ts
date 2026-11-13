@@ -5,7 +5,7 @@ export const steps = [
   },
   {
     t: "Fund rand escrow",
-    p: "Buyer deposits ZAR via a licensed South African bank partner. EscrowVault locks the equivalent rand-stablecoin (ZARP) in smart contract escrow.",
+    p: "Buyer approves the exact Mento ZARm amount and EscrowVault locks it in smart-contract escrow on Celo.",
   },
   {
     t: "Confirm two-party handoffs",
@@ -21,7 +21,7 @@ export const features = [
   {
     d: "M12 3l8 4v5c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V7l8-4z",
     t: "EscrowVault smart contracts",
-    p: "Funds are locked in an audited smart-contract vault on Base Sepolia. Release logic is governed by rules, not arbitrary custodian discretion.",
+    p: "Funds are locked in a smart-contract vault on Celo. Release logic is governed by rules, not arbitrary custodian discretion.",
   },
   {
     d: "M9 12l2 2 4-4M12 3a9 9 0 100 18 9 9 0 000-18z",
@@ -31,7 +31,7 @@ export const features = [
   {
     d: "M12 2v20M17 6H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6",
     t: "Rand in, rand out",
-    p: "Users see and transact in South African Rand (ZAR). Licensed banking partners handle fiat custody and stablecoin (ZARP) conversion.",
+    p: "Users see and transact in South African Rand using Mento ZARm on Celo.",
   },
   {
     d: "M13 2L4 14h7l-1 8 9-12h-7l1-8z",
@@ -65,7 +65,7 @@ export const faqs = [
   },
   {
     q: "How does payment work with South African Rand?",
-    a: "Rand in, Rand out. Business deposits are in ZAR, held in an independent client trust account with a licensed South African bank, and converted behind the scenes into a rand-pegged stablecoin (ZARP) locked in the EscrowVault contract.",
+    a: "Orders are denominated in rand and funded with Mento ZARm. The buyer approves the exact amount before the EscrowVault locks it on Celo.",
   },
   {
     q: "What happens if a parcel is damaged or short?",

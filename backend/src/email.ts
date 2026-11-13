@@ -35,7 +35,7 @@ export function renderEmail(template: EmailTemplate, payload: Payload): { subjec
         text: [`You've been invited to a Patela order as the ${role}.`, "",
           payload.agreementText ? `Agreement: ${str(payload.agreementText)}` : "",
           "", `Open this link to review and accept (it works once):`, link, "",
-          "Patela demo on Base Sepolia test tokens — no real money moves."].join("\n"),
+          "Patela order on Celo. Confirm the network, ZARm amount, and agreement before signing."].join("\n"),
       };
     }
     case "login_otp":

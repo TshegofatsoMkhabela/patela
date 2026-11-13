@@ -1,7 +1,7 @@
 import {
   createPublicClient, decodeEventLog, http, parseAbi, type Address, type Hex,
 } from "viem";
-import { base, baseSepolia } from "viem/chains";
+import { celo, celoSepolia } from "viem/chains";
 
 /** Frozen escrow events (specs/INTERFACES.md §2; the web app's copy is src/lib/contracts.ts). */
 export const escrowEventsAbi = parseAbi([
@@ -78,7 +78,7 @@ export function decodeEscrowLogs(logs: readonly RawLog[], escrowAddress: Address
   return found;
 }
 
-export class BaseChainVerifier implements ChainVerifier {
+export class EvmChainVerifier implements ChainVerifier {
   private readonly client;
   /** The RPC's chain never changes for a container, so it is checked once. */
   private chainChecked?: Promise<void>;
@@ -87,10 +87,10 @@ export class BaseChainVerifier implements ChainVerifier {
     rpcUrl: string,
     private readonly escrowAddress: Address,
     private readonly confirmations: number,
-    private readonly chainId: 8453 | 84532 = 8453,
+    private readonly chainId: 42220 | 11142220 = 11142220,
     private readonly tokenAddress?: Address,
   ) {
-    this.client = createPublicClient({ chain: chainId === 8453 ? base : baseSepolia, transport: http(rpcUrl) });
+    this.client = createPublicClient({ chain: chainId === 42220 ? celo : celoSepolia, transport: http(rpcUrl) });
   }
 
   async events(txHash: Hex): Promise<ChainEvent[]> {
@@ -114,3 +114,6 @@ export class BaseChainVerifier implements ChainVerifier {
       args: [wallet] });
   }
 }
+
+/** @deprecated Use EvmChainVerifier; kept for source compatibility with older integrations. */
+export const BaseChainVerifier = EvmChainVerifier;

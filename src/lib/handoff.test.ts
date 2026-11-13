@@ -186,7 +186,7 @@ describe("typed data (INTERFACES §2)", () => {
     expect(td.domain).toEqual({
       name: "Patela Escrow",
       version: "1",
-      chainId: 84532,
+      chainId: 11142220,
       verifyingContract: ESCROW,
     });
     expect(td.message).toEqual({

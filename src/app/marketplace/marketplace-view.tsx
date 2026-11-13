@@ -49,7 +49,7 @@ export function MarketplaceView() {
         <div className="pt-jobs">
           {jobs.map((j, i) => {
             const done = j.milestones.filter((m) => m.status === "approved").length;
-            const isSupplyChain = j.id === "ORD-2026-8941" || j.coins.includes("ZARP");
+            const isSupplyChain = j.id === "ORD-2026-8941" || j.coins.includes("ZARm");
             return (
               <Reveal key={j.id} delay={i * 80}>
                 <Link
@@ -86,7 +86,7 @@ export function MarketplaceView() {
                           borderColor: "rgba(150, 196, 244, 0.3)",
                         }}
                       >
-                        Multi-Hop Supply Chain · ZAR / ZARP
+                        Multi-Hop Supply Chain · ZAR / ZARm
                       </span>
                     )}
                   </div>
