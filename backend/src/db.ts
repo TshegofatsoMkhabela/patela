@@ -15,8 +15,9 @@ export interface Database extends Queryable {
 export class PgDatabase implements Database {
   private readonly pool: pg.Pool;
 
-  constructor(connectionString: string, max = 2) {
-    this.pool = new pg.Pool({ connectionString, max });
+  constructor(connectionString: string, max = 2, verifyTls = false) {
+    this.pool = new pg.Pool({ connectionString, max,
+      ssl: verifyTls ? { rejectUnauthorized: true } : undefined });
   }
 
   async query<T extends Record<string, unknown> = Record<string, unknown>>(

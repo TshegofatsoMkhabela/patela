@@ -17,7 +17,16 @@ Parameters:
     Description: Google OAuth Web application client ID.
   GoogleClientSecretArn:
     Type: String
-    Description: ARN of a Secrets Manager secret containing the raw Google OAuth client secret.
+    Default: ''
+    Description: Optional ARN of a Secrets Manager secret for authorization-code sign-in.
+  EnableAuthSmokePage:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Serve the API-only Google sign-in test page during development.
+
+Conditions:
+  HasGoogleClientSecret: !Not [!Equals [!Ref GoogleClientSecretArn, '']]
 
 Resources:
   Network:
@@ -153,15 +162,17 @@ Resources:
       Code: {S3Bucket: !Ref CodeBucket, S3Key: !Ref CodeKey}
       MemorySize: 512
       Timeout: 30
-      ReservedConcurrentExecutions: 5
       VpcConfig:
         SubnetIds: [!Ref PrivateSubnetA, !Ref PrivateSubnetB]
         SecurityGroupIds: [!Ref ApiSecurityGroup]
       Environment:
         Variables:
           DATABASE_URL: !Sub 'postgres://patela:{{resolve:secretsmanager:${DatabaseSecret}:SecretString:password}}@${Database.Endpoint.Address}:5432/patela'
+          DATABASE_SSL: 'true'
+          NODE_EXTRA_CA_CERTS: /var/runtime/ca-cert.pem
           GOOGLE_OAUTH_CLIENT_ID: !Ref GoogleClientId
-          GOOGLE_OAUTH_CLIENT_SECRET: !Sub '{{resolve:secretsmanager:${GoogleClientSecretArn}:SecretString}}'
+          GOOGLE_OAUTH_CLIENT_SECRET: !If [HasGoogleClientSecret, !Sub '{{resolve:secretsmanager:${GoogleClientSecretArn}:SecretString}}', '']
+          ENABLE_AUTH_SMOKE_PAGE: !Ref EnableAuthSmokePage
           PUBLIC_ORIGIN: !Ref PublicOrigin
           PG_POOL_MAX: '2'
           CHAIN_ID: '8453'
@@ -174,13 +185,14 @@ Resources:
       Code: {S3Bucket: !Ref CodeBucket, S3Key: !Ref CodeKey}
       MemorySize: 256
       Timeout: 120
-      ReservedConcurrentExecutions: 1
       VpcConfig:
         SubnetIds: [!Ref PrivateSubnetA, !Ref PrivateSubnetB]
         SecurityGroupIds: [!Ref ApiSecurityGroup]
       Environment:
         Variables:
           DATABASE_URL: !Sub 'postgres://patela:{{resolve:secretsmanager:${DatabaseSecret}:SecretString:password}}@${Database.Endpoint.Address}:5432/patela'
+          DATABASE_SSL: 'true'
+          NODE_EXTRA_CA_CERTS: /var/runtime/ca-cert.pem
           PG_POOL_MAX: '1'
   HttpApi:
     Type: AWS::ApiGatewayV2::Api
@@ -206,6 +218,9 @@ Resources:
       ApiId: !Ref HttpApi
       StageName: $default
       AutoDeploy: true
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 5
+        ThrottlingRateLimit: 2
   InvokePermission:
     Type: AWS::Lambda::Permission
     Properties:

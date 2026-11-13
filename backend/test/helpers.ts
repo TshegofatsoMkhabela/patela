@@ -1,5 +1,5 @@
 import { PGlite } from "@electric-sql/pglite";
-import type { AuthProvider, Identity } from "../src/auth.js";
+import { InvalidGoogleCredential, type AuthProvider, type Identity } from "../src/auth.js";
 import type { Database, Queryable } from "../src/db.js";
 import { applyMigrations } from "../src/migrations.js";
 
@@ -32,6 +32,10 @@ export class TestAuth implements AuthProvider {
   async googleSignInUrl() { return { url: "https://accounts.google.com/test", verifier: "test-verifier", state: "test-state" }; }
   async exchangeGoogleCode(code: string, verifier: string) {
     if (code !== "valid-code" || verifier !== "test-verifier") throw new Error("Invalid OAuth exchange");
+    return { accessToken: "user-0", refreshToken: "test-refresh" };
+  }
+  async googleCredentialSignIn(credential: string) {
+    if (credential !== "valid-credential".repeat(10)) throw new InvalidGoogleCredential("Invalid Google credential");
     return { accessToken: "user-0", refreshToken: "test-refresh" };
   }
   async refreshSession(refreshToken: string) {

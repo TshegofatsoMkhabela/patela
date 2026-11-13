@@ -21,8 +21,12 @@ export function createLambdaHandler(app: FastifyInstance) {
       if (value !== undefined) headers[key] = value;
     }
     if (event.cookies?.length) headers.cookie = event.cookies.join("; ");
+    const method = event.requestContext.http.method.toUpperCase();
+    if (!["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"].includes(method)) {
+      return { statusCode: 405, headers: {}, cookies: [], body: "Method Not Allowed", isBase64Encoded: false };
+    }
     const response = await app.inject({
-      method: event.requestContext.http.method,
+      method: method as "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS",
       url: event.rawPath + (event.rawQueryString ? `?${event.rawQueryString}` : ""),
       headers,
       payload: event.body === undefined ? undefined

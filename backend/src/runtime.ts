@@ -12,10 +12,10 @@ export function createRuntime(env: NodeJS.ProcessEnv = process.env) {
     BASE_RPC_URL, ESCROW_ADDRESS, PUBLIC_ORIGIN,
     API_ORIGIN = "http://localhost:4000", CHAIN_CONFIRMATIONS = "3",
     GOOGLE_MAPS_SERVER_KEY, CHAIN_ID = "8453", TOKEN_ADDRESS, TOKEN_DECIMALS = "18",
-    PG_POOL_MAX = "2",
+    PG_POOL_MAX = "2", ENABLE_AUTH_SMOKE_PAGE = "false", DATABASE_SSL = "false",
   } = env;
-  if (!DATABASE_URL || !GOOGLE_OAUTH_CLIENT_ID || !GOOGLE_OAUTH_CLIENT_SECRET) {
-    throw new Error("DATABASE_URL, GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET are required");
+  if (!DATABASE_URL || !GOOGLE_OAUTH_CLIENT_ID) {
+    throw new Error("DATABASE_URL and GOOGLE_OAUTH_CLIENT_ID are required");
   }
   if (ESCROW_ADDRESS && !isAddress(ESCROW_ADDRESS)) throw new Error("Invalid ESCROW_ADDRESS");
   const chainId = Number(CHAIN_ID);
@@ -36,7 +36,7 @@ export function createRuntime(env: NodeJS.ProcessEnv = process.env) {
       throw new Error(`${label} must be a web origin without a path`);
     }
   }
-  const db = new PgDatabase(DATABASE_URL, poolMax);
+  const db = new PgDatabase(DATABASE_URL, poolMax, DATABASE_SSL === "true");
   const auth = new PostgresAuth(db, new GoogleOidcProvider(GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET));
   const chain = BASE_RPC_URL && ESCROW_ADDRESS
     ? new BaseChainVerifier(BASE_RPC_URL, ESCROW_ADDRESS as Address, confirmations, chainId)
@@ -46,6 +46,9 @@ export function createRuntime(env: NodeJS.ProcessEnv = process.env) {
     publicOrigin, apiOrigin: API_ORIGIN,
     integrations: new GoogleIntegrations(GOOGLE_MAPS_SERVER_KEY),
     chainId, tokenAddress: tokenAddress as Address, tokenDecimals,
+    googleClientId: GOOGLE_OAUTH_CLIENT_ID,
+    enableGoogleCodeFlow: Boolean(GOOGLE_OAUTH_CLIENT_SECRET),
+    enableAuthSmokePage: ENABLE_AUTH_SMOKE_PAGE === "true",
   });
   return { app, db };
 }

@@ -1,7 +1,8 @@
 import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
+import { randomBytes } from "node:crypto";
 import rateLimit from "@fastify/rate-limit";
 import cors from "@fastify/cors";
-import type { AuthProvider, Identity } from "./auth.js";
+import { InvalidGoogleCredential, type AuthProvider, type Identity } from "./auth.js";
 import type { ChainVerifier } from "./chain.js";
 import type { Database } from "./db.js";
 import { PatelaService } from "./service.js";
@@ -21,6 +22,9 @@ export interface AppDependencies {
   chainId?: number;
   tokenAddress?: Address;
   tokenDecimals?: number;
+  googleClientId?: string;
+  enableGoogleCodeFlow?: boolean;
+  enableAuthSmokePage?: boolean;
 }
 
 function objectBody(value: unknown): Record<string, unknown> {
@@ -40,7 +44,8 @@ function point(value: unknown): Point {
 }
 
 export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrigin = "http://localhost:4000", integrations,
-  chainId, tokenAddress, tokenDecimals }: AppDependencies) {
+  chainId, tokenAddress, tokenDecimals, googleClientId, enableGoogleCodeFlow = true,
+  enableAuthSmokePage = false }: AppDependencies) {
   const app = Fastify({ logger: false, bodyLimit: 128 * 1024 });
   const secureCookie = new URL(apiOrigin).protocol === "https:" ? "; Secure" : "";
   const callbackUrl = new URL("/auth/google/callback", apiOrigin);
@@ -124,18 +129,21 @@ export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrig
     return session;
   });
   app.get("/auth/google/url", async (_request, reply) => {
+    if (!enableGoogleCodeFlow) throw new DomainError("Google authorization-code sign-in is not configured", 503);
     const started = await auth.googleSignInUrl(callbackUrl.toString());
     reply.header("Cache-Control", "no-store");
     reply.header("Set-Cookie", cookie("patela_pkce", JSON.stringify({ v: started.verifier, s: started.state }), 300));
     return { url: started.url };
   });
   app.get("/auth/google/start", async (_request, reply) => {
+    if (!enableGoogleCodeFlow) throw new DomainError("Google authorization-code sign-in is not configured", 503);
     const started = await auth.googleSignInUrl(callbackUrl.toString());
     reply.header("Cache-Control", "no-store");
     reply.header("Set-Cookie", cookie("patela_pkce", JSON.stringify({ v: started.verifier, s: started.state }), 300));
     return reply.redirect(started.url, 303);
   });
   app.get<{ Querystring: { code?: string; state?: string; error?: string } }>("/auth/google/callback", async (request, reply) => {
+    if (!enableGoogleCodeFlow) throw new DomainError("Google authorization-code sign-in is not configured", 503);
     reply.header("Cache-Control", "no-store");
     let challenge: { v: string; s: string } | undefined;
     try { challenge = JSON.parse(readCookie(request, "patela_pkce") ?? ""); } catch { /* Missing cookie. */ }
@@ -154,6 +162,55 @@ export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrig
     ]);
     return reply.redirect(new URL(publicOrigin === apiOrigin ? "/auth/success" : "/?auth=google", publicOrigin).toString(), 303);
   });
+  app.post("/auth/google/id-token", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } },
+    async (request, reply) => {
+      if (request.headers.origin !== apiOrigin && request.headers.origin !== publicOrigin) {
+        throw new DomainError("Origin is not allowed", 403);
+      }
+      if (!request.headers["content-type"]?.toLowerCase().startsWith("application/json")) {
+        throw new DomainError("JSON required", 415);
+      }
+      const credential = objectBody(request.body).credential;
+      if (typeof credential !== "string" || credential.length < 100 || credential.length > 8192) {
+        throw new DomainError("Google credential required", 400);
+      }
+      let session;
+      try { session = await auth.googleCredentialSignIn(credential); }
+      catch (error) {
+        if (error instanceof InvalidGoogleCredential) throw new DomainError("Google credential is invalid", 401);
+        throw error;
+      }
+      const identity = await auth.userFromToken(session.accessToken);
+      if (!identity) throw new DomainError("Google session had no verified user", 401);
+      await service.ensureProfile(identity);
+      reply.header("Cache-Control", "no-store");
+      reply.header("Set-Cookie", sessionCookies(session));
+      return { authenticated: true, profile: await service.profile(identity.id) };
+    });
+  if (enableAuthSmokePage && googleClientId) {
+    app.get("/auth/google/test", async (_request, reply) => {
+      const nonce = randomBytes(16).toString("base64");
+      const clientId = JSON.stringify(googleClientId).replace(/</g, "\\u003c");
+      reply.header("Cache-Control", "no-store");
+      reply.header("Referrer-Policy", "strict-origin-when-cross-origin");
+      reply.header("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+      reply.header("Content-Security-Policy",
+        `default-src 'none'; script-src 'nonce-${nonce}' https://accounts.google.com https://*.gstatic.com; `
+        + "style-src 'unsafe-inline' https://accounts.google.com; frame-src https://accounts.google.com; "
+        + "connect-src 'self' https://accounts.google.com; img-src https: data:; base-uri 'none'; form-action 'self'");
+      return reply.type("text/html; charset=utf-8").send(`<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Patela sign-in test</title></head>
+<body><main><h1>Patela sign-in test</h1><div id="google-button"></div><p id="status" role="status"></p></main>
+<script nonce="${nonce}">window.onload = () => {
+  google.accounts.id.initialize({client_id: ${clientId}, callback: async ({credential}) => {
+    const result = await fetch('/auth/google/id-token', {method: 'POST', headers: {'Content-Type': 'application/json'}, credentials: 'include', body: JSON.stringify({credential})});
+    if (result.ok) window.location.assign('/auth/success');
+    else document.getElementById('status').textContent = 'Sign-in failed (' + result.status + ')';
+  }});
+  google.accounts.id.renderButton(document.getElementById('google-button'), {theme: 'outline', size: 'large'});
+};</script>
+<script src="https://accounts.google.com/gsi/client" async defer></script></body></html>`);
+    });
+  }
   app.get("/auth/success", async (request, reply) => {
     const user = await requireUser(request, reply);
     reply.header("Cache-Control", "no-store");
