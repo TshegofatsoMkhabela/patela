@@ -2,6 +2,8 @@ import {
   createPublicClient, decodeEventLog, http, parseAbi, type Address, type Hex,
 } from "viem";
 import { celo, celoSepolia } from "viem/chains";
+import { ZARM_DECIMALS } from "./service.js";
+import { sameAddress } from "./validation.js";
 
 /** Frozen escrow events (specs/INTERFACES.md §2; the web app's copy is src/lib/contracts.ts). */
 export const escrowEventsAbi = parseAbi([
@@ -24,15 +26,22 @@ const setupAbi = parseAbi([
 export interface ChainReader {
   chainId(): Promise<number>;
   code(address: Address): Promise<Hex | undefined>;
-  read(address: Address, name: "symbol" | "decimals" | "paymentToken"): Promise<unknown>;
+  token(address: Address): Promise<{ symbol: string; decimals: number }>;
+  paymentToken(escrow: Address): Promise<Address>;
 }
 
 export function rpcChainReader(rpcUrl: string): ChainReader {
   const client = createPublicClient({ transport: http(rpcUrl) });
+  const read = <F extends "symbol" | "decimals" | "paymentToken">(address: Address, functionName: F) =>
+    client.readContract({ address, abi: setupAbi, functionName });
   return {
     chainId: () => client.getChainId(),
     code: address => client.getCode({ address }),
-    read: (address, functionName) => client.readContract({ address, abi: setupAbi, functionName }),
+    token: async address => {
+      const [symbol, decimals] = await Promise.all([read(address, "symbol"), read(address, "decimals")]);
+      return { symbol: symbol as string, decimals: decimals as number };
+    },
+    paymentToken: async escrow => (await read(escrow, "paymentToken")) as Address,
   };
 }
 
@@ -58,18 +67,17 @@ export async function checkChainSetup(reader: ChainReader, expected: {
     }),
     run("token", async () => {
       if (!await reader.code(tokenAddress)) throw new Error(`No contract at token ${tokenAddress}`);
-      const [symbol, decimals] = await Promise.all([reader.read(tokenAddress, "symbol"),
-        reader.read(tokenAddress, "decimals")]);
-      if (symbol !== "ZARm" || Number(decimals) !== 18) {
-        throw new Error(`Token ${tokenAddress} is ${String(symbol)}/${String(decimals)}, expected ZARm/18`);
+      const { symbol, decimals } = await reader.token(tokenAddress);
+      if (symbol !== "ZARm" || decimals !== ZARM_DECIMALS) {
+        throw new Error(`Token ${tokenAddress} is ${symbol}/${decimals}, expected ZARm/${ZARM_DECIMALS}`);
       }
-      return `${tokenAddress} is ZARm with 18 decimals`;
+      return `${tokenAddress} is ZARm with ${ZARM_DECIMALS} decimals`;
     }),
     run("escrow", async () => {
       if (!escrowAddress) throw new Error("ESCROW_ADDRESS is not set");
       if (!await reader.code(escrowAddress)) throw new Error(`No contract at escrow ${escrowAddress}`);
-      const paid = String(await reader.read(escrowAddress, "paymentToken"));
-      if (paid.toLowerCase() !== tokenAddress.toLowerCase()) {
+      const paid = await reader.paymentToken(escrowAddress);
+      if (!sameAddress(paid, tokenAddress)) {
         throw new Error(`Escrow pays out ${paid}, not the configured token ${tokenAddress}`);
       }
       return `${escrowAddress} holds ${tokenAddress}`;

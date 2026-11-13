@@ -17,7 +17,8 @@ function reader(over: Partial<{
   return {
     chainId: async () => chain.chainId,
     code: async address => address.toLowerCase() === escrow ? chain.escrowCode : chain.tokenCode,
-    read: async (_address, name) => chain[name],
+    token: async () => ({ symbol: chain.symbol, decimals: chain.decimals }),
+    paymentToken: async () => chain.paymentToken,
   };
 }
 
@@ -48,8 +49,8 @@ test("a missing escrow, or one paying out another token, fails the escrow check"
 });
 
 test("a failing RPC call is reported on that check instead of throwing", async () => {
-  const broken = { ...reader(), read: async () => { throw new Error("execution reverted"); } };
-  const checks = await checkChainSetup(broken, expected);
-  assert.deepEqual(checks.filter(c => !c.ok).map(c => c.name), ["token", "escrow"]);
-  assert.match(checks[1].detail, /execution reverted/);
+  const reverted = async () => { throw new Error("execution reverted"); };
+  const broken = { ...reader(), token: reverted, paymentToken: reverted };
+  assert.deepEqual(await failed(broken), ["token", "escrow"]);
+  assert.match((await checkChainSetup(broken, expected))[1].detail, /execution reverted/);
 });
