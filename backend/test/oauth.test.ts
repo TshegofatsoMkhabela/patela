@@ -22,6 +22,11 @@ test("Google authorization URL carries state and a matching PKCE challenge", asy
   } finally { await db.close(); }
 });
 
+test("Google ID-token verification rejects an unsigned credential", async () => {
+  const provider = new GoogleOidcProvider("example-client-id");
+  await assert.rejects(provider.verifyCredential("not-a-signed-google-id-token"));
+});
+
 test("Google identity creates a PostgreSQL session, rotates it, and revokes it", async () => {
   const db = new TestDatabase();
   const provider: GoogleIdentityProvider = {
@@ -29,6 +34,10 @@ test("Google identity creates a PostgreSQL session, rotates it, and revokes it",
     exchange: async (_code, verifier, redirectTo) => {
       assert.equal(verifier, "test-verifier");
       assert.equal(redirectTo, "http://localhost:4000/auth/google/callback");
+      return { subject: "stable-google-subject", email: "buyer@example.test", emailVerified: true };
+    },
+    verifyCredential: async credential => {
+      assert.equal(credential, "signed-google-id-token");
       return { subject: "stable-google-subject", email: "buyer@example.test", emailVerified: true };
     },
   };
@@ -47,6 +56,8 @@ test("Google identity creates a PostgreSQL session, rotates it, and revokes it",
     await assert.rejects(auth.refreshSession(second.refreshToken));
     const again = await auth.exchangeGoogleCode("test-code", "test-verifier", "http://localhost:4000/auth/google/callback");
     assert.equal((await auth.userFromToken(again.accessToken))?.id, identity?.id);
+    const fromCredential = await auth.googleCredentialSignIn("signed-google-id-token");
+    assert.equal((await auth.userFromToken(fromCredential.accessToken))?.id, identity?.id);
     const sessions = await db.query<{ access_hash: string }>("select access_hash from auth_sessions");
     assert.ok(sessions.rows.every(row => row.access_hash !== first.accessToken && row.access_hash !== second.accessToken));
   } finally { await db.close(); }
@@ -56,6 +67,7 @@ test("email OTP is one-time and wrong guesses consume attempts", async () => {
   const db = new TestDatabase();
   const provider: GoogleIdentityProvider = {
     authorizationUrl: () => "", exchange: async () => { throw new Error("Unused"); },
+    verifyCredential: async () => { throw new Error("Unused"); },
   };
   try {
     await db.migrate();
@@ -79,11 +91,13 @@ test("unverified Google email cannot create a Patela session", async () => {
   const provider: GoogleIdentityProvider = {
     authorizationUrl: () => "",
     exchange: async () => ({ subject: "unverified", email: "unverified@example.test", emailVerified: false }),
+    verifyCredential: async () => ({ subject: "unverified", email: "unverified@example.test", emailVerified: false }),
   };
   try {
     await db.migrate();
     const auth = new PostgresAuth(db, provider);
     await assert.rejects(auth.exchangeGoogleCode("code", "verifier", "http://localhost:4000/auth/google/callback"));
+    await assert.rejects(auth.googleCredentialSignIn("unverified-token"));
     const sessions = await db.query("select id from auth_sessions");
     assert.equal(sessions.rows.length, 0);
   } finally { await db.close(); }

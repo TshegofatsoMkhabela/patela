@@ -24,6 +24,9 @@
     "pg": "^8.23.1",
     "viem": "^2.57.19"
   },
+  "overrides": {
+    "light-my-request": "6.6.0"
+  },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.16",
     "@types/node": "^26.6.6",

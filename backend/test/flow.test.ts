@@ -41,7 +41,8 @@ test("backend rejects fake money and replayed QR, and advances only on chain eve
   const chain = new TestChain();
   const service = new PatelaService(db, chain, escrow);
   const app = buildApp({ db, auth, chain, escrowAddress: escrow,
-    publicOrigin: "http://localhost:3000", integrations: new TestIntegrations() });
+    publicOrigin: "http://localhost:3000", integrations: new TestIntegrations(),
+    googleClientId: "example-client-id", enableAuthSmokePage: true });
   try {
     await db.migrate();
     for (let i = 0; i < ids.length; i++) {
@@ -92,6 +93,34 @@ test("backend rejects fake money and replayed QR, and advances only on chain eve
     const google = await app.inject({ method: "GET", url: "/auth/google/url" });
     assert.equal(google.statusCode, 200);
     assert.equal(google.json().url, "https://accounts.google.com/test");
+    const smokePage = await app.inject({ method: "GET", url: "/auth/google/test" });
+    assert.equal(smokePage.statusCode, 200);
+    assert.match(smokePage.body, /example-client-id/);
+    assert.match(String(smokePage.headers["content-security-policy"]), /accounts\.google\.com/);
+    const credential = "valid-credential".repeat(10);
+    const wrongCredentialOrigin = await app.inject({
+      method: "POST", url: "/auth/google/id-token", headers: { origin: "https://untrusted.example" },
+      payload: { credential },
+    });
+    assert.equal(wrongCredentialOrigin.statusCode, 403);
+    const badCredential = await app.inject({
+      method: "POST", url: "/auth/google/id-token", headers: { origin: "http://localhost:4000" },
+      payload: { credential: "wrong".repeat(30) },
+    });
+    assert.equal(badCredential.statusCode, 401);
+    const credentialLogin = await app.inject({
+      method: "POST", url: "/auth/google/id-token", headers: { origin: "http://localhost:4000" },
+      payload: { credential },
+    });
+    assert.equal(credentialLogin.statusCode, 200, credentialLogin.body);
+    assert.equal(credentialLogin.json().authenticated, true);
+    const credentialCookies = (credentialLogin.headers["set-cookie"] as string[])
+      .map(value => value.split(";")[0]).join("; ");
+    const credentialProfile = await app.inject({
+      method: "GET", url: "/me", headers: { cookie: credentialCookies },
+    });
+    assert.equal(credentialProfile.statusCode, 200);
+    assert.equal(credentialProfile.json().id, ids[0]);
     const start = await app.inject({ method: "GET", url: "/auth/google/start" });
     assert.equal(start.statusCode, 303);
     assert.equal(start.headers.location, "https://accounts.google.com/test");
@@ -140,6 +169,13 @@ test("backend rejects fake money and replayed QR, and advances only on chain eve
       });
       assert.equal(success.json().authenticated, true);
     } finally { await apiOnly.close(); }
+    const idTokenOnly = buildApp({ db, auth, escrowAddress: escrow,
+      publicOrigin: "http://localhost:4000", apiOrigin: "http://localhost:4000",
+      enableGoogleCodeFlow: false });
+    try {
+      assert.equal((await idTokenOnly.inject({ method: "GET", url: "/auth/google/start" })).statusCode, 503);
+      assert.equal((await idTokenOnly.inject({ method: "GET", url: "/auth/google/test" })).statusCode, 404);
+    } finally { await idTokenOnly.close(); }
     const refreshed = await app.inject({
       method: "GET", url: "/me",
       headers: { cookie: "patela_access=expired; patela_refresh=test-refresh" },

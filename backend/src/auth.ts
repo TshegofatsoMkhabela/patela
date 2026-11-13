@@ -4,12 +4,14 @@ import type { Database, Queryable } from "./db.js";
 
 export interface Identity { id: string; email: string }
 export interface Session { accessToken: string; refreshToken: string }
+export class InvalidGoogleCredential extends Error {}
 export interface AuthProvider {
   userFromToken(token: string): Promise<Identity | null>;
   requestEmailOtp(email: string): Promise<void>;
   verifyEmailOtp(email: string, code: string): Promise<Session>;
   googleSignInUrl(redirectTo: string): Promise<{ url: string; verifier: string; state: string }>;
   exchangeGoogleCode(code: string, verifier: string, redirectTo: string): Promise<Session>;
+  googleCredentialSignIn(credential: string): Promise<Session>;
   refreshSession(refreshToken: string): Promise<Session>;
   revokeSession(token: string, refreshToken?: string): Promise<void>;
 }
@@ -19,11 +21,14 @@ export interface GoogleIdentityProvider {
   exchange(code: string, verifier: string, redirectTo: string): Promise<{
     subject: string; email: string; emailVerified: boolean;
   }>;
+  verifyCredential(credential: string): Promise<{
+    subject: string; email: string; emailVerified: boolean;
+  }>;
 }
 
 export class GoogleOidcProvider implements GoogleIdentityProvider {
   private readonly client: OAuth2Client;
-  constructor(private readonly clientId: string, clientSecret: string) {
+  constructor(private readonly clientId: string, private readonly clientSecret?: string) {
     this.client = new OAuth2Client(clientId, clientSecret);
   }
   authorizationUrl(redirectTo: string, state: string, challenge: string): string {
@@ -33,11 +38,15 @@ export class GoogleOidcProvider implements GoogleIdentityProvider {
     });
   }
   async exchange(code: string, verifier: string, redirectTo: string) {
+    if (!this.clientSecret) throw new Error("Google OAuth code flow is not configured");
     const { tokens } = await this.client.getToken({
       code, codeVerifier: verifier, redirect_uri: redirectTo,
     });
     if (!tokens.id_token) throw new Error("Google returned no ID token");
-    const ticket = await this.client.verifyIdToken({ idToken: tokens.id_token, audience: this.clientId });
+    return this.verifyCredential(tokens.id_token);
+  }
+  async verifyCredential(credential: string) {
+    const ticket = await this.client.verifyIdToken({ idToken: credential, audience: this.clientId });
     const payload = ticket.getPayload();
     if (!payload?.sub || !payload.email) throw new Error("Google identity is incomplete");
     return { subject: payload.sub, email: payload.email,
@@ -133,6 +142,18 @@ export class PostgresAuth implements AuthProvider {
 
   async exchangeGoogleCode(code: string, verifier: string, redirectTo: string): Promise<Session> {
     const account = await this.google.exchange(code, verifier, redirectTo);
+    return this.googleSession(account);
+  }
+
+  async googleCredentialSignIn(credential: string): Promise<Session> {
+    let account: { subject: string; email: string; emailVerified: boolean };
+    try { account = await this.google.verifyCredential(credential); }
+    catch { throw new InvalidGoogleCredential("Invalid Google credential"); }
+    if (!account.emailVerified) throw new InvalidGoogleCredential("Google email is not verified");
+    return this.googleSession(account);
+  }
+
+  private async googleSession(account: { subject: string; email: string; emailVerified: boolean }): Promise<Session> {
     if (!account.emailVerified) throw new Error("Google email is not verified");
     return this.db.transaction(async db => {
       const previous = await db.query<{ user_id: string }>(

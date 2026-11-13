@@ -3,7 +3,7 @@ import { applyMigrations } from "./migrations.js";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) throw new Error("DATABASE_URL is required");
-const db = new PgDatabase(connectionString);
+const db = new PgDatabase(connectionString, 2, process.env.DATABASE_SSL === "true");
 try {
   const files = await applyMigrations({ exec: sql => db.query(sql), query: (sql, values) => db.query(sql, values) });
   process.stdout.write(files.length ? `Patela migrations applied: ${files.join(", ")}\n`
