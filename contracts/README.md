@@ -1,15 +1,14 @@
 # Patella Smart Contracts
 
-This directory contains the Solidity smart contracts powering the Patella decentralized procurement, tender, milestone escrow, and logistics verification protocol on the **XRPL EVM Sidechain**.
+This directory contains the Solidity smart contracts powering the Patella decentralized procurement, tender, milestone escrow, and logistics verification protocol on **Celo L2** using the **CZAR** stablecoin.
 
 ---
 
 ## Table of Contents
 1. [Overview of the Smart Contracts](#overview-of-the-smart-contracts)
-   - [1. MockZARP.sol](#1-mockzarpsol)
-   - [2. PatellaRegistry.sol](#2-patellaregistrysol)
-   - [3. PatellaTenderTrail.sol](#3-patellatendertrailsol)
-   - [4. PatellaEscrowAndLogistics.sol](#4-patellaescrowandlogisticssol)
+   - [1. PatellaRegistry.sol](#1-patellaregistrysol)
+   - [2. PatellaTenderTrail.sol](#2-patellatendertrailsol)
+   - [3. PatellaEscrowAndLogistics.sol](#3-patellaescrowandlogisticssol)
 2. [How the Contracts Work (Workflow Architecture)](#how-the-contracts-work-workflow-architecture)
 3. [Required NPM Packages](#required-npm-packages)
 4. [Smart Contract Deployment](#smart-contract-deployment)
@@ -25,12 +24,7 @@ This directory contains the Solidity smart contracts powering the Patella decent
 
 Located in `contracts/contracts/`:
 
-### 1. `MockZARP.sol`
-- **Purpose**: A mock ERC-20 token representing the South African Rand pegged stablecoin (**ZARP**) for testnet settlement.
-- **Key Functionality**:
-  - Open minting (`mint(to, amount)`) for simulated buyers and escrow funding during testing.
-
-### 2. `PatellaRegistry.sol`
+### 1. `PatellaRegistry.sol`
 - **Purpose**: The central identity and Role-Based Access Control (RBAC) registry leveraging OpenZeppelin's `AccessControl`.
 - **Roles & State**:
   - `ADMIN_ROLE`: Authorizes business registration and verification statuses.
@@ -38,7 +32,7 @@ Located in `contracts/contracts/`:
   - `EVALUATOR_ROLE`: Permissioned assessors who score procurement bids.
   - Tracks business profile states: `isRegistered`, `isVerified`, and `roleType` (`"BUYER"`, `"SUPPLIER"`, `"LOGISTICS"`).
 
-### 3. `PatellaTenderTrail.sol`
+### 2. `PatellaTenderTrail.sol`
 - **Purpose**: Trust-minimized audit trail for enterprise Request for Quotations (RFQs) and tenders.
 - **Key Functionality**:
   - `publishTender(...)`: Allows verified buyers to publish RFQ specification hashes, evaluation rubrics, and tender deadlines.
@@ -47,7 +41,15 @@ Located in `contracts/contracts/`:
   - `awardTender(...)`: Buyer awards the contract to the winning bidder with a public reason hash.
   - `markConverted(...)`: Binds the awarded tender to a funded escrow order ID.
 
-### 4. `PatellaEscrowAndLogistics.sol`
+### 3. `PatellaEscrowAndLogistics.sol`
+- **Purpose**: Multi-milestone escrow vault interacting directly with the **CZAR** ERC-20 token on Celo L2, featuring cryptographic two-party QR/signature handoff verification and dispute settlement.
+- **Key Functionality**:
+  - `createOrder(...)`: Establishes milestone-based payments tied to handoff steps or delivery confirmations.
+  - `fundEscrow(...)`: Deposits CZAR tokens into escrow from the buyer.
+  - `recordTwoPartyHandoff(...)`: Verifies dual ECDSA signatures (`giver` and `receiver`) on-chain alongside geolocation photo hashes and single-use QR nonces. Handoff confirmations automatically trigger step-locked milestone payouts in CZAR.
+  - `approveMilestone(...)`: Allows buyer to manually approve evidence and trigger milestone releases.
+  - `claimTimeoutRelease(...)`: Auto-releases milestone funds if an auto-approve window expires without disputes.
+  - `raiseDispute(...)` / `resolveDispute(...)`: Freezes funds and authorizes registry-appointed arbiters to disburse to supplier or refund buyer in CZAR.
 - **Purpose**: Multi-milestone escrow vault with cryptographic two-party QR/signature handoff verification and dispute settlement.
 - **Key Functionality**:
   - `createOrder(...)`: Establishes milestone-based payments tied to handoff steps or delivery confirmations.
@@ -109,8 +111,8 @@ The Hardhat environment depends on the following packages:
 ## Smart Contract Deployment
 
 ### Deployment Process
-1. **Compilation**: Hardhat parses Solidity source files in `contracts/contracts/`, runs the solc compiler (`0.8.20`), and outputs compiled artifacts in `contracts/artifacts/`.
-2. **Execution**: `contracts/scripts/deploy.ts` connects to the targeted network provider (e.g. XRPL EVM Testnet RPC) using the funded private key from `.env`.
+1. **Compilation**: Hardhat parses Solidity source files in `contracts/contracts/`, runs the solc compiler (`0.8.24`), and outputs compiled artifacts in `contracts/artifacts/`.
+2. **Execution**: `contracts/scripts/deploy.ts` connects to the targeted network provider (e.g. Celo Sepolia Testnet RPC) using the funded private key and `CZAR_TOKEN_ADDRESS` from `.env`.
 3. **Artifact Recording**: The script exports contract addresses and full ABIs into `contracts/deployments/latest.json`.
 
 ```bash
@@ -120,8 +122,11 @@ npx hardhat compile
 # 2. Deploy locally to ephemeral Hardhat network
 npx hardhat run scripts/deploy.ts --network hardhat
 
-# 3. Deploy to XRPL EVM Testnet
-npx hardhat run scripts/deploy.ts --network testnet
+# 3. Deploy to Celo Sepolia L2 Testnet (Active)
+npx hardhat run scripts/deploy.ts --network celoSepolia
+
+# 4. Deploy to Celo Mainnet
+npx hardhat run scripts/deploy.ts --network celoMainnet
 ```
 
 ---

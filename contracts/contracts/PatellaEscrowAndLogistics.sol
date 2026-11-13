@@ -11,7 +11,7 @@ contract PatellaEscrowAndLogistics is ReentrancyGuard {
     using ECDSA for bytes32;
     using MessageHashUtils for bytes32;
 
-    IERC20 public zarpToken;
+    IERC20 public czarToken;
     PatellaRegistry public registry;
 
     enum OrderStatus { Created, Funded, InTransit, Disputed, Completed, Cancelled }
@@ -57,8 +57,8 @@ contract PatellaEscrowAndLogistics is ReentrancyGuard {
     event OrderDisputed(uint256 indexed orderId, address indexed raisedBy);
     event DisputeResolved(uint256 indexed orderId, bool releasedToSupplier);
 
-    constructor(address _zarpToken, address _registry) {
-        zarpToken = IERC20(_zarpToken);
+    constructor(address _czarToken, address _registry) {
+        czarToken = IERC20(_czarToken);
         registry = PatellaRegistry(_registry);
     }
 
@@ -108,7 +108,7 @@ contract PatellaEscrowAndLogistics is ReentrancyGuard {
         require(msg.sender == o.buyer, "Only buyer can fund");
         require(o.status == OrderStatus.Created, "Order already funded or invalid");
 
-        require(zarpToken.transferFrom(msg.sender, address(this), o.totalAmount), "ZARP transfer failed");
+        require(czarToken.transferFrom(msg.sender, address(this), o.totalAmount), "CZAR transfer failed");
 
         o.status = OrderStatus.Funded;
         o.lastEventTimestamp = block.timestamp;
@@ -195,10 +195,10 @@ contract PatellaEscrowAndLogistics is ReentrancyGuard {
 
         if (releaseToSupplier) {
             o.status = OrderStatus.Completed;
-            require(zarpToken.transfer(o.supplier, remainingBalance), "Transfer failed");
+            require(czarToken.transfer(o.supplier, remainingBalance), "Transfer failed");
         } else {
             o.status = OrderStatus.Cancelled;
-            require(zarpToken.transfer(o.buyer, remainingBalance), "Refund failed");
+            require(czarToken.transfer(o.buyer, remainingBalance), "Refund failed");
         }
 
         emit DisputeResolved(orderId, releaseToSupplier);
@@ -221,7 +221,7 @@ contract PatellaEscrowAndLogistics is ReentrancyGuard {
         o.releasedAmount += m.amount;
         o.lastEventTimestamp = block.timestamp;
 
-        require(zarpToken.transfer(m.recipient, m.amount), "ZARP payout failed");
+        require(czarToken.transfer(m.recipient, m.amount), "CZAR payout failed");
         emit MilestoneReleased(orderId, milestoneIndex, m.recipient, m.amount);
 
         if (o.releasedAmount == o.totalAmount) {
@@ -229,4 +229,3 @@ contract PatellaEscrowAndLogistics is ReentrancyGuard {
         }
     }
 }
-
