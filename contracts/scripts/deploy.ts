@@ -1,61 +1,44 @@
-import { ethers, artifacts, network } from "hardhat";
-import * as fs from "fs";
-import * as path from "path";
+import hre, { network } from "hardhat";
+import { mkdirSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-async function main() {
-  const MockZARP = await ethers.getContractFactory("MockZARP");
-  const zarp = await MockZARP.deploy();
-  await zarp.waitForDeployment();
-  const zarpAddress = await zarp.getAddress();
+// Deploys MockZARP, the registry, the tender trail and the escrow, then writes
+// deployments/<network>.json with addresses and ABIs for the web app and backend.
+// Usage: npx hardhat run scripts/deploy.ts --network baseSepolia
 
-  const Registry = await ethers.getContractFactory("PatellaRegistry");
-  const registry = await Registry.deploy();
-  await registry.waitForDeployment();
-  const registryAddress = await registry.getAddress();
+const connection = await network.connect();
+const { viem, networkName } = connection;
+const publicClient = await viem.getPublicClient();
+const chainId = await publicClient.getChainId();
 
-  const TenderTrail = await ethers.getContractFactory("PatellaTenderTrail");
-  const tenderTrail = await TenderTrail.deploy(registryAddress);
-  await tenderTrail.waitForDeployment();
-  const tenderAddress = await tenderTrail.getAddress();
+const zarp = await viem.deployContract("MockZARP");
+const registry = await viem.deployContract("PatellaRegistry");
+const tenderTrail = await viem.deployContract("PatellaTenderTrail", [registry.address]);
+const escrow = await viem.deployContract("PatellaEscrowAndLogistics", [zarp.address, registry.address]);
 
-  const Escrow = await ethers.getContractFactory("PatellaEscrowAndLogistics");
-  const escrow = await Escrow.deploy(zarpAddress, registryAddress);
-  await escrow.waitForDeployment();
-  const escrowAddress = await escrow.getAddress();
-
-  const deploymentData = {
-    network: network.name,
-    deployedAt: new Date().toISOString(),
-    contracts: {
-      MockZARP: {
-        address: zarpAddress,
-        abi: (await artifacts.readArtifact("MockZARP")).abi,
-      },
-      PatellaRegistry: {
-        address: registryAddress,
-        abi: (await artifacts.readArtifact("PatellaRegistry")).abi,
-      },
-      PatellaTenderTrail: {
-        address: tenderAddress,
-        abi: (await artifacts.readArtifact("PatellaTenderTrail")).abi,
-      },
-      PatellaEscrowAndLogistics: {
-        address: escrowAddress,
-        abi: (await artifacts.readArtifact("PatellaEscrowAndLogistics")).abi,
-      },
-    },
-  };
-
-  const outDir = path.join(__dirname, "../deployments");
-  if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
-  fs.writeFileSync(path.join(outDir, "latest.json"), JSON.stringify(deploymentData, null, 2));
-
-  console.log("Deployed successfully to", network.name);
-  console.log({ zarpAddress, registryAddress, tenderAddress, escrowAddress });
-}
-
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
+const entry = async (name: string, address: string) => ({
+  address,
+  abi: (await hre.artifacts.readArtifact(name)).abi,
 });
 
+const deployment = {
+  network: networkName,
+  chainId,
+  deployedAt: new Date().toISOString(),
+  contracts: {
+    MockZARP: await entry("MockZARP", zarp.address),
+    PatellaRegistry: await entry("PatellaRegistry", registry.address),
+    PatellaTenderTrail: await entry("PatellaTenderTrail", tenderTrail.address),
+    PatellaEscrowAndLogistics: await entry("PatellaEscrowAndLogistics", escrow.address),
+  },
+};
+
+const outDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "deployments");
+mkdirSync(outDir, { recursive: true });
+const outFile = path.join(outDir, `${networkName}.json`);
+writeFileSync(outFile, JSON.stringify(deployment, null, 2));
+
+console.log(`Deployed to ${networkName} (chain ${chainId}):`);
+for (const [name, c] of Object.entries(deployment.contracts)) console.log(`  ${name}: ${c.address}`);
+console.log(`Wrote ${outFile}`);

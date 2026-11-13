@@ -3,3 +3,5 @@ node_modules/
 cache/
 artifacts/
 
+deployments/default.json
+types/
