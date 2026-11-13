@@ -29,7 +29,7 @@ Each becomes a Given/When/Then scenario in /tdd-workflow.
 
 ### Web app (`src/`, vitest + manual rehearsal)
 - [ ] Given the buyer with MetaMask on Base Sepolia, when they create and fund an order, then the four-wallet balance panel shows the buyer's ZARP drop and the escrow's rise.
-- [ ] Given the supplier opening the accept link, when they sign in with the email code, then a Coinbase CDP embedded wallet is created for them without them holding ETH.
+- [ ] Given the supplier opening the accept link, when they sign in with the email code, then a MetaMask Embedded Wallet (Web3Auth) is created for them without them holding ETH.
 - [ ] Given the giver's window showing a handoff QR and the receiver's window scanning it with the webcam, when both sign, then the release is sent with sponsored gas and the app shows PAID with the measured seconds.
 - [ ] Given a screenshot of an old QR, when it's scanned, then the app shows it was rejected.
 
@@ -41,7 +41,7 @@ Each becomes a Given/When/Then scenario in /tdd-workflow.
 - Base Sepolia with MockZARP only.
 - Two handoffs: supplier → driver (pickup), driver → buyer (delivery).
 - Buyer: existing account, MetaMask extension in desktop Chrome.
-- Supplier and driver: invited by email, wallet provisioned by Coinbase CDP Embedded Wallets on sign-in, gas sponsored by Patela.
+- Supplier and driver: invited by email, wallet provisioned by MetaMask Embedded Wallets (Web3Auth) on sign-in, gas sponsored by Patela through a paymaster.
 - Email: Gmail SMTP with an app password stored in AWS Secrets Manager by the user.
 - QR scanning with the laptop webcam, using a bundled JavaScript QR reader.
 - Backend on Lambda + RDS (deployed only after the user approves the monthly cost).
@@ -67,16 +67,16 @@ EIP-712 `Handoff` type: `orderId uint256, stage uint8, giver address, receiver a
 
 Backend env additions: `BASE_RPC_URL`, `ESCROW_ADDRESS`, `TOKEN_ADDRESS`, `TOKEN_DECIMALS`, `CHAIN_ID=84532`, `SMTP_SECRET_ARN`, allowed origins for `main`, `demo` and `integration-demo` sites.
 
-Web env additions (per Amplify branch, set in the template): `NEXT_PUBLIC_CHAIN_ID`, `NEXT_PUBLIC_ESCROW_ADDRESS`, `NEXT_PUBLIC_ZARP_ADDRESS`, `NEXT_PUBLIC_API_ORIGIN`, `NEXT_PUBLIC_CDP_PROJECT_ID`.
+Web env additions (per Amplify branch, set in the template): `NEXT_PUBLIC_CHAIN_ID`, `NEXT_PUBLIC_ESCROW_ADDRESS`, `NEXT_PUBLIC_ZARP_ADDRESS`, `NEXT_PUBLIC_API_ORIGIN`, `NEXT_PUBLIC_WEB3AUTH_CLIENT_ID`.
 
 ## Tech Stack
 - Contract: Solidity 0.8.20, OpenZeppelin, Hardhat (tests + deploy); Remix optional for inspection.
 - Backend: Node 22, Fastify, PostgreSQL (RDS), Lambda + API Gateway, node:test.
-- Web: Next.js 15, React 19, viem, Coinbase CDP embedded wallet SDK, vitest.
+- Web: Next.js 15, React 19, viem, MetaMask Embedded Wallets (Web3Auth) SDK, vitest.
 - Hosting: AWS Amplify (Next.js SSR), CloudFormation.
 
 ## Open Questions
-- Coinbase CDP: exact SDK, whether embedded wallets sign as EOAs or smart accounts by default, and how gas sponsorship is configured and billed on Base Sepolia. Verify in CDP docs before coding.
+- MetaMask Embedded Wallets: SDK version, whether wallets sign as EOAs or MetaMask smart accounts, which paymaster sponsors gas on Base Sepolia, and that the free Sapphire Devnet tier covers the demo. Verify in the docs before coding.
 - Gmail sending from Lambda: app passwords need 2-step verification on the Gmail account; Gmail may rate-limit or flag automated mail.
 - Who resolves disputes on stage (which wallet holds the resolver role)?
 - Refund deadline length for the demo (long enough not to expire mid-demo, short enough to show a refund in a second order).
@@ -88,5 +88,5 @@ Web env additions (per Amplify branch, set in the template): `NEXT_PUBLIC_CHAIN_
 3. Backend: `backend/src/chain.ts` (real events, uint256 IDs), `backend/src/service.ts` (invite/accept by email, driver assignment), new `backend/src/email.ts` (Gmail SMTP from Secrets Manager), tests first in `backend/test/`.
 4. Backend stack: `infra/backend-lambda.yaml` — chain + SMTP settings, multiple origins, secrets read at runtime, removable database.
 5. User stores the Gmail app password in Secrets Manager; deploy the backend after cost approval.
-6. Web: `src/lib/escrow.ts` (viem + ABI), `src/lib/wallets.ts` (MetaMask for buyer, CDP embedded for supplier/driver), order, accept, handoff (QR + webcam) and balance-panel views; env vars in `infra/amplify-hosting.yaml`.
+6. Web: `src/lib/escrow.ts` (viem + ABI), `src/lib/wallets.ts` (MetaMask extension for the buyer, MetaMask Embedded Wallets for supplier and driver), order, accept, handoff (QR + webcam) and balance-panel views; env vars in `infra/amplify-hosting.yaml`.
 7. Rehearse on the integration preview three times in a row, then release the `demo` URL.
