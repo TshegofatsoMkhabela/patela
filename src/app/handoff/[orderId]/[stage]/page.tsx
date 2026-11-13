@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { PaidScreen } from "@/components/PaidScreen";
 import { QrScanner } from "@/components/QrScanner";
 import { connectEmbeddedWallet, connectExtensionWallet, type WalletSigner } from "@/lib/embedded-wallet";
+import { demoSignerAvailable, demoWalletSigner, type DemoPersona } from "@/lib/demo-signer";
 import { contractErrorMessage, type Stage } from "@/lib/handoff";
-import { API_ORIGIN, browserApi, browserLocate, waitForReleaseOnChain } from "../../handoff-api";
+import { API_ORIGIN, browserApi, locateOrDemo, waitForReleaseOnChain } from "../../handoff-api";
 import { readOrderParties, runGiver, runReceiver, type FlowDeps, type FlowState } from "../../handoff-flow";
 
 const parseStage = (s: string): Stage | null => (s === "1" || s === "pickup" ? 1 : s === "2" || s === "delivery" ? 2 : null);
@@ -26,10 +27,19 @@ export default function HandoffPage() {
   const [scanned, setScanned] = useState<string | null>(null);
   const confirmRef = useRef<() => void>(() => {});
   const started = useRef(false);
+  const localDemo = demoSignerAvailable();
+  const [pasted, setPasted] = useState("");
+  // Pickup: supplier hands to driver. Delivery: driver hands to buyer.
+  const personas: DemoPersona[] = stage === 1 ? ["supplier", "driver"] : ["driver", "buyer"];
 
-  async function connect(kind: "extension" | "embedded") {
+  async function connect(kind: "extension" | "embedded" | DemoPersona) {
     try {
-      const s = kind === "extension" ? await connectExtensionWallet() : await connectEmbeddedWallet(email.trim());
+      const s =
+        kind === "extension"
+          ? await connectExtensionWallet()
+          : kind === "embedded"
+            ? await connectEmbeddedWallet(email.trim())
+            : demoWalletSigner(kind);
       const parties = readOrderParties(await browserApi.request("GET", `/orders/${encodeURIComponent(orderId)}`), stage!);
       const me = s.address.toLowerCase();
       const r = me === parties.giver.toLowerCase() ? "giver" : me === parties.receiver.toLowerCase() ? "receiver" : null;
@@ -47,7 +57,7 @@ export default function HandoffPage() {
     signer: s,
     now: () => Date.now(),
     sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
-    locate: browserLocate,
+    locate: locateOrDemo(localDemo),
     confirm: () => new Promise<void>((resolve) => (confirmRef.current = resolve)),
     waitForRelease: waitForReleaseOnChain,
     onState: setState,
@@ -83,9 +93,26 @@ export default function HandoffPage() {
   return (
     <main className="mx-auto max-w-xl space-y-6 p-8">
       <h1 className="text-2xl font-semibold">{stage === 1 ? "Pickup" : "Delivery"} handoff</h1>
-      <p className="text-sm opacity-70">Demo on Base Sepolia with test MockZARP. Gas is sponsored by Patela.</p>
+      <p className="text-sm opacity-70">
+        {localDemo
+          ? "Demo on a local Hardhat chain with test MockZARP. Sign in to Patela as your persona in this window first."
+          : "Demo on Base Sepolia with test MockZARP. Gas is sponsored by Patela."}
+      </p>
 
-      {!signer && (
+      {!signer && localDemo && (
+        <section className="space-y-2">
+          <p>Demo wallets (Hardhat dev accounts, local chain only):</p>
+          <div className="flex flex-wrap gap-2">
+            {personas.map((p) => (
+              <Button key={p} onClick={() => connect(p)}>
+                I am the {p} (demo)
+              </Button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {!signer && !localDemo && (
         <section className="space-y-3">
           <p>Connect the wallet for your role.</p>
           <div className="flex gap-2">
@@ -106,6 +133,12 @@ export default function HandoffPage() {
         <section className="space-y-2">
           <p>Point the webcam at the QR on the other screen.</p>
           <QrScanner onScan={setScanned} />
+          {localDemo && (
+            <div className="flex gap-2">
+              <Input placeholder="Demo: paste the QR text (patela:h1:…)" value={pasted} onChange={(e) => setPasted(e.target.value)} />
+              <Button disabled={!pasted.startsWith("patela:")} onClick={() => setScanned(pasted.trim())}>Use pasted QR</Button>
+            </div>
+          )}
         </section>
       )}
 
@@ -114,6 +147,11 @@ export default function HandoffPage() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={qrImage} alt="Handoff QR code" className="mx-auto" width={360} height={360} />
           <Countdown expiresAt={state.expiresAt} />
+          {localDemo && (
+            <Button variant="outline" onClick={() => void navigator.clipboard?.writeText(state.qr)}>
+              Demo: copy QR text for the other window
+            </Button>
+          )}
           <p className="text-sm opacity-70">Waiting for the receiver to scan…</p>
         </section>
       )}
@@ -143,7 +181,7 @@ const STATUS = {
   locating: "Getting your location…",
   signing: "Confirm the signature in your wallet…",
   submitting: "Sending the release transaction…",
-  confirming: "Waiting for Base Sepolia to confirm…",
+  confirming: "Waiting for the chain to confirm…",
   "waiting-for-release": "Signed. Waiting for the other side to release payment…",
 };
 

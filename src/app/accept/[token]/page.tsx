@@ -7,6 +7,7 @@ import type { Address, Hex, TypedDataDefinition } from "viem";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { connectEmbeddedWallet, type WalletSigner } from "@/lib/embedded-wallet";
+import { demoSignerAvailable, demoWalletSigner } from "@/lib/demo-signer";
 import { contractErrorMessage } from "@/lib/handoff";
 import { browserApi } from "../../handoff/handoff-api";
 import { readChainOrderId, readWallet } from "../../handoff/handoff-flow";
@@ -26,14 +27,18 @@ export default function AcceptPage() {
   const [signer, setSigner] = useState<WalletSigner | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // LOCAL DEMO: the backend returns sign-in codes and invite links instead of emailing them.
+  const [demoNote, setDemoNote] = useState<string | null>(null);
+  const localDemo = demoSignerAvailable();
 
   useEffect(() => {
     (async () => {
       try {
         const inv = (await browserApi.request("GET", `/invitations/${encodeURIComponent(token)}`)) as Invitation;
         setInvite(inv);
-        const signedIn = await browserApi.request("GET", "/me").then(() => true, () => false);
-        setStep(signedIn ? "wallet" : "sign-in");
+        // Only a session for the invited email counts (another persona may be signed in here).
+        const me = (await browserApi.request("GET", "/me").catch(() => null)) as { email?: string } | null;
+        setStep(me?.email?.toLowerCase() === inv.email.toLowerCase() ? "wallet" : "sign-in");
       } catch (err) {
         setError(contractErrorMessage(err));
       }
@@ -68,7 +73,13 @@ export default function AcceptPage() {
 
   const requestCode = () =>
     run("Sending code…", async () => {
-      await browserApi.request("POST", "/auth/otp/request", { email: invite!.email });
+      const sent = (await browserApi.request("POST", "/auth/otp/request", { email: invite!.email })) as {
+        code?: string;
+      };
+      if (sent?.code) {
+        setCode(sent.code);
+        setDemoNote(`Demo inbox: your sign-in code is ${sent.code} (filled in for you).`);
+      }
       setStep("code");
     });
 
@@ -80,7 +91,8 @@ export default function AcceptPage() {
 
   const createWallet = () =>
     run("Creating your wallet…", async () => {
-      const s = await connectEmbeddedWallet(invite!.email);
+      // Local chain: the invited persona signs with its Hardhat dev account (demo only).
+      const s = localDemo ? demoWalletSigner(invite!.role) : await connectEmbeddedWallet(invite!.email);
       const challenge = (await browserApi.request("POST", "/wallet/challenge", { wallet: s.address })) as {
         challengeId: string;
         typedData: TypedDataDefinition & { message: Record<string, unknown> };
@@ -108,7 +120,10 @@ export default function AcceptPage() {
 
   const inviteDriver = () =>
     run("Inviting driver…", async () => {
-      await browserApi.request("POST", `/orders/${encodeURIComponent(invite!.orderId)}/driver-invite`, { email: driverEmail.trim() });
+      const sent = (await browserApi.request("POST", `/orders/${encodeURIComponent(invite!.orderId)}/driver-invite`, {
+        email: driverEmail.trim(),
+      })) as { acceptUrl?: string };
+      if (sent?.acceptUrl) setDemoNote(`Demo inbox: send the driver this link: ${sent.acceptUrl}`);
       setStep("await-driver");
     });
 
@@ -124,7 +139,11 @@ export default function AcceptPage() {
   return (
     <main className="mx-auto max-w-2xl space-y-6 p-8">
       <h1 className="text-2xl font-semibold">{invite?.role === "driver" ? "Driver invitation" : "Order invitation"}</h1>
-      <p className="text-sm opacity-70">Demo on Base Sepolia with test MockZARP. Gas is sponsored by Patela.</p>
+      <p className="text-sm opacity-70">
+        {localDemo
+          ? "Demo on a local Hardhat chain with test MockZARP. Your demo wallet is a Hardhat dev account."
+          : "Demo on Base Sepolia with test MockZARP. Gas is sponsored by Patela."}
+      </p>
 
       {invite && (
         <section className="space-y-2">
@@ -145,8 +164,12 @@ export default function AcceptPage() {
       )}
       {step === "wallet" && (
         <div className="space-y-1">
-          <Button onClick={createWallet} disabled={!!busy}>Create my wallet</Button>
-          <p className="text-xs opacity-70">MetaMask Embedded Wallet will email you a second code to unlock your wallet.</p>
+          <Button onClick={createWallet} disabled={!!busy}>{localDemo ? "Use my demo wallet" : "Create my wallet"}</Button>
+          <p className="text-xs opacity-70">
+            {localDemo
+              ? "Demo: signs with a Hardhat dev account on the local chain."
+              : "MetaMask Embedded Wallet will email you a second code to unlock your wallet."}
+          </p>
         </div>
       )}
       {step === "accept" && <Button onClick={acceptOrder} disabled={!!busy}>Accept the order</Button>}
@@ -172,6 +195,7 @@ export default function AcceptPage() {
       )}
 
       {signer && <p className="font-mono text-xs opacity-70">Wallet {signer.address}</p>}
+      {demoNote && <p className="break-all rounded border border-dashed p-2 text-sm">{demoNote}</p>}
       {busy && <p aria-live="polite">{busy}</p>}
       {error && <p role="alert" className="text-red-500">{error}</p>}
     </main>

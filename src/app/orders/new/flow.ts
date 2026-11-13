@@ -36,6 +36,8 @@ export type FlowProgress = {
   orderId?: string;
   agreementHash?: Hex;
   refundDeadline?: bigint;
+  /** DEMO_MODE: the supplier's accept link returned by the backend. */
+  acceptUrl?: string;
   chainOrderId?: bigint;
   createTxHash?: Hex;
   chainRecorded?: boolean;
@@ -128,6 +130,7 @@ export async function runOrderFlow(
       progress.orderId = created.id;
       progress.agreementHash = created.agreementHash;
       progress.refundDeadline = refundDeadlineSeconds(created.refundDeadline);
+      if (created.acceptUrl) progress.acceptUrl = created.acceptUrl;
       done("save");
     }
     const orderId = progress.orderId!;

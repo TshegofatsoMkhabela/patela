@@ -6,7 +6,7 @@ import { SiteNav } from "@/components/SiteNav";
 import { BalancePanel } from "@/components/BalancePanel";
 import { ApiError, api, type OrderDetail } from "@/lib/api";
 import { ESCROW_ADDRESS } from "@/lib/contracts";
-import { NETWORK_LABEL, explorerTxUrl } from "@/lib/chain";
+import { NETWORK, NETWORK_LABEL, explorerTxUrl } from "@/lib/chain";
 import { isPaid, partyAddresses, timelineItems } from "./order-data";
 
 const ORDER_POLL_MS = 3000;
@@ -160,6 +160,14 @@ export function OrderView({ id }: { id: string }) {
         </section>
 
         <p style={{ marginTop: 20, color: "#7c8596", fontSize: "0.9rem" }}>{NETWORK_LABEL}</p>
+        {NETWORK.local ? (
+          <p style={{ color: "#7c8596", fontSize: "0.9rem", display: "flex", gap: 16, flexWrap: "wrap" }}>
+            <span>Demo:</span>
+            <Link href="/demo-inbox">Demo inbox (codes and accept links)</Link>
+            <Link href={`/handoff/${encodeURIComponent(id)}/pickup`}>Pickup handoff</Link>
+            <Link href={`/handoff/${encodeURIComponent(id)}/delivery`}>Delivery handoff</Link>
+          </p>
+        ) : null}
       </main>
     </div>
   );

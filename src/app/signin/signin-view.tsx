@@ -113,9 +113,15 @@ export function SignInView() {
     }
     if (!codeSent) {
       runBackend(async () => {
-        await patelaApi.requestOtp(address);
+        const sent = await patelaApi.requestOtp(address);
         setCodeSent(true);
-        toast.info("Code requested. Enter the 6-digit code to continue.");
+        if (sent?.code) {
+          // Local demo: the backend returns the code instead of emailing it.
+          setCode(sent.code);
+          toast.info(`Demo inbox: your code is ${sent.code} (filled in).`);
+        } else {
+          toast.info("Code requested. Enter the 6-digit code to continue.");
+        }
       });
       return;
     }

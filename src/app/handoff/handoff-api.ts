@@ -1,6 +1,6 @@
 import { createPublicClient, http, parseAbiItem, type Hex } from "viem";
-import { baseSepolia } from "viem/chains";
-import { ESCROW_ADDRESS } from "@/lib/contracts";
+import { baseSepolia, hardhat } from "viem/chains";
+import { CHAIN_ID, ESCROW_ADDRESS } from "@/lib/contracts";
 import type { Api, Fix } from "./handoff-flow";
 
 // Browser adapters for the handoff and accept pages. A small local fetch helper until the shared
@@ -38,14 +38,24 @@ export function browserLocate(): Promise<Fix> {
   });
 }
 
+/**
+ * LOCAL DEMO: when the browser can't or won't share a location (both demo windows on one laptop),
+ * fall back to a fixed, clearly fake demo position instead of failing the handoff.
+ */
+export const DEMO_FIX: Fix = { lat: -26.2041, lng: 28.0473, accuracyM: 999 };
+export const locateOrDemo = (localDemo: boolean) => (): Promise<Fix> =>
+  localDemo ? browserLocate().catch(() => DEMO_FIX) : browserLocate();
+
 const handoffVerified = parseAbiItem(
   "event HandoffVerified(uint256 indexed orderId, uint8 stage, address indexed giver, address indexed receiver, bytes32 evidenceHash)",
 );
 
 /** Polls the escrow's HandoffVerified events for this order and stage (receiver side). */
 export async function waitForReleaseOnChain({ chainOrderId, stage }: { chainOrderId: bigint; stage: number }) {
-  const client = createPublicClient({ chain: baseSepolia, transport: http(process.env.NEXT_PUBLIC_RPC_URL || undefined) });
-  const fromBlock = (await client.getBlockNumber()) - 50n;
+  const chain = CHAIN_ID === hardhat.id ? hardhat : baseSepolia;
+  const client = createPublicClient({ chain, transport: http(process.env.NEXT_PUBLIC_RPC_URL || undefined) });
+  const head = await client.getBlockNumber();
+  const fromBlock = head > 50n ? head - 50n : 0n; // a fresh local chain has fewer than 50 blocks
   for (;;) {
     const logs = await client.getLogs({ address: ESCROW_ADDRESS, event: handoffVerified, args: { orderId: chainOrderId }, fromBlock });
     const hit = logs.find((log) => Number(log.args.stage) === stage);

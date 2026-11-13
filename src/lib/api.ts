@@ -82,11 +82,21 @@ export type CreateOrderInput = {
   agreementText: string;
 };
 
+export type DemoEmail = {
+  id: string;
+  to_email: string;
+  template: string;
+  payload: { code?: string; acceptUrl?: string; [key: string]: unknown };
+  created_at: string;
+};
+
 export type CreatedOrder = {
   id: string;
   agreementHash: `0x${string}`;
   /** Unix seconds (becomes the contract's uint64 refundDeadline). */
   refundDeadline: number | string;
+  /** DEMO_MODE only: the supplier's one-time accept link, also emailed. */
+  acceptUrl?: string;
 };
 
 /**
@@ -120,8 +130,11 @@ export type OrderDetail = {
 };
 
 export const api = {
+  /** In the local demo the response also carries the code (`demo: true`). */
   requestOtp: (email: string) =>
-    request<{ queued: boolean }>("POST", "/auth/otp/request", { email }),
+    request<{ queued: boolean; demo?: boolean; code?: string }>("POST", "/auth/otp/request", { email }),
+  /** LOCAL DEMO only (404 elsewhere): what would have been emailed, newest first. */
+  demoInbox: () => request<{ demo: true; emails: DemoEmail[] }>("GET", "/demo/inbox"),
   verifyOtp: (email: string, code: string) =>
     request<unknown>("POST", "/auth/otp/verify", { email, code }),
   logout: () => request<{ signedOut: boolean }>("POST", "/auth/logout", {}),

@@ -28,7 +28,8 @@ export type EscrowWrite =
   | { functionName: "assignDriver"; args: readonly [bigint, Address] }
   | { functionName: "releaseHandoff"; args: readonly [bigint, number, Hex, bigint, Hex, Hex, Hex] };
 
-export type WalletKind = "embedded" | "extension";
+/** "demo" = a Hardhat dev account on the local chain only (src/lib/demo-signer.ts). */
+export type WalletKind = "embedded" | "extension" | "demo";
 
 export type WalletSigner = {
   kind: WalletKind;

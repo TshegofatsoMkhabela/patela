@@ -21,6 +21,7 @@ import {
   type ChainClients,
 } from "@/lib/chain";
 import { ESCROW_ADDRESS } from "@/lib/contracts";
+import { DEMO_EMAILS, demoAccount, demoChainClients } from "@/lib/demo-signer";
 import { STEP_LABELS, runOrderFlow, type FlowProgress, type FlowState, type StepKey } from "./flow";
 
 const STATUS_ICON = { idle: "○", pending: "…", done: "✓", error: "✕" } as const;
@@ -41,8 +42,11 @@ export function NewOrderView() {
   const [walletMsg, setWalletMsg] = useState<{ text: string; error?: boolean } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
-  const [supplierEmail, setSupplierEmail] = useState("");
-  const [supplierWallet, setSupplierWallet] = useState("");
+  // Local chain: prefill the demo supplier persona (Hardhat dev account #2).
+  const [supplierEmail, setSupplierEmail] = useState(NETWORK.local ? DEMO_EMAILS.supplier : "");
+  const [supplierWallet, setSupplierWallet] = useState<string>(
+    NETWORK.local ? demoAccount("supplier").address : "",
+  );
   const [totalZarp, setTotalZarp] = useState("100");
   const [refundAfterHours, setRefundAfterHours] = useState(72);
   const [agreementText, setAgreementText] = useState("");
@@ -83,13 +87,17 @@ export function NewOrderView() {
   const configured = contractsConfigured();
   const locked = Boolean(progress.orderId); // fields frozen once the order exists off-chain
 
-  async function connect() {
+  async function connect(demo = false) {
     setBusy("connect");
     setWalletMsg(null);
     try {
-      const c = await connectMetaMask();
+      const c = demo ? demoChainClients("buyer") : await connectMetaMask();
       setClients(c);
-      setWalletMsg({ text: `MetaMask connected on ${NETWORK.name}.` });
+      setWalletMsg({
+        text: demo
+          ? "Demo buyer wallet (Hardhat dev account #1) on the local chain."
+          : `MetaMask connected on ${NETWORK.name}.`,
+      });
       void refreshZarp(c);
     } catch (err) {
       setWalletMsg({ text: contractErrorMessage(err), error: true });
@@ -243,13 +251,25 @@ export function NewOrderView() {
             </p>
           ) : (
             <p style={{ margin: "0 0 12px", color: "#a2a9b8" }}>
-              Connect the MetaMask extension. You need a little CELO for gas and ZARm to fund the
-              order: on Celo Sepolia, get CELO from the Celo faucet and swap some for ZARm in the
-              Mento app.
+              {NETWORK.local
+                ? "Local demo: use the demo buyer wallet (a Hardhat dev account that already holds MockZARP), or MetaMask pointed at http://127.0.0.1:8545."
+                : NETWORK.mintable
+                  ? `Connect the MetaMask extension on ${NETWORK.name}. You need a little ETH for gas; mint test MockZARP below.`
+                  : "Connect the MetaMask extension. You need a little CELO for gas and ZARm to fund the order: on Celo Sepolia, get CELO from the Celo faucet and swap some for ZARm in the Mento app."}
             </p>
           )}
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button type="button" className="pt-btn" onClick={connect} disabled={busy !== null}>
+            {NETWORK.local && !clients ? (
+              <button
+                type="button"
+                className="pt-btn"
+                onClick={() => connect(true)}
+                disabled={busy !== null}
+              >
+                Use demo buyer wallet
+              </button>
+            ) : null}
+            <button type="button" className="pt-btn" onClick={() => connect()} disabled={busy !== null}>
               {clients
                 ? "Reconnect MetaMask"
                 : busy === "connect"

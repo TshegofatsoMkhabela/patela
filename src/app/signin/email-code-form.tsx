@@ -28,9 +28,14 @@ export function EmailCodeForm() {
     setBusy(true);
     setError(null);
     try {
-      await api.requestOtp(email.trim());
+      const res = await api.requestOtp(email.trim());
       setSent(true);
-      toast.success(`Code sent to ${email.trim()}`);
+      if (res?.code) {
+        setCode(res.code);
+        toast.success(`Demo inbox: your code is ${res.code} (filled in).`);
+      } else {
+        toast.success(`Code sent to ${email.trim()}`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
