@@ -125,6 +125,25 @@
 .pa-submit:hover {
   background: #eaf3f4;
 }
+.pa-submit:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+.pa-link {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: #fff;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.pa-google {
+  display: flex;
+  justify-content: center;
+  min-height: 42px;
+  color-scheme: light;
+}
 .pa-divider {
   display: flex;
   align-items: center;

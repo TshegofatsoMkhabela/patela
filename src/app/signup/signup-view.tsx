@@ -6,6 +6,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { SiteNav } from "@/components/SiteNav";
 import { Reveal } from "@/components/Reveal";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
+import { ApiError, patelaApi, saveAuthUser, toAuthUser, type Profile } from "@/lib/patela-api";
 
 export type RoleType = "buyer" | "carrier" | "supplier" | "driver" | "auditor";
 
@@ -503,8 +505,10 @@ export function SignUpView() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("+27 ");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<RoleType>("buyer");
 
   // Workflow stages: "register" -> "onboarding" -> "completed"
@@ -518,35 +522,74 @@ export function SignUpView() {
   const totalExtraSteps = activeRoleConfig.steps.length;
   const currentStep = activeRoleConfig.steps[currentStepIdx] || activeRoleConfig.steps[0];
 
-  function handleInitialSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function detailsAreValid(): boolean {
     if (!fullName.trim() || fullName.trim().length < 3) {
       toast.error("Please enter your full legal name (at least 3 characters).");
-      return;
+      return false;
     }
-    if (!email.trim() || !email.includes("@")) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       toast.error("Please enter a valid business email address.");
-      return;
+      return false;
     }
     if (!phone.trim() || phone.trim().length < 8) {
       toast.error("Please enter a valid South African mobile number (+27).");
-      return;
+      return false;
     }
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters.");
-      return;
-    }
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match.");
-      return;
-    }
+    return true;
+  }
 
-    // Finished signing up first!
+  async function withBackend(task: () => Promise<void>) {
+    setBusy(true);
+    try {
+      await task();
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Sign-up failed. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // The account exists once the email is verified (the session cookie is set);
+  // save the name on it, then onboard.
+  async function accountCreated() {
+    const named = await patelaApi.updateName(fullName.trim());
+    setProfile(named);
+    saveAuthUser({ ...toAuthUser(named), phone });
     toast.success(
-      `Account created for ${fullName}. Let's complete your ${activeRoleConfig.badge} profile.`,
+      `Account created for ${named.full_name ?? fullName}. Let's complete your ${activeRoleConfig.badge} profile.`,
     );
     setStage("onboarding");
     setCurrentStepIdx(0);
+  }
+
+  function handleInitialSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!detailsAreValid()) return;
+    const address = email.trim();
+    if (!codeSent) {
+      void withBackend(async () => {
+        await patelaApi.requestOtp(address);
+        setCodeSent(true);
+        toast.info("Code requested. Enter the 6-digit code to create your account.");
+      });
+      return;
+    }
+    if (!/^\d{6}$/.test(code)) {
+      toast.error("Enter the 6-digit code.");
+      return;
+    }
+    void withBackend(async () => {
+      await patelaApi.verifyOtp(address, code);
+      await accountCreated();
+    });
+  }
+
+  function handleGoogle(credential: string) {
+    if (!detailsAreValid()) return;
+    void withBackend(async () => {
+      await patelaApi.googleSignIn(credential);
+      await accountCreated();
+    });
   }
 
   function handleFieldChange(fieldId: string, value: string) {
@@ -582,14 +625,18 @@ export function SignUpView() {
     } else {
       // Finished all extra questions one by one!
       const appRole = role === "buyer" ? "client" : role === "auditor" ? "auditor" : "worker";
+      // Demo: the backend cannot store marketplace roles or onboarding answers
+      // yet, so they stay in this browser next to the real account's details.
       const userProfile = {
-        fullName,
-        email,
+        ...(profile ? toAuthUser(profile) : {}),
+        fullName: profile?.full_name ?? fullName,
+        email: profile?.email ?? email,
         phone,
         role: appRole,
         rawRole: role,
         roleTitle: activeRoleConfig.title,
         extraData,
+        extraDataStoredLocally: true,
         registeredAt: new Date().toISOString(),
         verified: true,
       };
@@ -729,7 +776,11 @@ export function SignUpView() {
                     className="pt-in"
                     placeholder="alex@resources.co.za"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setCodeSent(false);
+                      setCode("");
+                    }}
                     required
                   />
                 </div>
@@ -757,30 +808,41 @@ export function SignUpView() {
                   </small>
                 </div>
                 <div className="pt-field">
-                  <label htmlFor="pw">Password</label>
-                  <input
-                    id="pw"
-                    type="password"
-                    className="pt-in"
-                    placeholder="At least 6 characters"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
+                  <label htmlFor="otp">Email verification code</label>
+                  {codeSent ? (
+                    <>
+                      <input
+                        id="otp"
+                        className="pt-in"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={6}
+                        placeholder="6-digit code"
+                        value={code}
+                        onChange={(e) => setCode(e.target.value)}
+                        required
+                      />
+                      <small>Valid for 10 minutes. Change the email above to start again.</small>
+                    </>
+                  ) : (
+                    <small>
+                      No password needed: we&apos;ll send a 6-digit code to your email. Preview:
+                      code emails are queued in the server&apos;s outbox and not delivered yet.
+                    </small>
+                  )}
                 </div>
               </div>
 
               <div className="pt-field">
-                <label htmlFor="cpw">Confirm Password</label>
-                <input
-                  id="cpw"
-                  type="password"
-                  className="pt-in"
-                  placeholder="Repeat your password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
+                <GoogleSignInButton
+                  onCredential={handleGoogle}
+                  className="pt-btn ghost"
+                  fallback={<span>Sign up with Google</span>}
                 />
+                <small>
+                  Your role and onboarding answers are kept in this browser only (demo) until the
+                  Patela server can store them.
+                </small>
               </div>
 
               <div
@@ -802,9 +864,16 @@ export function SignUpView() {
                 <button
                   type="submit"
                   className="pt-btn"
+                  disabled={busy}
                   style={{ padding: "12px 28px", fontSize: "0.95rem" }}
                 >
-                  <span>Create Account &amp; Proceed to {activeRoleConfig.badge} Profile</span>
+                  <span>
+                    {busy
+                      ? "Please wait…"
+                      : codeSent
+                        ? `Verify & Proceed to ${activeRoleConfig.badge} Profile`
+                        : "Send Verification Code"}
+                  </span>
                   <span aria-hidden="true">→</span>
                 </button>
               </div>

@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { KeyRound, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
+import { ApiError, patelaApi, saveAuthUser, toAuthUser } from "@/lib/patela-api";
 import "@/styles/journey-auth.css";
 
 type Method = "code" | "password";
@@ -51,31 +53,57 @@ export function SignInView() {
   const [method, setMethod] = useState<Method>("code");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [sentCode, setSentCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
   const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  function signIn() {
-    const authUser = {
-      fullName: email.split("@")[0],
-      email,
-      role: "buyer",
-      roleTitle: "Commercial Buyer / Consignor",
-      verified: true,
-      signedInAt: new Date().toISOString(),
-    };
-    try {
-      localStorage.setItem("patela_auth_user", JSON.stringify(authUser));
-    } catch {
-      toast.error("This browser could not save the demo session.");
+  function enter(user: Record<string, unknown>, message: string) {
+    if (!saveAuthUser(user)) {
+      toast.error("This browser could not save your session.");
       return;
     }
-    toast.success("Signed in to the Patela demo workspace.");
+    toast.success(message);
     router.push("/html/client-dashboard.html");
+  }
+
+  // Demo only: the backend has no password sign-in.
+  function demoPasswordSignIn() {
+    enter(
+      {
+        fullName: email.split("@")[0],
+        email,
+        role: "buyer",
+        roleTitle: "Commercial Buyer / Consignor",
+        verified: true,
+        source: "demo",
+        signedInAt: new Date().toISOString(),
+      },
+      "Signed in to the Patela demo workspace.",
+    );
+  }
+
+  async function withBackend(task: () => Promise<void>) {
+    setBusy(true);
+    try {
+      await task();
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Sign-in failed. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function handleGoogle(credential: string) {
+    void withBackend(async () => {
+      const profile = await patelaApi.googleSignIn(credential);
+      enter(toAuthUser(profile), "Signed in with Google.");
+    });
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    const address = email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)) {
       toast.error("Enter a valid email address.");
       return;
     }
@@ -84,20 +112,25 @@ export function SignInView() {
         toast.error("Enter your password.");
         return;
       }
-      signIn();
+      demoPasswordSignIn();
       return;
     }
-    if (!sentCode) {
-      const nextCode = String(Math.floor(100000 + Math.random() * 900000));
-      setSentCode(nextCode);
-      toast.info(`Demo code: ${nextCode}. No email was sent.`);
+    if (!codeSent) {
+      void withBackend(async () => {
+        await patelaApi.requestOtp(address);
+        setCodeSent(true);
+        toast.info("Code requested. Enter the 6-digit code to continue.");
+      });
       return;
     }
-    if (code !== sentCode) {
-      toast.error("That demo code does not match.");
+    if (!/^\d{6}$/.test(code)) {
+      toast.error("Enter the 6-digit code.");
       return;
     }
-    signIn();
+    void withBackend(async () => {
+      const profile = await patelaApi.verifyOtp(address, code);
+      enter(toAuthUser(profile), "Signed in to Patela.");
+    });
   }
 
   return (
@@ -116,7 +149,7 @@ export function SignInView() {
                 className={method === "code" ? "active" : ""}
                 onClick={() => {
                   setMethod("code");
-                  setSentCode("");
+                  setCodeSent(false);
                   setCode("");
                 }}
               >
@@ -128,7 +161,7 @@ export function SignInView() {
                 className={method === "password" ? "active" : ""}
                 onClick={() => setMethod("password")}
               >
-                <KeyRound size={17} /> Password
+                <KeyRound size={17} /> Password (demo)
               </button>
             </div>
             <label htmlFor="pa-email">Email</label>
@@ -140,7 +173,7 @@ export function SignInView() {
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
-                setSentCode("");
+                setCodeSent(false);
                 setCode("");
               }}
               required
@@ -159,12 +192,15 @@ export function SignInView() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
-                <p className="pa-help">This preview accepts any password for a demo session.</p>
+                <p className="pa-help">
+                  Demo only: any password opens a local demo session. It does not sign you in to the
+                  Patela server.
+                </p>
               </>
-            ) : sentCode ? (
+            ) : codeSent ? (
               <>
                 <label htmlFor="pa-code" className="pa-secondary-label">
-                  Demo code
+                  Sign-in code
                 </label>
                 <input
                   id="pa-code"
@@ -177,26 +213,47 @@ export function SignInView() {
                   required
                 />
                 <p className="pa-help">
-                  Demo code: <strong>{sentCode}</strong>. No email was sent.
+                  The code is valid for 10 minutes.{" "}
+                  <button
+                    type="button"
+                    className="pa-link"
+                    onClick={() => {
+                      setCodeSent(false);
+                      setCode("");
+                    }}
+                  >
+                    Use a different email
+                  </button>
                 </p>
               </>
             ) : (
-              <p className="pa-help">We&apos;ll show you a demo code. No email will be sent.</p>
+              <p className="pa-help">
+                We&apos;ll send a 6-digit code to this email. Preview: code emails are queued in the
+                server&apos;s outbox and not delivered yet.
+              </p>
             )}
-            <button className="pa-submit" type="submit">
-              {method === "password" ? "Sign in" : sentCode ? "Verify code" : "Send code"}
+            <button className="pa-submit" type="submit" disabled={busy}>
+              {busy
+                ? "Please wait…"
+                : method === "password"
+                  ? "Sign in (demo)"
+                  : codeSent
+                    ? "Verify code"
+                    : "Send code"}
             </button>
           </form>
           <div className="pa-divider">
             <span>Or continue with</span>
           </div>
           <div className="pa-social">
-            <button
-              type="button"
-              onClick={() => toast.info("Google sign-in is not connected in this demo.")}
-            >
-              <GoogleMark /> Continue with Google
-            </button>
+            <GoogleSignInButton
+              onCredential={handleGoogle}
+              fallback={
+                <>
+                  <GoogleMark /> Continue with Google
+                </>
+              }
+            />
             <button
               type="button"
               onClick={() => toast.info("MetaMask sign-in is not connected in this demo.")}
@@ -208,7 +265,9 @@ export function SignInView() {
         <p className="pa-signup">
           Don&apos;t have an account? <Link href="/signup">Sign up</Link>
         </p>
-        <p className="pa-demo">Patela product preview · Authentication is simulated</p>
+        <p className="pa-demo">
+          Patela product preview · Email code and Google use the Patela server · Password is a demo
+        </p>
       </div>
     </main>
   );
