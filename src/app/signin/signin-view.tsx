@@ -6,6 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { SiteNav } from "@/components/SiteNav";
 import { Reveal } from "@/components/Reveal";
+import { EmailCodeForm } from "./email-code-form";
 
 interface DemoAccount {
   name: string;
@@ -73,44 +74,6 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
 
 export function SignInView() {
   const router = useRouter();
-  const [selectedRole, setSelectedRole] = useState<"client" | "worker">("client");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(true);
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!email.trim() || !email.includes("@")) {
-      toast.error("Please enter a valid email address.");
-      return;
-    }
-    if (!password.trim()) {
-      toast.error("Please enter your password.");
-      return;
-    }
-
-    // Sign in demo session
-    const authUser = {
-      fullName: email.split("@")[0].toUpperCase(),
-      email,
-      role: selectedRole,
-      roleTitle:
-        selectedRole === "client" ? "Commercial Consignor / Buyer" : "Logistics Partner / Supplier",
-      verified: true,
-      signedInAt: new Date().toISOString(),
-    };
-    try {
-      localStorage.setItem("patela_auth_user", JSON.stringify(authUser));
-      localStorage.setItem("patela_current_role", selectedRole);
-    } catch {
-      /* safe */
-    }
-
-    toast.success(`Welcome back! Signed in as ${email}.`);
-    router.push(
-      selectedRole === "client" ? "/html/client-dashboard.html" : "/html/worker-dashboard.html",
-    );
-  }
 
   function handleDemoLogin(account: DemoAccount) {
     const authUser = {
@@ -159,184 +122,8 @@ export function SignInView() {
               gap: 28,
             }}
           >
-            {/* Standard Credentials Sign In */}
-            <form
-              className="pt-form pt-card"
-              onSubmit={handleSubmit}
-              style={{ padding: "36px 32px", marginTop: 0 }}
-            >
-              <div style={{ marginBottom: 20 }}>
-                <h2 style={{ fontSize: "1.25rem", margin: "0 0 4px", fontWeight: 600 }}>
-                  Account Credentials
-                </h2>
-                <p style={{ color: "#a2a9b8", fontSize: "0.875rem", margin: 0 }}>
-                  Enter your registered enterprise email and password.
-                </p>
-              </div>
-
-              <div style={{ marginBottom: 18 }}>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "0.8rem",
-                    color: "#d9c39a",
-                    marginBottom: 8,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                  }}
-                >
-                  Select Operating Workspace
-                </label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      padding: "10px 12px",
-                      borderRadius: 10,
-                      border:
-                        selectedRole === "client"
-                          ? "1px solid #ffe2b2"
-                          : "1px solid rgba(196,214,232,0.15)",
-                      background:
-                        selectedRole === "client" ? "rgba(255,226,178,0.08)" : "transparent",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="wsRole"
-                      value="client"
-                      checked={selectedRole === "client"}
-                      onChange={() => setSelectedRole("client")}
-                      style={{ accentColor: "#ffe2b2" }}
-                    />
-                    <div>
-                      <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#fff" }}>
-                        Client
-                      </div>
-                      <div style={{ fontSize: "0.7rem", color: "#a2a9b8" }}>Buyer / Consignor</div>
-                    </div>
-                  </label>
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      padding: "10px 12px",
-                      borderRadius: 10,
-                      border:
-                        selectedRole === "worker"
-                          ? "1px solid #7ea6e0"
-                          : "1px solid rgba(196,214,232,0.15)",
-                      background:
-                        selectedRole === "worker" ? "rgba(126,166,224,0.08)" : "transparent",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="wsRole"
-                      value="worker"
-                      checked={selectedRole === "worker"}
-                      onChange={() => setSelectedRole("worker")}
-                      style={{ accentColor: "#ffe2b2" }}
-                    />
-                    <div>
-                      <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#fff" }}>
-                        Worker
-                      </div>
-                      <div style={{ fontSize: "0.7rem", color: "#a2a9b8" }}>Carrier / Supplier</div>
-                    </div>
-                  </label>
-                </div>
-              </div>
-
-              <div className="pt-field">
-                <label htmlFor="si-email">Business Email or Phone</label>
-                <input
-                  id="si-email"
-                  type="email"
-                  className="pt-in"
-                  placeholder="name@company.co.za"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="pt-field">
-                <div
-                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-                >
-                  <label htmlFor="si-pw">Password</label>
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toast.info(
-                        "For testnet demo: use any password or click a quick persona below.",
-                      );
-                    }}
-                    style={{ fontSize: "0.8rem", color: "#ffe2b2", textDecoration: "underline" }}
-                  >
-                    Forgot password?
-                  </a>
-                </div>
-                <input
-                  id="si-pw"
-                  type="password"
-                  className="pt-in"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "6px 0 16px" }}>
-                <input
-                  type="checkbox"
-                  id="rem"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                  style={{ accentColor: "#ffe2b2", width: 16, height: 16 }}
-                />
-                <label
-                  htmlFor="rem"
-                  style={{ fontSize: "0.85rem", color: "#a2a9b8", cursor: "pointer" }}
-                >
-                  Remember this device for 30 days
-                </label>
-              </div>
-
-              <button
-                type="submit"
-                className="pt-btn"
-                style={{ width: "100%", justifyContent: "center", padding: "13px" }}
-              >
-                <span>Sign In to Workspace</span>
-                <span aria-hidden="true">→</span>
-              </button>
-
-              <div
-                style={{
-                  textAlign: "center",
-                  marginTop: 22,
-                  fontSize: "0.85rem",
-                  color: "#a2a9b8",
-                }}
-              >
-                Don&apos;t have an account yet?{" "}
-                <Link
-                  href="/signup"
-                  style={{ color: "#ffe2b2", fontWeight: 600, textDecoration: "underline" }}
-                >
-                  Sign up with progressive onboarding
-                </Link>
-              </div>
-            </form>
+            {/* Backend session sign-in (email code) */}
+            <EmailCodeForm />
 
             {/* Quick 1-Click Persona Logins */}
             <div className="pt-card" style={{ padding: "36px 32px" }}>
@@ -352,7 +139,8 @@ export function SignInView() {
                 </h2>
                 <p style={{ color: "#a2a9b8", fontSize: "0.85rem", margin: 0 }}>
                   Switch directly into any verified supply chain role to inspect their dedicated
-                  screens and controls:
+                  screens and controls (demo preview only: stored in this browser, not signed in
+                  to Patela, and not used by the escrow order flow):
                 </p>
               </div>
 
