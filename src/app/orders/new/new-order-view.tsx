@@ -272,7 +272,12 @@ export function NewOrderView() {
                 Use demo buyer wallet
               </button>
             ) : null}
-            <button type="button" className="pt-btn" onClick={() => connect()} disabled={busy !== null}>
+            <button
+              type="button"
+              className="pt-btn"
+              onClick={() => connect()}
+              disabled={busy !== null}
+            >
               {clients
                 ? "Reconnect MetaMask"
                 : busy === "connect"
@@ -387,7 +392,9 @@ export function NewOrderView() {
                         </span>
                       ) : null}
                       {k === "supplier" && s.status === "pending" && progress.acceptUrl ? (
-                        <span style={{ display: "block", fontSize: "0.85rem", wordBreak: "break-all" }}>
+                        <span
+                          style={{ display: "block", fontSize: "0.85rem", wordBreak: "break-all" }}
+                        >
                           Demo inbox: open this link as the supplier (another browser profile or
                           private window): <a href={progress.acceptUrl}>{progress.acceptUrl}</a>
                         </span>

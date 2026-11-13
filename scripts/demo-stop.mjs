@@ -18,10 +18,13 @@ for (const name of ["web", "backend", "hardhat"]) {
   const pid = pids[name];
   if (!pid) continue;
   // Kill the whole tree: next and tsx start child processes of their own.
-  const result = process.platform === "win32"
-    ? spawnSync("taskkill", ["/T", "/F", "/PID", String(pid)], { stdio: "ignore" })
-    : spawnSync("kill", ["-TERM", `-${pid}`], { stdio: "ignore" });
-  process.stdout.write(`[demo] ${name} (pid ${pid}) ${result.status === 0 ? "stopped" : "was not running"}\n`);
+  const result =
+    process.platform === "win32"
+      ? spawnSync("taskkill", ["/T", "/F", "/PID", String(pid)], { stdio: "ignore" })
+      : spawnSync("kill", ["-TERM", `-${pid}`], { stdio: "ignore" });
+  process.stdout.write(
+    `[demo] ${name} (pid ${pid}) ${result.status === 0 ? "stopped" : "was not running"}\n`,
+  );
 }
 if (pids.dockerContainer) {
   spawnSync("docker", ["rm", "-f", pids.dockerContainer], { stdio: "ignore" });

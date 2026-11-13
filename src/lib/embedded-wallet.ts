@@ -21,7 +21,9 @@ import { ESCROW_ADDRESS, escrowAbi } from "@/lib/contracts";
 
 export const BASE_SEPOLIA_HEX = "0x14a34";
 
-export type Eip1193Provider = { request(args: { method: string; params?: unknown }): Promise<unknown> };
+export type Eip1193Provider = {
+  request(args: { method: string; params?: unknown }): Promise<unknown>;
+};
 
 export type EscrowWrite =
   | { functionName: "acceptOrder"; args: readonly [bigint, Hex] }
@@ -34,7 +36,10 @@ export type WalletKind = "embedded" | "extension" | "demo";
 export type WalletSigner = {
   kind: WalletKind;
   address: Address;
-  signTypedData<const T extends TypedData | Record<string, unknown>, P extends keyof T | "EIP712Domain">(
+  signTypedData<
+    const T extends TypedData | Record<string, unknown>,
+    P extends keyof T | "EIP712Domain",
+  >(
     td: TypedDataDefinition<T, P>,
   ): Promise<Hex>;
   /** Sends an escrow call (sponsored for the embedded wallet) and returns the transaction hash. */
@@ -79,12 +84,18 @@ export function embeddedWalletOptions(env: Env = publicEnv()) {
       : undefined,
     // Bundler and paymaster URLs come from the dashboard (Smart accounts > Bundler & Paymaster),
     // deep-merged with this by the SDK.
-    accountAbstractionConfig: { smartAccountType: "metamask" as const, smartAccountEipStandard: "7702" as const },
+    accountAbstractionConfig: {
+      smartAccountType: "metamask" as const,
+      smartAccountEipStandard: "7702" as const,
+    },
   };
 }
 
 const defaultPublicClient = (): ReceiptClient =>
-  createPublicClient({ chain: baseSepolia, transport: http(process.env.NEXT_PUBLIC_RPC_URL || undefined) });
+  createPublicClient({
+    chain: baseSepolia,
+    transport: http(process.env.NEXT_PUBLIC_RPC_URL || undefined),
+  });
 
 export async function signerFromProvider(
   provider: Eip1193Provider,
@@ -95,7 +106,8 @@ export async function signerFromProvider(
   if (kind === "extension") await ensureBaseSepolia(provider);
 
   const wallet = createWalletClient({ chain: baseSepolia, transport: custom(provider) });
-  const [address] = kind === "extension" ? await wallet.requestAddresses() : await wallet.getAddresses();
+  const [address] =
+    kind === "extension" ? await wallet.requestAddresses() : await wallet.getAddresses();
   if (!address) throw new Error("The wallet returned no account");
   let receipts = opts.publicClient;
 
@@ -103,7 +115,10 @@ export async function signerFromProvider(
     kind,
     address,
     async signTypedData(td) {
-      const signature = await wallet.signTypedData({ account: address, ...(td as TypedDataDefinition) });
+      const signature = await wallet.signTypedData({
+        account: address,
+        ...(td as TypedDataDefinition),
+      });
       const signer = await recoverTypedDataAddress({ ...(td as TypedDataDefinition), signature });
       if (signer.toLowerCase() !== address.toLowerCase()) {
         throw new Error(
@@ -115,7 +130,13 @@ export async function signerFromProvider(
     },
     writeEscrow(call) {
       // value is explicit: the SDK's smart-account path calls BigInt(value) on it.
-      return wallet.writeContract({ account: address, address: escrow, abi: escrowAbi, value: 0n, ...call } as never);
+      return wallet.writeContract({
+        account: address,
+        address: escrow,
+        abi: escrowAbi,
+        value: 0n,
+        ...call,
+      } as never);
     },
     async waitForReceipt(hash) {
       receipts ??= defaultPublicClient();
@@ -128,7 +149,10 @@ export async function signerFromProvider(
 async function ensureBaseSepolia(provider: Eip1193Provider) {
   const current = String(await provider.request({ method: "eth_chainId" })).toLowerCase();
   if (current === BASE_SEPOLIA_HEX) return;
-  await provider.request({ method: "wallet_switchEthereumChain", params: [{ chainId: BASE_SEPOLIA_HEX }] });
+  await provider.request({
+    method: "wallet_switchEthereumChain",
+    params: [{ chainId: BASE_SEPOLIA_HEX }],
+  });
 }
 
 /** Buyer's MetaMask extension. */

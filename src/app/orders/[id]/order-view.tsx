@@ -161,7 +161,15 @@ export function OrderView({ id }: { id: string }) {
 
         <p style={{ marginTop: 20, color: "#7c8596", fontSize: "0.9rem" }}>{NETWORK_LABEL}</p>
         {NETWORK.local ? (
-          <p style={{ color: "#7c8596", fontSize: "0.9rem", display: "flex", gap: 16, flexWrap: "wrap" }}>
+          <p
+            style={{
+              color: "#7c8596",
+              fontSize: "0.9rem",
+              display: "flex",
+              gap: 16,
+              flexWrap: "wrap",
+            }}
+          >
             <span>Demo:</span>
             <Link href="/demo-inbox">Demo inbox (codes and accept links)</Link>
             <Link href={`/handoff/${encodeURIComponent(id)}/pickup`}>Pickup handoff</Link>

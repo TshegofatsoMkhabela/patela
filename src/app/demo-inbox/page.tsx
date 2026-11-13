@@ -15,7 +15,8 @@ export default function DemoInboxPage() {
     const load = () =>
       api.demoInbox().then(
         (r) => !stop && (setEmails(r.emails), setError(null)),
-        () => !stop && setError("The demo inbox is only available in the local demo (npm run demo)."),
+        () =>
+          !stop && setError("The demo inbox is only available in the local demo (npm run demo)."),
       );
     void load();
     const t = setInterval(load, 3000);
@@ -26,8 +27,12 @@ export default function DemoInboxPage() {
   }, []);
 
   return (
-    <main style={{ maxWidth: 860, margin: "0 auto", padding: "40px 16px", fontFamily: "system-ui" }}>
-      <p style={{ textTransform: "uppercase", letterSpacing: 1, fontSize: 12, opacity: 0.7 }}>Demo</p>
+    <main
+      style={{ maxWidth: 860, margin: "0 auto", padding: "40px 16px", fontFamily: "system-ui" }}
+    >
+      <p style={{ textTransform: "uppercase", letterSpacing: 1, fontSize: 12, opacity: 0.7 }}>
+        Demo
+      </p>
       <h1 style={{ margin: "4px 0 8px" }}>Demo inbox</h1>
       <p style={{ opacity: 0.75, marginTop: 0 }}>
         Local demo only: emails are not sent. Sign-in codes and accept links appear here instead.
@@ -37,15 +42,22 @@ export default function DemoInboxPage() {
       {emails && emails.length === 0 ? <p>No emails yet.</p> : null}
       <ul style={{ listStyle: "none", padding: 0 }}>
         {emails?.map((e) => (
-          <li key={e.id} style={{ border: "1px solid #8884", borderRadius: 8, padding: 12, marginBottom: 10 }}>
+          <li
+            key={e.id}
+            style={{ border: "1px solid #8884", borderRadius: 8, padding: 12, marginBottom: 10 }}
+          >
             <div style={{ fontSize: 13, opacity: 0.7 }}>
               {new Date(e.created_at).toLocaleTimeString()} · to {e.to_email} · {e.template}
             </div>
             {e.payload.code ? (
-              <div style={{ fontFamily: "monospace", fontSize: 22, marginTop: 4 }}>{e.payload.code}</div>
+              <div style={{ fontFamily: "monospace", fontSize: 22, marginTop: 4 }}>
+                {e.payload.code}
+              </div>
             ) : null}
             {e.payload.acceptUrl ? (
-              <Link href={new URL(e.payload.acceptUrl).pathname + new URL(e.payload.acceptUrl).search}>
+              <Link
+                href={new URL(e.payload.acceptUrl).pathname + new URL(e.payload.acceptUrl).search}
+              >
                 Open accept link
               </Link>
             ) : null}

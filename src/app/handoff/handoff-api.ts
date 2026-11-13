@@ -51,13 +51,27 @@ const handoffVerified = parseAbiItem(
 );
 
 /** Polls the escrow's HandoffVerified events for this order and stage (receiver side). */
-export async function waitForReleaseOnChain({ chainOrderId, stage }: { chainOrderId: bigint; stage: number }) {
+export async function waitForReleaseOnChain({
+  chainOrderId,
+  stage,
+}: {
+  chainOrderId: bigint;
+  stage: number;
+}) {
   const chain = CHAIN_ID === hardhat.id ? hardhat : baseSepolia;
-  const client = createPublicClient({ chain, transport: http(process.env.NEXT_PUBLIC_RPC_URL || undefined) });
+  const client = createPublicClient({
+    chain,
+    transport: http(process.env.NEXT_PUBLIC_RPC_URL || undefined),
+  });
   const head = await client.getBlockNumber();
   const fromBlock = head > 50n ? head - 50n : 0n; // a fresh local chain has fewer than 50 blocks
   for (;;) {
-    const logs = await client.getLogs({ address: ESCROW_ADDRESS, event: handoffVerified, args: { orderId: chainOrderId }, fromBlock });
+    const logs = await client.getLogs({
+      address: ESCROW_ADDRESS,
+      event: handoffVerified,
+      args: { orderId: chainOrderId },
+      fromBlock,
+    });
     const hit = logs.find((log) => Number(log.args.stage) === stage);
     if (hit?.transactionHash) return { txHash: hit.transactionHash as Hex };
     await new Promise((r) => setTimeout(r, 1500));

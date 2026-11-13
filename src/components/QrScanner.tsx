@@ -22,7 +22,10 @@ export function QrScanner({ onScan }: { onScan: (text: string) => void }) {
     (async () => {
       try {
         const { default: jsQR } = await import("jsqr");
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+          audio: false,
+        });
         const video = videoRef.current;
         if (!video || stopped) return;
         video.srcObject = stream;
@@ -45,7 +48,9 @@ export function QrScanner({ onScan }: { onScan: (text: string) => void }) {
         };
         tick();
       } catch (err) {
-        setError(err instanceof Error ? `Camera unavailable: ${err.message}` : "Camera unavailable");
+        setError(
+          err instanceof Error ? `Camera unavailable: ${err.message}` : "Camera unavailable",
+        );
       }
     })();
 
@@ -58,8 +63,18 @@ export function QrScanner({ onScan }: { onScan: (text: string) => void }) {
 
   return (
     <div className="space-y-2">
-      <video ref={videoRef} muted playsInline className="w-full max-w-md rounded-lg border bg-black" aria-label="Webcam QR scanner" />
-      {error && <p role="alert" className="text-sm text-red-500">{error}</p>}
+      <video
+        ref={videoRef}
+        muted
+        playsInline
+        className="w-full max-w-md rounded-lg border bg-black"
+        aria-label="Webcam QR scanner"
+      />
+      {error && (
+        <p role="alert" className="text-sm text-red-500">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

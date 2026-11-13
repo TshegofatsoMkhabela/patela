@@ -10,7 +10,11 @@ function Redirect() {
   useEffect(() => {
     if (token) router.replace(`/accept/${encodeURIComponent(token)}`);
   }, [router, token]);
-  return <p className="p-8">{token ? "Opening your invitation…" : "This invitation link has no token."}</p>;
+  return (
+    <p className="p-8">
+      {token ? "Opening your invitation…" : "This invitation link has no token."}
+    </p>
+  );
 }
 
 export default function AcceptRedirectPage() {

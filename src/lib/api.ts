@@ -132,7 +132,9 @@ export type OrderDetail = {
 export const api = {
   /** In the local demo the response also carries the code (`demo: true`). */
   requestOtp: (email: string) =>
-    request<{ queued: boolean; demo?: boolean; code?: string }>("POST", "/auth/otp/request", { email }),
+    request<{ queued: boolean; demo?: boolean; code?: string }>("POST", "/auth/otp/request", {
+      email,
+    }),
   /** LOCAL DEMO only (404 elsewhere): what would have been emailed, newest first. */
   demoInbox: () => request<{ demo: true; emails: DemoEmail[] }>("GET", "/demo/inbox"),
   verifyOtp: (email: string, code: string) =>

@@ -14,7 +14,9 @@ describe("demo signer", () => {
   it("Given the local chain 31337, Then demo personas are Hardhat dev accounts #1-#3", () => {
     expect(demoSignerAvailable(31337)).toBe(true);
     expect(demoAccount("buyer", 31337).address).toBe("0x70997970C51812dc3A010C7d01b50e0d17dc79C8");
-    expect(demoAccount("supplier", 31337).address).toBe("0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC");
+    expect(demoAccount("supplier", 31337).address).toBe(
+      "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+    );
     expect(demoAccount("driver", 31337).address).toBe("0x90F79bf6EB2c4f870365E785982E1f101E93b906");
   });
 

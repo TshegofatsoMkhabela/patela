@@ -17,7 +17,9 @@ const stranger = privateKeyToAccount(`0x${"44".repeat(32)}`);
 type Call = { method: string; params?: unknown };
 
 /** EIP-1193 provider backed by a local key, like the embedded wallet's EOA / 7702 account. */
-function fakeProvider(opts: { signWith?: typeof owner; chainId?: string; accounts?: Address[] } = {}) {
+function fakeProvider(
+  opts: { signWith?: typeof owner; chainId?: string; accounts?: Address[] } = {},
+) {
   const calls: Call[] = [];
   let chainId = opts.chainId ?? BASE_SEPOLIA_HEX;
   const provider: Eip1193Provider = {
@@ -67,13 +69,23 @@ describe("embeddedWalletOptions", () => {
     expect(opts.clientId).toBe("client-123");
     expect(opts.web3AuthNetwork).toBe("sapphire_devnet");
     expect(opts.defaultChainId).toBe("0x14a34");
-    expect(opts.accountAbstractionConfig).toEqual({ smartAccountType: "metamask", smartAccountEipStandard: "7702" });
+    expect(opts.accountAbstractionConfig).toEqual({
+      smartAccountType: "metamask",
+      smartAccountEipStandard: "7702",
+    });
   });
 
   it("adds a Base Sepolia chain entry only when an RPC URL is configured", () => {
     expect(embeddedWalletOptions({ NEXT_PUBLIC_WEB3AUTH_CLIENT_ID: "c" }).chains).toBeUndefined();
-    const chains = embeddedWalletOptions({ NEXT_PUBLIC_WEB3AUTH_CLIENT_ID: "c", NEXT_PUBLIC_RPC_URL: "https://rpc.test" }).chains;
-    expect(chains?.[0]).toMatchObject({ chainId: "0x14a34", rpcTarget: "https://rpc.test", chainNamespace: "eip155" });
+    const chains = embeddedWalletOptions({
+      NEXT_PUBLIC_WEB3AUTH_CLIENT_ID: "c",
+      NEXT_PUBLIC_RPC_URL: "https://rpc.test",
+    }).chains;
+    expect(chains?.[0]).toMatchObject({
+      chainId: "0x14a34",
+      rpcTarget: "https://rpc.test",
+      chainNamespace: "eip155",
+    });
   });
 
   it("refuses to start without a client ID", () => {
@@ -109,15 +121,22 @@ describe("signerFromProvider", () => {
   it("switches an extension wallet to Base Sepolia", async () => {
     const { provider, calls } = fakeProvider({ chainId: "0x1" });
     await signerFromProvider(provider, "extension", { escrow: ESCROW });
-    expect(calls.find((c) => c.method === "wallet_switchEthereumChain")?.params).toEqual([{ chainId: BASE_SEPOLIA_HEX }]);
+    expect(calls.find((c) => c.method === "wallet_switchEthereumChain")?.params).toEqual([
+      { chainId: BASE_SEPOLIA_HEX },
+    ]);
   });
 
   it("sends escrow calls to the escrow with value 0 and returns the tx hash", async () => {
     const { provider, calls } = fakeProvider();
     const signer = await signerFromProvider(provider, "embedded", { escrow: ESCROW });
-    const hash = await signer.writeEscrow({ functionName: "acceptOrder", args: [5n, `0x${"cd".repeat(32)}`] });
+    const hash = await signer.writeEscrow({
+      functionName: "acceptOrder",
+      args: [5n, `0x${"cd".repeat(32)}`],
+    });
     expect(hash).toBe(`0x${"aa".repeat(32)}`);
-    const tx = (calls.find((c) => c.method === "eth_sendTransaction")!.params as [Record<string, Hex>])[0];
+    const tx = (
+      calls.find((c) => c.method === "eth_sendTransaction")!.params as [Record<string, Hex>]
+    )[0];
     expect(tx.to?.toLowerCase()).toBe(ESCROW);
     expect(tx.from?.toLowerCase()).toBe(owner.address.toLowerCase());
     expect(BigInt(tx.value)).toBe(0n);
@@ -143,6 +162,8 @@ describe("signerFromProvider", () => {
 
   it("fails clearly when the wallet has no account", async () => {
     const { provider } = fakeProvider({ accounts: [] });
-    await expect(signerFromProvider(provider, "extension", { escrow: ESCROW })).rejects.toThrow(/account/i);
+    await expect(signerFromProvider(provider, "extension", { escrow: ESCROW })).rejects.toThrow(
+      /account/i,
+    );
   });
 });
