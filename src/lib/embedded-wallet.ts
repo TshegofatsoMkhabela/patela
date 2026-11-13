@@ -6,10 +6,11 @@ import {
   recoverTypedDataAddress,
   type Address,
   type Hex,
+  type TypedData,
+  type TypedDataDefinition,
 } from "viem";
 import { baseSepolia } from "viem/chains";
 import { ESCROW_ADDRESS, escrowAbi } from "@/lib/contracts";
-import type { HandoffTypedData } from "@/lib/handoff";
 
 // Wallets that sign handoffs and send escrow calls.
 // - Supplier and driver: MetaMask Embedded Wallets (Web3Auth v11), email passwordless login, EIP-7702
@@ -32,7 +33,9 @@ export type WalletKind = "embedded" | "extension";
 export type WalletSigner = {
   kind: WalletKind;
   address: Address;
-  signTypedData(td: HandoffTypedData): Promise<Hex>;
+  signTypedData<const T extends TypedData | Record<string, unknown>, P extends keyof T | "EIP712Domain">(
+    td: TypedDataDefinition<T, P>,
+  ): Promise<Hex>;
   /** Sends an escrow call (sponsored for the embedded wallet) and returns the transaction hash. */
   writeEscrow(call: EscrowWrite): Promise<Hex>;
   /** Resolves once mined; throws if the transaction reverted. */
@@ -99,8 +102,8 @@ export async function signerFromProvider(
     kind,
     address,
     async signTypedData(td) {
-      const signature = await wallet.signTypedData({ account: address, ...td });
-      const signer = await recoverTypedDataAddress({ ...td, signature });
+      const signature = await wallet.signTypedData({ account: address, ...(td as TypedDataDefinition) });
+      const signer = await recoverTypedDataAddress({ ...(td as TypedDataDefinition), signature });
       if (signer.toLowerCase() !== address.toLowerCase()) {
         throw new Error(
           "The wallet signed as a smart-contract account, not its EOA. Set the embedded wallet to an " +

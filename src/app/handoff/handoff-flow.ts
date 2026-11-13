@@ -53,20 +53,33 @@ const POLL_MS = 1000;
 class FlowError extends Error {}
 const message = (err: unknown) => (err instanceof FlowError ? err.message : contractErrorMessage(err));
 
-/** Reads chain order ID and the stage's giver/receiver from `GET /orders/:id` (camelCase or row shape). */
-export function readOrderParties(order: unknown, stage: Stage) {
+type PartyRole = "buyer" | "supplier" | "driver";
+
+/** A party's wallet from `GET /orders/:id` (camelCase or row shape), or null if not linked yet. */
+export function readWallet(order: unknown, role: PartyRole): Address | null {
   const o = (order ?? {}) as Record<string, unknown>;
   const parties = (o.parties ?? {}) as Record<string, Record<string, unknown> | undefined>;
-  const wallet = (role: string): Address => {
-    const value =
-      parties[role]?.walletAddress ?? parties[role]?.wallet_address ?? o[`${role}WalletAddress`] ?? o[`${role}_wallet_address`];
-    if (typeof value !== "string" || !isAddress(value)) throw new Error(`The order has no ${role} wallet yet`);
-    return getAddress(value);
-  };
+  const value =
+    parties[role]?.walletAddress ?? parties[role]?.wallet_address ?? o[`${role}WalletAddress`] ?? o[`${role}_wallet_address`];
+  return typeof value === "string" && isAddress(value) ? getAddress(value) : null;
+}
+
+export function readChainOrderId(order: unknown): bigint {
+  const o = (order ?? {}) as Record<string, unknown>;
   const rawId = o.chainOrderId ?? o.chain_order_id;
   if (rawId === undefined || rawId === null || rawId === "") throw new Error("The order is not on-chain yet");
+  return BigInt(rawId as string);
+}
+
+/** Chain order ID and the stage's giver/receiver wallets. */
+export function readOrderParties(order: unknown, stage: Stage) {
   const roles = ROLE_BY_STAGE[stage];
-  return { chainOrderId: BigInt(rawId as string), giver: wallet(roles.giver), receiver: wallet(roles.receiver) };
+  const wallet = (role: PartyRole) => {
+    const address = readWallet(order, role);
+    if (!address) throw new Error(`The order has no ${role} wallet yet`);
+    return address;
+  };
+  return { chainOrderId: readChainOrderId(order), giver: wallet(roles.giver), receiver: wallet(roles.receiver) };
 }
 
 const base = (orderId: string, stage: Stage) => `/orders/${encodeURIComponent(orderId)}/handoffs/${stage}`;
