@@ -268,11 +268,15 @@ export class OnboardingService {
     });
   }
 
-  async outbox(adminId: string) {
+  async outbox(adminId: string, delivering = false) {
     await this.requireAdmin(adminId);
     const result = await this.db.query<Row>(
-      "select id,to_email,template,payload,status,created_at from email_outbox order by created_at, id limit 200",
+      `select id,to_email,template,payload,status,attempts,last_error,sent_at,created_at
+       from email_outbox order by created_at, id limit 200`,
     );
-    return { demo: true, note: "Demo outbox: these emails are queued but never delivered.", emails: result.rows };
+    return { demo: true, note: delivering
+      ? "Demo outbox: emails are sent through the configured Gmail SMTP account."
+      : "Demo outbox: no mail transport is configured, so these emails are queued but never delivered.",
+    emails: result.rows };
   }
 }

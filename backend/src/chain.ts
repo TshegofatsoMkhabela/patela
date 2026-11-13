@@ -1,51 +1,37 @@
 import {
-  createPublicClient,
-  decodeEventLog,
-  http,
-  type Address,
-  type Hex,
+  createPublicClient, decodeEventLog, http, parseAbi, type Address, type Hex,
 } from "viem";
 import { base, baseSepolia } from "viem/chains";
 
-const escrowEvents = [
-  {
-    type: "event",
-    name: "OrderFunded",
-    inputs: [
-      { name: "orderId", type: "bytes32", indexed: true },
-      { name: "buyer", type: "address", indexed: true },
-      { name: "token", type: "address", indexed: true },
-      { name: "amount", type: "uint256", indexed: false },
-    ],
-  },
-  {
-    type: "event",
-    name: "HandoffCompleted",
-    inputs: [
-      { name: "orderId", type: "bytes32", indexed: true },
-      { name: "stage", type: "uint8", indexed: true },
-      { name: "payee", type: "address", indexed: true },
-      { name: "amount", type: "uint256", indexed: false },
-    ],
-  },
-  {
-    type: "event",
-    name: "OrderRefunded",
-    inputs: [
-      { name: "orderId", type: "bytes32", indexed: true },
-      { name: "buyer", type: "address", indexed: true },
-      { name: "amount", type: "uint256", indexed: false },
-    ],
-  },
-] as const;
+/** Frozen escrow events (specs/INTERFACES.md §2; the web app's copy is src/lib/contracts.ts). */
+export const escrowEventsAbi = parseAbi([
+  "event OrderCreated(uint256 indexed orderId, address indexed buyer, address indexed supplier, uint256 total, bytes32 agreementHash)",
+  "event EscrowFunded(uint256 indexed orderId, uint256 amount)",
+  "event OrderAccepted(uint256 indexed orderId, address indexed supplier, bytes32 agreementHash)",
+  "event DriverAssigned(uint256 indexed orderId, address indexed driver)",
+  "event HandoffVerified(uint256 indexed orderId, uint8 stage, address indexed giver, address indexed receiver, bytes32 evidenceHash)",
+  "event PaymentReleased(uint256 indexed orderId, uint8 stage, address indexed recipient, uint256 amount)",
+  "event OrderRefunded(uint256 indexed orderId, address indexed buyer, uint256 amount)",
+]);
+const balanceAbi = parseAbi(["function balanceOf(address) view returns (uint256)"]);
 
+export type EscrowEventName = (typeof escrowEventsAbi)[number]["name"];
+
+/** One decoded escrow log. Fields not carried by an event are undefined. */
 export type ChainEvent = {
-  name: "OrderFunded" | "HandoffCompleted" | "OrderRefunded";
-  orderId: Hex;
-  amountWei: bigint;
-  actor: Address;
-  token?: Address;
+  name: EscrowEventName;
+  orderId: bigint;
+  /** OrderCreated total, EscrowFunded/PaymentReleased/OrderRefunded amount. */
+  amountWei?: bigint;
   stage?: number;
+  buyer?: Address;
+  supplier?: Address;
+  driver?: Address;
+  giver?: Address;
+  receiver?: Address;
+  recipient?: Address;
+  agreementHash?: Hex;
+  evidenceHash?: Hex;
   chainId: number;
   txHash: Hex;
   logIndex: number;
@@ -54,7 +40,42 @@ export type ChainEvent = {
 };
 
 export interface ChainVerifier {
+  /** Escrow events in a confirmed, successful transaction. Throws if it is not confirmed yet. */
   events(txHash: Hex): Promise<ChainEvent[]>;
+  /** Token balance for the four-wallet panel. Optional: the order view shows null without it. */
+  balanceOf?(wallet: Address): Promise<bigint>;
+}
+
+type RawLog = { address: Address; data: Hex; topics: Hex[]; logIndex: number | null };
+type ReceiptMeta = { chainId: number; txHash: Hex; blockNumber: bigint; blockHash: Hex };
+
+/** Decodes the escrow's frozen events from a receipt's logs, skipping other contracts and unknown events. */
+export function decodeEscrowLogs(logs: readonly RawLog[], escrowAddress: Address, meta: ReceiptMeta): ChainEvent[] {
+  const found: ChainEvent[] = [];
+  for (const log of logs) {
+    if (log.address.toLowerCase() !== escrowAddress.toLowerCase()) continue;
+    let decoded;
+    try {
+      decoded = decodeEventLog({ abi: escrowEventsAbi, data: log.data, topics: log.topics as [Hex, ...Hex[]] });
+    } catch { continue; }
+    const args = decoded.args as Record<string, unknown>;
+    found.push({
+      name: decoded.eventName,
+      orderId: args.orderId as bigint,
+      amountWei: (args.total ?? args.amount) as bigint | undefined,
+      stage: args.stage === undefined ? undefined : Number(args.stage),
+      buyer: args.buyer as Address | undefined,
+      supplier: args.supplier as Address | undefined,
+      driver: args.driver as Address | undefined,
+      giver: args.giver as Address | undefined,
+      receiver: args.receiver as Address | undefined,
+      recipient: args.recipient as Address | undefined,
+      agreementHash: args.agreementHash as Hex | undefined,
+      evidenceHash: args.evidenceHash as Hex | undefined,
+      ...meta, logIndex: log.logIndex ?? 0,
+    });
+  }
+  return found;
 }
 
 export class BaseChainVerifier implements ChainVerifier {
@@ -65,6 +86,7 @@ export class BaseChainVerifier implements ChainVerifier {
     private readonly escrowAddress: Address,
     private readonly confirmations: number,
     private readonly chainId: 8453 | 84532 = 8453,
+    private readonly tokenAddress?: Address,
   ) {
     this.client = createPublicClient({ chain: chainId === 8453 ? base : baseSepolia, transport: http(rpcUrl) });
   }
@@ -77,35 +99,14 @@ export class BaseChainVerifier implements ChainVerifier {
     if (currentBlock - receipt.blockNumber + 1n < BigInt(this.confirmations)) {
       throw new Error("Transaction is not sufficiently confirmed");
     }
-    const found: ChainEvent[] = [];
-    for (const log of receipt.logs) {
-      if (log.address.toLowerCase() !== this.escrowAddress.toLowerCase()) continue;
-      try {
-        const decoded = decodeEventLog({ abi: escrowEvents, data: log.data, topics: log.topics });
-        const args = decoded.args as Record<string, unknown>;
-        if (decoded.eventName === "OrderFunded") {
-          found.push({
-            name: decoded.eventName, orderId: args.orderId as Hex, amountWei: args.amount as bigint,
-            actor: args.buyer as Address, token: args.token as Address, chainId: this.chainId,
-            txHash, logIndex: log.logIndex, blockNumber: receipt.blockNumber, blockHash: receipt.blockHash,
-          });
-        } else if (decoded.eventName === "HandoffCompleted") {
-          found.push({
-            name: decoded.eventName, orderId: args.orderId as Hex, amountWei: args.amount as bigint,
-            actor: args.payee as Address, stage: Number(args.stage), chainId: this.chainId,
-            txHash, logIndex: log.logIndex, blockNumber: receipt.blockNumber, blockHash: receipt.blockHash,
-          });
-        } else if (decoded.eventName === "OrderRefunded") {
-          found.push({
-            name: decoded.eventName, orderId: args.orderId as Hex, amountWei: args.amount as bigint,
-            actor: args.buyer as Address, chainId: this.chainId,
-            txHash, logIndex: log.logIndex, blockNumber: receipt.blockNumber, blockHash: receipt.blockHash,
-          });
-        }
-      } catch {
-        // Logs for unrelated events emitted by the same escrow are ignored.
-      }
-    }
-    return found;
+    return decodeEscrowLogs(receipt.logs, this.escrowAddress, {
+      chainId: this.chainId, txHash, blockNumber: receipt.blockNumber, blockHash: receipt.blockHash,
+    });
+  }
+
+  async balanceOf(wallet: Address): Promise<bigint> {
+    if (!this.tokenAddress) throw new Error("Token address is not configured");
+    return this.client.readContract({ address: this.tokenAddress, abi: balanceAbi, functionName: "balanceOf",
+      args: [wallet] });
   }
 }

@@ -15,7 +15,8 @@ const business = {
 
 async function setup(people: number) {
   const db = new TestDatabase();
-  assert.deepEqual(await db.migrate(), ["001_core.sql", "002_organizations.sql", "003_auth.sql"]);
+  assert.deepEqual(await db.migrate(), ["001_core.sql", "002_organizations.sql", "003_auth.sql",
+    "004_two_handoff_orders.sql"]);
   assert.deepEqual(await db.migrate(), [], "each migration is applied only once");
   const auth = new TestAuth();
   const ids = Array.from({ length: people }, () => randomUUID());
