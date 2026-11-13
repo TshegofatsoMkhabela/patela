@@ -11,7 +11,7 @@ import {
   type Address,
   type Hex,
 } from "viem";
-import { BASE_SEPOLIA_HEX, type Eth } from "@/lib/chain";
+import { BASE_SEPOLIA_HEX, type Eth } from "@/lib/chain-basics";
 
 const abi = [
   {

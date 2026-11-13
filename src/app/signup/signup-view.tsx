@@ -672,6 +672,25 @@ export function SignUpView() {
                 Select your role in the supply chain corridor. After signing up, we will configure
                 your profile with step-by-step role information.
               </p>
+              <p
+                className="pt-card"
+                style={{
+                  margin: "18px auto 0",
+                  maxWidth: "60ch",
+                  padding: "14px 18px",
+                  fontSize: "0.9rem",
+                }}
+              >
+                Buying in the escrow demo?{" "}
+                <Link
+                  href="/signin?next=/orders/new"
+                  style={{ color: "#ffe2b2", fontWeight: 600, textDecoration: "underline" }}
+                >
+                  Sign in with an email code
+                </Link>{" "}
+                — your Patela account is created on first sign-in. The profile questions below are a
+                demo preview stored in this browser only.
+              </p>
             </div>
 
             <form

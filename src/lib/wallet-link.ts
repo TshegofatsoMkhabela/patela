@@ -1,7 +1,7 @@
 // Proves to the backend that the signed-in user controls a MetaMask wallet:
 // /wallet/challenge -> eth_signTypedData_v4 -> /wallet/link.
 
-import { isUserRejection, type Eth } from "@/lib/chain";
+import { isUserRejection, type Eth } from "@/lib/chain-basics";
 import { ApiError, type WalletChallenge } from "@/lib/patela-api";
 
 export type LinkApi = {

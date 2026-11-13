@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { HeroBar, VIDEO, POSTER } from "@/components/HeroBar";
 import { patelaApi } from "@/lib/patela-api";
 import { actions, browserEthereum, connectWallet, shortAddr, usePatela } from "@/lib/patela-store";
-import { isUserRejection, testZarpAddress, type Eth } from "@/lib/chain";
+import { isUserRejection, testZarpAddress, type Eth } from "@/lib/chain-basics";
 import { linkConnectedWallet, type LinkOutcome } from "@/lib/wallet-link";
 
 const TEST_ZARP = testZarpAddress(process.env.NEXT_PUBLIC_ZARP_TOKEN_ADDRESS);

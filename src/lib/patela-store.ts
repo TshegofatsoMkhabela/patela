@@ -1,5 +1,5 @@
 import { useEffect, useSyncExternalStore } from "react";
-import { BASE_SEPOLIA_HEX, type Eth } from "@/lib/chain";
+import { BASE_SEPOLIA_HEX, type Eth } from "@/lib/chain-basics";
 
 export const STABLECOINS = ["ZARP", "USDC", "USDT", "DAI", "PYUSD", "EURC"] as const;
 export type Coin = (typeof STABLECOINS)[number];

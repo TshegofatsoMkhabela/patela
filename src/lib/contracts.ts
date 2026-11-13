@@ -3,7 +3,7 @@ import { parseAbi, type Address } from "viem";
 // Frozen contract interface shared by the web branches. Source of truth: specs/INTERFACES.md §2.
 // Change only together with that file and the contract.
 
-export const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? 84532);
+export const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 31337);
 export const ESCROW_ADDRESS = (process.env.NEXT_PUBLIC_ESCROW_ADDRESS ?? "") as Address;
 export const ZARP_ADDRESS = (process.env.NEXT_PUBLIC_ZARP_ADDRESS ?? "") as Address;
 export const ZARP_DECIMALS = 18;

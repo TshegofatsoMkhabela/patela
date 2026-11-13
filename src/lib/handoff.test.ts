@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { keccak256, recoverTypedDataAddress, toBytes, type Address, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { encodeErrorResult } from "viem";
-import { escrowAbi, handoffTypes } from "@/lib/contracts";
+import { CHAIN_ID, escrowAbi, handoffTypes } from "@/lib/contracts";
 import {
   HANDOFF_TTL_SECONDS,
   HandoffPayloadError,
@@ -186,7 +186,7 @@ describe("typed data (INTERFACES §2)", () => {
     expect(td.domain).toEqual({
       name: "Patela Escrow",
       version: "1",
-      chainId: 84532,
+      chainId: CHAIN_ID,
       verifyingContract: ESCROW,
     });
     expect(td.message).toEqual({
