@@ -206,6 +206,7 @@ export function PatelaHome() {
           <a href="#network" onClick={() => setMenuOpen(false)}>
             Corridors
           </a>
+          <Link href="/tracker">Route tracker demo</Link>
           <a href="#about" onClick={() => setMenuOpen(false)}>
             About us
           </a>
