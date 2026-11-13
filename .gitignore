@@ -5,6 +5,7 @@
 # Production
 /build
 /dist
+/infra/artifacts/
 
 # Node
 /node_modules
