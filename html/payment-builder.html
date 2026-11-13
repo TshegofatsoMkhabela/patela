@@ -43,7 +43,7 @@
               <h2 style="font-size:1.15rem;margin:4px 0 0;font-weight:600;">Escrow Allocation vs. Governed Total</h2>
             </div>
             <div style="display:flex;align-items:center;gap:10px;">
-              <span class="badge badge-success" id="math-status-badge">✓ Exact Conservation Matched</span>
+              <span class="badge badge-success" id="math-status-badge">Exact Conservation Matched</span>
             </div>
           </div>
 
@@ -75,7 +75,11 @@
 
           <!-- Invariant Requirements Notice -->
           <div class="trust-boundary-card" style="margin-top:16px;">
-            <div style="color:var(--gold);font-size:1.3rem;">⚖️</div>
+            <div style="color:var(--gold);line-height:1;display:flex;align-items:center;">
+              <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            </div>
             <div>
               <strong>Mandatory Architecture Rules (Section 4.3):</strong>
               1) Every tranche must sum exactly to the escrowed total before submission.
@@ -124,7 +128,7 @@
                     <div class="meta-text" style="font-size:0.7rem;margin-top:2px;">Node 01 dual signature confirmed</div>
                   </td>
                   <td class="meta-text">24 Hours</td>
-                  <td><span class="badge badge-success">✓ Released</span></td>
+                  <td><span class="badge badge-success">Released</span></td>
                   <td class="right">
                     <span class="hash-pill" title="Base Sepolia Release Tx">Tx 0x41ab…21a1</span>
                   </td>
@@ -144,7 +148,7 @@
                     <div class="meta-text" style="font-size:0.7rem;margin-top:2px;">Node 02 inward custody verified</div>
                   </td>
                   <td class="meta-text">48 Hours (Auto-release if no dispute)</td>
-                  <td><span class="badge badge-gold">⚡ Releasable</span></td>
+                  <td><span class="badge badge-gold">Releasable</span></td>
                   <td class="right">
                     <button type="button" class="btn btn-primary btn-sm" id="release-tranche-2-btn">Authorize Release →</button>
                   </td>

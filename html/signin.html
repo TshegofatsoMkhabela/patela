@@ -76,6 +76,26 @@
 
           <form id="signin-form">
             <div style="margin-bottom:18px;">
+              <label class="form-label" style="display:block;margin-bottom:8px;">Select Target Workspace</label>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);cursor:pointer;background:rgba(255,226,178,0.04);" id="label-role-client">
+                  <input type="radio" name="si-role" value="client" checked style="accent-color:#ffe2b2;" />
+                  <div>
+                    <div style="font-size:0.85rem;font-weight:600;color:#fff;">Client Workspace</div>
+                    <div style="font-size:0.7rem;color:var(--text-secondary);">Buyer / Consignor</div>
+                  </div>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);cursor:pointer;background:rgba(126,166,224,0.04);" id="label-role-worker">
+                  <input type="radio" name="si-role" value="worker" style="accent-color:#ffe2b2;" />
+                  <div>
+                    <div style="font-size:0.85rem;font-weight:600;color:#fff;">Worker Workspace</div>
+                    <div style="font-size:0.7rem;color:var(--text-secondary);">Carrier / Supplier</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div style="margin-bottom:18px;">
               <label class="form-label" for="si-email">Business Email or Mobile</label>
               <input type="text" id="si-email" class="form-control" placeholder="name@company.co.za" required />
             </div>
@@ -83,7 +103,7 @@
             <div style="margin-bottom:18px;">
               <div style="display:flex;justify-content:space-between;align-items:center;">
                 <label class="form-label" for="si-pw">Password</label>
-                <a href="#" onclick="alert('Testnet demo: use any password or click a 1-click persona on the right.'); return false;" style="font-size:0.8rem;color:#ffe2b2;text-decoration:underline;">Forgot password?</a>
+                <a href="#" onclick="alert('Demo environment: Enter any password or select 1-click role login.'); return false;" style="font-size:0.8rem;color:#ffe2b2;text-decoration:underline;">Forgot password?</a>
               </div>
               <input type="password" id="si-pw" class="form-control" placeholder="••••••••" required />
             </div>
@@ -113,65 +133,70 @@
             </p>
           </div>
 
-          <div>
-            <div class="persona-quick-item" onclick="quickLogin('Alex Vance', 'Commercial Buyer', 'orders.html')">
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <!-- Client Track -->
+            <div class="persona-quick-item" onclick="quickLogin('Alex Morgan', 'client', 'Commercial Buyer &amp; Consignor', 'client-dashboard.html')">
               <div style="display:flex;align-items:center;gap:12px;">
-                <span style="font-size:1.4rem;">🏢</span>
+                <span class="badge badge-gold" style="font-size:0.7rem;padding:4px 8px;letter-spacing:0.04em;">CLIENT</span>
                 <div>
-                  <div style="font-weight:600;font-size:0.9rem;color:#fff;">Alex Vance</div>
-                  <div style="font-size:0.75rem;color:#ffe2b2;">Commercial Buyer / Consignor</div>
-                  <div style="font-size:0.7rem;color:var(--text-secondary);">Anglo African Resources (Pty) Ltd</div>
+                  <div style="font-weight:600;font-size:0.9rem;color:#fff;">Alex Morgan / Alex Vance</div>
+                  <div style="font-size:0.75rem;color:#ffe2b2;">Commercial Buyer &amp; Consignor</div>
+                  <div style="font-size:0.7rem;color:var(--text-secondary);">Anglo-Bavarian Mineral Trade (Pty) Ltd</div>
                 </div>
               </div>
-              <span style="color:#ffe2b2;font-weight:600;font-size:0.85rem;">Enter →</span>
+              <span style="color:#ffe2b2;font-weight:600;font-size:0.85rem;">Enter Dashboard →</span>
             </div>
 
-            <div class="persona-quick-item" onclick="quickLogin('Dumisani Khumalo', 'Freight Fleet Operator', 'tender-trail.html')">
+            <!-- Worker Track 1: Transporter / Fleet Operator -->
+            <div class="persona-quick-item" onclick="quickLogin('Jordan Blake', 'worker', 'Freight Fleet Operator', 'worker-dashboard.html')">
               <div style="display:flex;align-items:center;gap:12px;">
-                <span style="font-size:1.4rem;">🚛</span>
+                <span class="badge badge-blue" style="font-size:0.7rem;padding:4px 8px;letter-spacing:0.04em;">WORKER</span>
                 <div>
-                  <div style="font-weight:600;font-size:0.9rem;color:#fff;">Dumisani Khumalo</div>
-                  <div style="font-size:0.75rem;color:#ffe2b2;">Freight Fleet Operator</div>
-                  <div style="font-size:0.7rem;color:var(--text-secondary);">Trans-Limpopo Freight Logistics</div>
+                  <div style="font-weight:600;font-size:0.9rem;color:#fff;">Jordan Blake / Dumisani Khumalo</div>
+                  <div style="font-size:0.75rem;color:#ffe2b2;">Freight Carrier &amp; Logistics Partner</div>
+                  <div style="font-size:0.7rem;color:var(--text-secondary);">Trans-Limpopo Freight Logistics Ltd</div>
                 </div>
               </div>
-              <span style="color:#ffe2b2;font-weight:600;font-size:0.85rem;">Enter →</span>
+              <span style="color:#ffe2b2;font-weight:600;font-size:0.85rem;">Enter Dashboard →</span>
             </div>
 
-            <div class="persona-quick-item" onclick="quickLogin('Johan van der Merwe', 'Commodity Supplier', 'order-detail.html')">
+            <!-- Worker Track 2: Commodity Supplier -->
+            <div class="persona-quick-item" onclick="quickLogin('Johan van der Merwe', 'worker', 'Commodity Supplier', 'worker-dashboard.html')">
               <div style="display:flex;align-items:center;gap:12px;">
-                <span style="font-size:1.4rem;">🏭</span>
+                <span class="badge badge-blue" style="font-size:0.7rem;padding:4px 8px;letter-spacing:0.04em;">SUPPLIER</span>
                 <div>
                   <div style="font-weight:600;font-size:0.9rem;color:#fff;">Johan van der Merwe</div>
-                  <div style="font-size:0.75rem;color:#ffe2b2;">Commodity Supplier</div>
+                  <div style="font-size:0.75rem;color:#ffe2b2;">Commodity Supplier &amp; Producer</div>
                   <div style="font-size:0.7rem;color:var(--text-secondary);">Witbank Minerals &amp; Mining Co</div>
                 </div>
               </div>
-              <span style="color:#ffe2b2;font-weight:600;font-size:0.85rem;">Enter →</span>
+              <span style="color:#ffe2b2;font-weight:600;font-size:0.85rem;">Enter Dashboard →</span>
             </div>
 
-            <div class="persona-quick-item" onclick="quickLogin('Sipho Ndlovu', 'Frontline Driver', 'guest-handoff.html')">
+            <!-- Frontline Driver -->
+            <div class="persona-quick-item" onclick="quickLogin('Sipho Ndlovu', 'worker', 'Frontline Driver / Clerk', 'guest-handoff.html')">
               <div style="display:flex;align-items:center;gap:12px;">
-                <span style="font-size:1.4rem;">🚚</span>
+                <span class="badge badge-gold" style="font-size:0.7rem;padding:4px 8px;letter-spacing:0.04em;">DRIVER</span>
                 <div>
                   <div style="font-weight:600;font-size:0.9rem;color:#fff;">Sipho Ndlovu</div>
-                  <div style="font-size:0.75rem;color:#ffe2b2;">Frontline Driver / Clerk</div>
-                  <div style="font-size:0.7rem;color:var(--text-secondary);">Cross-Dock Heavy Articulated Driver</div>
+                  <div style="font-size:0.75rem;color:#ffe2b2;">Frontline Driver / Custody Clerk</div>
+                  <div style="font-size:0.7rem;color:var(--text-secondary);">Cross-Dock Depot Heavy Haulage</div>
                 </div>
               </div>
-              <span style="color:#ffe2b2;font-weight:600;font-size:0.85rem;">Enter →</span>
+              <span style="color:#ffe2b2;font-weight:600;font-size:0.85rem;">Open Handoff →</span>
             </div>
 
-            <div class="persona-quick-item" onclick="quickLogin('Dr. Nomsa Mthembu', 'Forensic Auditor', 'auditor-trail.html')">
+            <!-- Auditor & Compliance -->
+            <div class="persona-quick-item" onclick="quickLogin('Dr. Nomsa Mthembu', 'auditor', 'Forensic Auditor / Inspector', 'auditor-trail.html')">
               <div style="display:flex;align-items:center;gap:12px;">
-                <span style="font-size:1.4rem;">🔍</span>
+                <span class="badge badge-neutral" style="font-size:0.7rem;padding:4px 8px;letter-spacing:0.04em;">AUDITOR</span>
                 <div>
                   <div style="font-weight:600;font-size:0.9rem;color:#fff;">Dr. Nomsa Mthembu</div>
-                  <div style="font-size:0.75rem;color:#ffe2b2;">Forensic Auditor / Inspector</div>
-                  <div style="font-size:0.7rem;color:var(--text-secondary);">IRBA Registered Compliance Audit</div>
+                  <div style="font-size:0.75rem;color:#ffe2b2;">Forensic Auditor &amp; Block Verifier</div>
+                  <div style="font-size:0.7rem;color:var(--text-secondary);">Independent IRBA Registered Audit</div>
                 </div>
               </div>
-              <span style="color:#ffe2b2;font-weight:600;font-size:0.85rem;">Enter →</span>
+              <span style="color:#ffe2b2;font-weight:600;font-size:0.85rem;">Open Trail →</span>
             </div>
           </div>
         </div>
@@ -179,35 +204,47 @@
     </main>
   </div>
 
+  <script src="assets/js/demo-data.js"></script>
   <script>
     document.getElementById("signin-form").addEventListener("submit", function(e) {
       e.preventDefault();
       const em = document.getElementById("si-email").value.trim();
+      const roleRadio = document.querySelector('input[name="si-role"]:checked');
+      const role = roleRadio ? roleRadio.value : 'client';
       const auth = {
         name: em.split("@")[0].toUpperCase(),
         email: em,
-        role: "buyer",
-        roleTitle: "Commercial Consignor / Buyer",
+        role: role,
+        roleTitle: role === 'worker' ? "Logistics Partner / Supplier" : "Commercial Consignor / Buyer",
         verified: true
       };
       try {
         localStorage.setItem("patela_auth_user", JSON.stringify(auth));
+        localStorage.setItem("patela_current_role", role);
       } catch(e) {}
-      window.location.href = "orders.html";
+      if (window.PatelaStore && window.PatelaStore.setRole) {
+        window.PatelaStore.setRole(role);
+      }
+      window.location.href = role === 'worker' ? "worker-dashboard.html" : "client-dashboard.html";
     });
 
-    function quickLogin(name, role, redirect) {
+    function quickLogin(name, role, roleTitle, redirect) {
       const auth = {
         name: name,
         role: role,
-        roleTitle: role,
+        roleTitle: roleTitle,
         verified: true
       };
       try {
         localStorage.setItem("patela_auth_user", JSON.stringify(auth));
+        localStorage.setItem("patela_current_role", role === 'worker' ? 'worker' : 'client');
       } catch(e) {}
+      if (window.PatelaStore && window.PatelaStore.setRole) {
+        window.PatelaStore.setRole(role === 'worker' ? 'worker' : 'client');
+      }
       window.location.href = redirect;
     }
   </script>
 </body>
 </html>
+

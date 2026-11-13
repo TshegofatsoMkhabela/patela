@@ -78,7 +78,7 @@
               '</div>' +
               '<div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--border-subtle);">' +
                 '<span class="meta-text">' + j.proposals + ' proposals</span>' +
-                '<span class="card-expand-hint">' + (j.applied ? 'Applied ✓ · View' : 'Open workspace →') + '</span>' +
+                '<span class="card-expand-hint">' + (j.applied ? 'Applied · View' : 'Open workspace →') + '</span>' +
               '</div>' +
             '</article>'
           );
@@ -180,7 +180,7 @@
             '<div style="display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid var(--border-subtle);gap:10px;">' +
               '<span class="meta-text">' + window.PatelaUI.escapeHtml(j.clientName) + ' · ' + j.proposals + ' proposals</span>' +
               '<span class="card-expand-hint">' +
-                (j.applied ? 'Applied ✓ · Open workspace →' : 'Open full-screen workspace →') +
+                (j.applied ? 'Applied · Open workspace →' : 'Open full-screen workspace →') +
               '</span>' +
             '</div>' +
           '</article>'

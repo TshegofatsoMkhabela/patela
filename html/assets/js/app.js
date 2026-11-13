@@ -227,30 +227,30 @@
         let stageStates = [];
         if (project.status === 'Completed') {
           stageStates = [
-            { num: '✓', title: '1. Project created', meta: '01 Oct 2026', state: 'completed' },
-            { num: '✓', title: '2. Agreement accepted', meta: '02 Oct 2026', state: 'completed' },
-            { num: '✓', title: '3. Escrow funded', meta: project.funded.toLocaleString('en-US') + '.00 ' + project.asset, state: 'completed' },
-            { num: '✓', title: '4. Work submitted', meta: 'All 3 milestones', state: 'completed' },
-            { num: '✓', title: '5. AI review completed', meta: '3/3 checks passed', state: 'completed' },
-            { num: '✓', title: '6. Milestone approved', meta: '18 Oct 2026', state: 'completed' },
-            { num: '✓', title: '7. Payment released', meta: project.released.toLocaleString('en-US') + '.00 ' + project.asset, state: 'completed' }
+            { num: '1', title: '1. Project created', meta: '01 Oct 2026', state: 'completed' },
+            { num: '2', title: '2. Agreement accepted', meta: '02 Oct 2026', state: 'completed' },
+            { num: '3', title: '3. Escrow funded', meta: project.funded.toLocaleString('en-US') + '.00 ' + project.asset, state: 'completed' },
+            { num: '4', title: '4. Work submitted', meta: 'All 3 milestones', state: 'completed' },
+            { num: '5', title: '5. AI review completed', meta: '3/3 checks passed', state: 'completed' },
+            { num: '6', title: '6. Milestone approved', meta: '18 Oct 2026', state: 'completed' },
+            { num: '7', title: '7. Payment released', meta: project.released.toLocaleString('en-US') + '.00 ' + project.asset, state: 'completed' }
           ];
         } else if (project.status === 'Awaiting client approval') {
           stageStates = [
-            { num: '✓', title: '1. Project created', meta: '20 Oct 2026', state: 'completed' },
-            { num: '✓', title: '2. Agreement accepted', meta: '20 Oct 2026', state: 'completed' },
-            { num: '✓', title: '3. Escrow funded', meta: project.funded.toLocaleString('en-US') + '.00 ' + project.asset, state: 'completed' },
-            { num: '✓', title: '4. Work submitted', meta: 'Today, 09:42 UTC', state: 'completed' },
-            { num: '✓', title: '5. AI review completed', meta: 'Today, 09:44 UTC', state: 'completed' },
+            { num: '1', title: '1. Project created', meta: '20 Oct 2026', state: 'completed' },
+            { num: '2', title: '2. Agreement accepted', meta: '20 Oct 2026', state: 'completed' },
+            { num: '3', title: '3. Escrow funded', meta: project.funded.toLocaleString('en-US') + '.00 ' + project.asset, state: 'completed' },
+            { num: '4', title: '4. Work submitted', meta: 'Today, 09:42 UTC', state: 'completed' },
+            { num: '5', title: '5. AI review completed', meta: 'Today, 09:44 UTC', state: 'completed' },
             { num: '6', title: '6. Milestone approved', meta: 'Awaiting client decision', state: 'current' },
             { num: '7', title: '7. Payment released', meta: 'Upcoming stage', state: 'upcoming' }
           ];
         } else if (project.status === 'Under AI review') {
           stageStates = [
-            { num: '✓', title: '1. Project created', meta: '24 Oct 2026', state: 'completed' },
-            { num: '✓', title: '2. Agreement accepted', meta: '24 Oct 2026', state: 'completed' },
-            { num: '✓', title: '3. Escrow funded', meta: project.funded.toLocaleString('en-US') + '.00 ' + project.asset, state: 'completed' },
-            { num: '✓', title: '4. Work submitted', meta: '42 mins ago', state: 'completed' },
+            { num: '1', title: '1. Project created', meta: '24 Oct 2026', state: 'completed' },
+            { num: '2', title: '2. Agreement accepted', meta: '24 Oct 2026', state: 'completed' },
+            { num: '3', title: '3. Escrow funded', meta: project.funded.toLocaleString('en-US') + '.00 ' + project.asset, state: 'completed' },
+            { num: '4', title: '4. Work submitted', meta: '42 mins ago', state: 'completed' },
             { num: '5', title: '5. AI review completed', meta: 'Verification in progress', state: 'current' },
             { num: '6', title: '6. Milestone approved', meta: 'Upcoming stage', state: 'upcoming' },
             { num: '7', title: '7. Payment released', meta: 'Upcoming stage', state: 'upcoming' }
@@ -258,9 +258,9 @@
         } else {
           // 'In progress' or 'Revision requested'
           stageStates = [
-            { num: '✓', title: '1. Project created', meta: '21 Oct 2026', state: 'completed' },
-            { num: '✓', title: '2. Agreement accepted', meta: '22 Oct 2026', state: 'completed' },
-            { num: '✓', title: '3. Escrow funded', meta: project.funded.toLocaleString('en-US') + '.00 ' + project.asset, state: 'completed' },
+            { num: '1', title: '1. Project created', meta: '21 Oct 2026', state: 'completed' },
+            { num: '2', title: '2. Agreement accepted', meta: '22 Oct 2026', state: 'completed' },
+            { num: '3', title: '3. Escrow funded', meta: project.funded.toLocaleString('en-US') + '.00 ' + project.asset, state: 'completed' },
             { num: '4', title: '4. Work submitted', meta: project.status === 'Revision requested' ? 'Revision in progress' : 'Active milestone work', state: 'current' },
             { num: '5', title: '5. AI review completed', meta: 'Upcoming stage', state: 'upcoming' },
             { num: '6', title: '6. Milestone approved', meta: 'Upcoming stage', state: 'upcoming' },
@@ -681,7 +681,7 @@
             rep.passed.map(function (item) {
               return (
                 '<div class="ai-check-row">' +
-                  '<span class="ai-check-icon pass">✓</span>' +
+                  '<span class="ai-check-icon pass"><svg viewBox="0 0 16 16" width="10" height="10" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5 L6.5 12 L13 4"/></svg></span>' +
                   '<span>' + window.PatelaUI.escapeHtml(item) + '</span>' +
                 '</div>'
               );

@@ -282,7 +282,7 @@
         '<div class="metric-card">' +
           '<span class="metric-label">Active proposals</span>' +
           '<div class="metric-value tabular">' + job.proposals + '</div>' +
-          '<span class="metric-foot">' + (job.applied ? 'Your proposal is active ✓' : 'Open for applications') + '</span>' +
+          '<span class="metric-foot">' + (job.applied ? 'Your proposal is active' : 'Open for applications') + '</span>' +
         '</div>' +
       '</section>' +
 
@@ -329,7 +329,7 @@
               (job.deliverables || []).map(function (d) {
                 return (
                   '<div class="ai-check-row">' +
-                    '<span class="ai-check-icon pass">✓</span>' +
+                    '<span class="ai-check-icon pass"><svg viewBox="0 0 16 16" width="10" height="10" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5 L6.5 12 L13 4"/></svg></span>' +
                     '<span style="color:var(--text-primary);">' + escapeHtml(d) + '</span>' +
                   '</div>'
                 );
@@ -349,7 +349,7 @@
                 '<h2 class="section-title">' + (job.applied ? 'Update your proposal' : 'Submit proposal for this engagement') + '</h2>' +
                 '<p class="section-subtitle">Your bid will be matched against the pre-funded milestone schedule</p>' +
               '</div>' +
-              (job.applied ? '<span class="badge badge-success">Applied ✓</span>' : '') +
+              (job.applied ? '<span class="badge badge-success">Applied</span>' : '') +
             '</div>' +
             '<form id="fs-job-proposal-form" novalidate>' +
               '<div class="form-row">' +
@@ -481,39 +481,39 @@
     let stageStates = [];
     if (project.status === 'Completed') {
       stageStates = [
-        { num: '✓', title: '1. Project created', meta: '01 Oct 2026', state: 'completed' },
-        { num: '✓', title: '2. Agreement accepted', meta: '02 Oct 2026', state: 'completed' },
-        { num: '✓', title: '3. Escrow funded', meta: formatAsset(project.funded, project.asset), state: 'completed' },
-        { num: '✓', title: '4. Work submitted', meta: 'All milestones', state: 'completed' },
-        { num: '✓', title: '5. AI review completed', meta: 'Verified', state: 'completed' },
-        { num: '✓', title: '6. Milestone approved', meta: '18 Oct 2026', state: 'completed' },
-        { num: '✓', title: '7. Payment released', meta: formatAsset(project.released, project.asset), state: 'completed' }
+        { num: '1', title: '1. Project created', meta: '01 Oct 2026', state: 'completed' },
+        { num: '2', title: '2. Agreement accepted', meta: '02 Oct 2026', state: 'completed' },
+        { num: '3', title: '3. Escrow funded', meta: formatAsset(project.funded, project.asset), state: 'completed' },
+        { num: '4', title: '4. Work submitted', meta: 'All milestones', state: 'completed' },
+        { num: '5', title: '5. AI review completed', meta: 'Verified', state: 'completed' },
+        { num: '6', title: '6. Milestone approved', meta: '18 Oct 2026', state: 'completed' },
+        { num: '7', title: '7. Payment released', meta: formatAsset(project.released, project.asset), state: 'completed' }
       ];
     } else if (project.status === 'Awaiting client approval') {
       stageStates = [
-        { num: '✓', title: '1. Project created', meta: '20 Oct 2026', state: 'completed' },
-        { num: '✓', title: '2. Agreement accepted', meta: '20 Oct 2026', state: 'completed' },
-        { num: '✓', title: '3. Escrow funded', meta: formatAsset(project.funded, project.asset), state: 'completed' },
-        { num: '✓', title: '4. Work submitted', meta: 'Today, 09:42 UTC', state: 'completed' },
-        { num: '✓', title: '5. AI review completed', meta: 'Today, 09:44 UTC', state: 'completed' },
+        { num: '1', title: '1. Project created', meta: '20 Oct 2026', state: 'completed' },
+        { num: '2', title: '2. Agreement accepted', meta: '20 Oct 2026', state: 'completed' },
+        { num: '3', title: '3. Escrow funded', meta: formatAsset(project.funded, project.asset), state: 'completed' },
+        { num: '4', title: '4. Work submitted', meta: 'Today, 09:42 UTC', state: 'completed' },
+        { num: '5', title: '5. AI review completed', meta: 'Today, 09:44 UTC', state: 'completed' },
         { num: '6', title: '6. Milestone approved', meta: 'Awaiting decision', state: 'current' },
         { num: '7', title: '7. Payment released', meta: 'Upcoming stage', state: 'upcoming' }
       ];
     } else if (project.status === 'Under AI review') {
       stageStates = [
-        { num: '✓', title: '1. Project created', meta: '24 Oct 2026', state: 'completed' },
-        { num: '✓', title: '2. Agreement accepted', meta: '24 Oct 2026', state: 'completed' },
-        { num: '✓', title: '3. Escrow funded', meta: formatAsset(project.funded, project.asset), state: 'completed' },
-        { num: '✓', title: '4. Work submitted', meta: '42 mins ago', state: 'completed' },
+        { num: '1', title: '1. Project created', meta: '24 Oct 2026', state: 'completed' },
+        { num: '2', title: '2. Agreement accepted', meta: '24 Oct 2026', state: 'completed' },
+        { num: '3', title: '3. Escrow funded', meta: formatAsset(project.funded, project.asset), state: 'completed' },
+        { num: '4', title: '4. Work submitted', meta: '42 mins ago', state: 'completed' },
         { num: '5', title: '5. AI review completed', meta: 'In progress', state: 'current' },
         { num: '6', title: '6. Milestone approved', meta: 'Upcoming stage', state: 'upcoming' },
         { num: '7', title: '7. Payment released', meta: 'Upcoming stage', state: 'upcoming' }
       ];
     } else {
       stageStates = [
-        { num: '✓', title: '1. Project created', meta: '21 Oct 2026', state: 'completed' },
-        { num: '✓', title: '2. Agreement accepted', meta: '22 Oct 2026', state: 'completed' },
-        { num: '✓', title: '3. Escrow funded', meta: formatAsset(project.funded, project.asset), state: 'completed' },
+        { num: '1', title: '1. Project created', meta: '21 Oct 2026', state: 'completed' },
+        { num: '2', title: '2. Agreement accepted', meta: '22 Oct 2026', state: 'completed' },
+        { num: '3', title: '3. Escrow funded', meta: formatAsset(project.funded, project.asset), state: 'completed' },
         { num: '4', title: '4. Work submitted', meta: project.status === 'Revision requested' ? 'Revision needed' : 'In execution', state: 'current' },
         { num: '5', title: '5. AI review completed', meta: 'Upcoming stage', state: 'upcoming' },
         { num: '6', title: '6. Milestone approved', meta: 'Upcoming stage', state: 'upcoming' },
@@ -641,7 +641,7 @@
             '</div>' +
             '<div class="ai-check-list">' +
               (project.aiReport.passed || []).map(function (item) {
-                return '<div class="ai-check-row"><span class="ai-check-icon pass">✓</span><span>' + escapeHtml(item) + '</span></div>';
+                return '<div class="ai-check-row"><span class="ai-check-icon pass"><svg viewBox="0 0 16 16" width="10" height="10" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5 L6.5 12 L13 4"/></svg></span><span>' + escapeHtml(item) + '</span></div>';
               }).join('') +
               (project.aiReport.failed || []).map(function (item) {
                 return '<div class="ai-check-row"><span class="ai-check-icon warn">!</span><span style="color:var(--warning);">' + escapeHtml(item) + '</span></div>';
@@ -867,7 +867,7 @@
             '</div>' +
             '<div class="ai-check-list">' +
               (project.aiReport.passed || []).map(function (item) {
-                return '<div class="ai-check-row"><span class="ai-check-icon pass">✓</span><span>' + escapeHtml(item) + '</span></div>';
+                return '<div class="ai-check-row"><span class="ai-check-icon pass"><svg viewBox="0 0 16 16" width="10" height="10" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5 L6.5 12 L13 4"/></svg></span><span>' + escapeHtml(item) + '</span></div>';
               }).join('') +
               (project.aiReport.failed || []).map(function (item) {
                 return '<div class="ai-check-row"><span class="ai-check-icon warn">!</span><span style="color:var(--warning);">' + escapeHtml(item) + '</span></div>';

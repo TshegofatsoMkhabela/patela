@@ -70,7 +70,7 @@ export function SignInView() {
       return;
     }
     toast.success("Signed in to the Patela demo workspace.");
-    router.push("/html/orders.html");
+    router.push("/html/client-dashboard.html");
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
