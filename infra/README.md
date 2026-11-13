@@ -2,8 +2,11 @@
 
 `amplify-hosting.yaml` is a CloudFormation template for the web app's hosting. It creates:
 
-- **PatelaApp**: the Amplify app, connected to GitHub, using `WEB_COMPUTE` hosting (needed for Next.js server rendering).
-- **MainBranch**: the `main` branch, which rebuilds and redeploys on every push. `NEXT_PUBLIC_SITE_URL` is set to its own URL.
+- **PatelaApp**: the Amplify app, connected to GitHub, using `WEB_COMPUTE` hosting (needed for Next.js server rendering). Every build runs `npm test` and then `npm run build`. If either fails, nothing is deployed and the last good version stays live.
+- **MainBranch**: `main`, for development. It rebuilds and redeploys on every push.
+- **DemoBranch**: `demo`, the URL used on stage. Auto-build is off, so it only changes when you release it on purpose (see below).
+
+Each branch has its own `NEXT_PUBLIC_SITE_URL`, set to its own address.
 
 Everything runs in `us-east-1` using the AWS CLI profile `patella`. Sign in with `aws login --profile patella`.
 
@@ -31,7 +34,25 @@ Creating the stack doesn't build the site: the first build starts on the next pu
 aws amplify start-job --app-id <AppId> --branch-name main --job-type RELEASE --profile patella --region us-east-1
 ```
 
-## Find the URL and build status
+## Release the demo
+
+The `demo` URL is frozen. To put a version on it after rehearsing it on `main`:
+
+1. Point the `demo` git branch at the commit you rehearsed, and push it:
+
+   ```powershell
+   git push origin main:demo
+   ```
+
+2. Build and deploy it (the push alone does nothing):
+
+   ```powershell
+   aws amplify start-job --app-id <AppId> --branch-name demo --job-type RELEASE --profile patella --region us-east-1
+   ```
+
+From then until the next release, pushes to `main` never change what's on stage. To roll back, push an older commit to `demo` and release again.
+
+## Find the URLs and build status
 
 ```powershell
 aws cloudformation describe-stacks --stack-name patela-hosting --query "Stacks[0].Outputs" --profile patella --region us-east-1

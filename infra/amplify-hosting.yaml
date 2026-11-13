@@ -1,7 +1,8 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
   Patela web app on AWS Amplify Hosting (Next.js SSR). Creates the Amplify app
-  connected to GitHub and the main branch, which redeploys on every push.
+  connected to GitHub, a main branch that redeploys on every push, and a frozen
+  demo branch that only changes when it is released on purpose.
 
 Parameters:
   RepositoryUrl:
@@ -11,7 +12,13 @@ Parameters:
   BranchName:
     Type: String
     Default: main
-    Description: Branch that is deployed to production.
+    Description: Development branch; every push to it is built and deployed.
+  DemoBranchName:
+    Type: String
+    Default: demo
+    Description: >
+      Branch shown on stage. Auto-build is off, so pushes to it are not
+      deployed until someone runs a release (aws amplify start-job).
   GitHubTokenSecretName:
     Type: String
     Default: patela/github-token
@@ -31,6 +38,7 @@ Resources:
       # WEB_COMPUTE is required for Next.js server-side rendering (Next 12+).
       Platform: WEB_COMPUTE
       EnableBranchAutoDeletion: false
+      # A failing test or build stops the deploy; the last good version stays live.
       BuildSpec: |
         version: 1
         frontend:
@@ -41,6 +49,7 @@ Resources:
                 - npm ci
             build:
               commands:
+                - npm test
                 - npm run build
           artifacts:
             baseDirectory: .next
@@ -60,7 +69,7 @@ Resources:
       AppId: !GetAtt PatelaApp.AppId
       BranchName: !Ref BranchName
       Framework: Next.js - SSR
-      Stage: PRODUCTION
+      Stage: DEVELOPMENT
       EnableAutoBuild: true
       # Set on the branch, not the app: the URL only exists once the app does.
       EnvironmentVariables:
@@ -70,10 +79,29 @@ Resources:
         - Key: project
           Value: patela
 
+  DemoBranch:
+    Type: AWS::Amplify::Branch
+    Properties:
+      AppId: !GetAtt PatelaApp.AppId
+      BranchName: !Ref DemoBranchName
+      Framework: Next.js - SSR
+      Stage: PRODUCTION
+      # Frozen: a push to the demo branch never changes what's on stage by itself.
+      EnableAutoBuild: false
+      EnvironmentVariables:
+        - Name: NEXT_PUBLIC_SITE_URL
+          Value: !Sub "https://${DemoBranchName}.${PatelaApp.DefaultDomain}"
+      Tags:
+        - Key: project
+          Value: patela
+
 Outputs:
   AppId:
     Description: Amplify app ID, used by the aws amplify CLI commands.
     Value: !GetAtt PatelaApp.AppId
   SiteUrl:
-    Description: Public HTTPS address of the deployed app.
+    Description: Development URL; updates on every push to the main branch.
     Value: !Sub "https://${BranchName}.${PatelaApp.DefaultDomain}"
+  DemoUrl:
+    Description: Stage URL; changes only when the demo branch is released.
+    Value: !Sub "https://${DemoBranchName}.${PatelaApp.DefaultDomain}"
