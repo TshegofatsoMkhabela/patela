@@ -8,10 +8,12 @@ Network: Base Sepolia (chain 84532), token MockZARP (18 decimals). Spec: `specs/
 
 1. Buyer signs in (backend session) and connects MetaMask (extension, Base Sepolia).
 2. Buyer gets test ZARP ("Get test ZARP" → `MockZARP.mint`, testnet only).
-3. Buyer creates the order in the app → backend stores the agreement text and returns `agreementHash`
-   → buyer's MetaMask calls `createOrder(...)` then `approve` + `fundEscrow(orderId)`.
-4. Backend emails the supplier an accept link (Gmail SMTP).
-5. Supplier opens the link, signs in with the email code → MetaMask Embedded Wallet is created →
+3. Buyer creates the order in the app → backend stores the agreement text, returns `agreementHash`,
+   and emails the supplier an accept link `<site>/accept?token=…` (Gmail SMTP).
+4. Supplier opens the link, signs in with the email code → MetaMask Embedded Wallet is created and
+   linked (`/wallet/link`) → `POST /invitations/:token/accept`. Now the supplier's address is known.
+   (`createOrder` takes the supplier address, so the invite has to come before it.)
+5. Buyer's MetaMask calls `createOrder(...)` then `approve` + `fundEscrow(orderId)`; then the
    supplier calls `acceptOrder(orderId, agreementHash)` (gas sponsored).
 6. Supplier enters the driver's email → backend emails the driver → driver signs in the same way,
    gets a wallet → supplier calls `assignDriver(orderId, driverAddress)`.
@@ -90,9 +92,9 @@ All JSON; session cookie (`credentials: "include"`); errors `{ error: string }` 
 |---|---|---|---|
 | existing `/auth/otp/request`, `/auth/otp/verify`, `/auth/google/id-token`, `/auth/logout`, `/me` | — | — | web core |
 | `POST /wallet/challenge`, `POST /wallet/link` | existing | existing | both web |
-| `POST /orders` | `{ supplierEmail, totalZarp, driverAtPickupZarp, supplierAtPickupZarp, supplierAtDeliveryZarp, refundAfterHours, agreementText }` | `{ id, agreementHash, refundDeadline }` | web core |
+| `POST /orders` | `{ supplierEmail, totalZarp, driverAtPickupZarp, supplierAtPickupZarp, supplierAtDeliveryZarp, refundAfterHours, agreementText }` | `{ id, agreementHash, refundDeadline }` (sends supplier invite email; with `DEMO_MODE` also `acceptUrl`) | web core |
 | `POST /orders/:id/chain` | `{ chainOrderId, createTxHash }` | order | web core |
-| `POST /orders/:id/funding/verify` | `{ txHash }` | order (sends supplier invite email) | web core |
+| `POST /orders/:id/funding/verify` | `{ txHash }` | order | web core |
 | `GET /orders/:id` | — | order + parties + timeline + balances | both web |
 | `GET /invitations/:token` | — | `{ orderId, role, email, agreementText, agreementHash }` | web handoff |
 | `POST /invitations/:token/accept` | `{ walletAddress }` (after `/wallet/link`) | order | web handoff |
