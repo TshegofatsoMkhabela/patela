@@ -29,14 +29,17 @@ Parameters:
   EscrowAddress:
     Type: String
     Default: ""
-    Description: PatellaEscrowAndLogistics address on Base Sepolia (contracts/deployments/baseSepolia.json).
+    Description: PatellaEscrowAndLogistics address on Celo Sepolia (set after the contract is deployed there).
   ZarpAddress:
     Type: String
-    Default: ""
-    Description: MockZARP token address on Base Sepolia (testnet demo token).
+    # Mento ZARm (South African rand, 18 decimals) on Celo Sepolia, per docs.mento.org deployment addresses.
+    # Celo mainnet ZARm is 0x4c35853A3B4e647fD266f4de678dCc8fEC410BF6 (real money; not used yet).
+    Default: "0x10CCfB235b0E1Ed394bACE4560C3ed016697687e"
+    Description: ZARm token address on the web app's chain.
   ApiOrigin:
     Type: String
-    Default: ""
+    # Development backend stack (infra/README.md). Its PublicOrigin must list the Amplify URL for CORS.
+    Default: https://g629knqcjc.execute-api.us-east-1.amazonaws.com
     Description: Backend API origin the web app calls, e.g. https://api.example.com (no trailing slash).
   Web3AuthClientId:
     Type: String
@@ -44,8 +47,8 @@ Parameters:
     Description: MetaMask Embedded Wallets (Web3Auth) client ID; public, used by the browser.
   RpcUrl:
     Type: String
-    Default: https://sepolia.base.org
-    Description: Base Sepolia JSON-RPC URL the browser reads balances and simulates transactions with.
+    Default: https://forno.celo-sepolia.celo-testnet.org
+    Description: Celo Sepolia JSON-RPC URL the browser reads balances and simulates transactions with.
 
 Resources:
   PatelaApp:
@@ -96,9 +99,9 @@ Resources:
       EnvironmentVariables:
         - Name: NEXT_PUBLIC_SITE_URL
           Value: !Sub "https://${BranchName}.${PatelaApp.DefaultDomain}"
-        # Testnet demo chain settings (specs/INTERFACES.md §6). Public values: they ship to the browser.
+        # Celo Sepolia chain settings (specs/INTERFACES.md §6, network changed to Celo). Public values: they ship to the browser.
         - Name: NEXT_PUBLIC_CHAIN_ID
-          Value: "84532"
+          Value: "11142220"
         - Name: NEXT_PUBLIC_ESCROW_ADDRESS
           Value: !Ref EscrowAddress
         - Name: NEXT_PUBLIC_ZARP_ADDRESS
@@ -125,9 +128,9 @@ Resources:
       EnvironmentVariables:
         - Name: NEXT_PUBLIC_SITE_URL
           Value: !Sub "https://${DemoBranchName}.${PatelaApp.DefaultDomain}"
-        # Testnet demo chain settings (specs/INTERFACES.md §6). Public values: they ship to the browser.
+        # Celo Sepolia chain settings (specs/INTERFACES.md §6, network changed to Celo). Public values: they ship to the browser.
         - Name: NEXT_PUBLIC_CHAIN_ID
-          Value: "84532"
+          Value: "11142220"
         - Name: NEXT_PUBLIC_ESCROW_ADDRESS
           Value: !Ref EscrowAddress
         - Name: NEXT_PUBLIC_ZARP_ADDRESS
