@@ -1,0 +1,225 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Patela API on Lambda with private RDS PostgreSQL (development-sized stack).
+
+Parameters:
+  CodeBucket:
+    Type: String
+    Description: S3 bucket containing the built backend ZIP.
+  CodeKey:
+    Type: String
+    Description: S3 key for the built backend ZIP.
+  PublicOrigin:
+    Type: String
+    Default: ''
+    Description: Exact HTTPS web origin, or blank for an API-only OAuth test.
+  GoogleClientId:
+    Type: String
+    Description: Google OAuth Web application client ID.
+  GoogleClientSecretArn:
+    Type: String
+    Description: ARN of a Secrets Manager secret containing the raw Google OAuth client secret.
+
+Resources:
+  Network:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.80.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags: [{Key: Name, Value: patela-api}]
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+  GatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: {VpcId: !Ref Network, InternetGatewayId: !Ref InternetGateway}
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Network
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: 10.80.0.0/24
+      MapPublicIpOnLaunch: true
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Network
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: 10.80.1.0/24
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Network
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: 10.80.2.0/24
+  PublicRoutes:
+    Type: AWS::EC2::RouteTable
+    Properties: {VpcId: !Ref Network}
+  PublicInternetRoute:
+    Type: AWS::EC2::Route
+    DependsOn: GatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRoutes
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+  PublicRouteAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: {SubnetId: !Ref PublicSubnet, RouteTableId: !Ref PublicRoutes}
+  NatAddress:
+    Type: AWS::EC2::EIP
+    DependsOn: GatewayAttachment
+    Properties: {Domain: vpc}
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties: {SubnetId: !Ref PublicSubnet, AllocationId: !GetAtt NatAddress.AllocationId}
+  PrivateRoutes:
+    Type: AWS::EC2::RouteTable
+    Properties: {VpcId: !Ref Network}
+  PrivateInternetRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRoutes
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+  PrivateAssociationA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: {SubnetId: !Ref PrivateSubnetA, RouteTableId: !Ref PrivateRoutes}
+  PrivateAssociationB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: {SubnetId: !Ref PrivateSubnetB, RouteTableId: !Ref PrivateRoutes}
+  ApiSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Patela Lambda outbound access
+      VpcId: !Ref Network
+  DatabaseSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: PostgreSQL from Patela Lambda only
+      VpcId: !Ref Network
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref ApiSecurityGroup
+  DatabaseSubnets:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Private Patela database subnets
+      SubnetIds: [!Ref PrivateSubnetA, !Ref PrivateSubnetB]
+  DatabaseSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: Patela PostgreSQL master credentials
+      GenerateSecretString:
+        SecretStringTemplate: '{"username":"patela"}'
+        GenerateStringKey: password
+        PasswordLength: 32
+        ExcludePunctuation: true
+  Database:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      Engine: postgres
+      DBInstanceClass: db.t4g.micro
+      AllocatedStorage: '20'
+      StorageEncrypted: true
+      DBName: patela
+      MasterUsername: patela
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${DatabaseSecret}:SecretString:password}}'
+      DBSubnetGroupName: !Ref DatabaseSubnets
+      VPCSecurityGroups: [!Ref DatabaseSecurityGroup]
+      PubliclyAccessible: false
+      BackupRetentionPeriod: 7
+      DeletionProtection: true
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: lambda.amazonaws.com}
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+  ApiFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: nodejs22.x
+      Handler: dist/lambda.handler
+      Role: !GetAtt LambdaRole.Arn
+      Code: {S3Bucket: !Ref CodeBucket, S3Key: !Ref CodeKey}
+      MemorySize: 512
+      Timeout: 30
+      ReservedConcurrentExecutions: 5
+      VpcConfig:
+        SubnetIds: [!Ref PrivateSubnetA, !Ref PrivateSubnetB]
+        SecurityGroupIds: [!Ref ApiSecurityGroup]
+      Environment:
+        Variables:
+          DATABASE_URL: !Sub 'postgres://patela:{{resolve:secretsmanager:${DatabaseSecret}:SecretString:password}}@${Database.Endpoint.Address}:5432/patela'
+          GOOGLE_OAUTH_CLIENT_ID: !Ref GoogleClientId
+          GOOGLE_OAUTH_CLIENT_SECRET: !Sub '{{resolve:secretsmanager:${GoogleClientSecretArn}:SecretString}}'
+          PUBLIC_ORIGIN: !Ref PublicOrigin
+          PG_POOL_MAX: '2'
+          CHAIN_ID: '8453'
+  MigrationFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: nodejs22.x
+      Handler: dist/migrate-lambda.handler
+      Role: !GetAtt LambdaRole.Arn
+      Code: {S3Bucket: !Ref CodeBucket, S3Key: !Ref CodeKey}
+      MemorySize: 256
+      Timeout: 120
+      ReservedConcurrentExecutions: 1
+      VpcConfig:
+        SubnetIds: [!Ref PrivateSubnetA, !Ref PrivateSubnetB]
+        SecurityGroupIds: [!Ref ApiSecurityGroup]
+      Environment:
+        Variables:
+          DATABASE_URL: !Sub 'postgres://patela:{{resolve:secretsmanager:${DatabaseSecret}:SecretString:password}}@${Database.Endpoint.Address}:5432/patela'
+          PG_POOL_MAX: '1'
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: patela-api
+      ProtocolType: HTTP
+  ApiIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt ApiFunction.Arn
+      PayloadFormatVersion: '2.0'
+  DefaultRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: $default
+      Target: !Sub 'integrations/${ApiIntegration}'
+  DefaultStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref HttpApi
+      StageName: $default
+      AutoDeploy: true
+  InvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ApiFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*'
+
+Outputs:
+  ApiOrigin:
+    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+  DatabaseEndpoint:
+    Value: !GetAtt Database.Endpoint.Address
+  FunctionName:
+    Value: !Ref ApiFunction
+  MigrationFunctionName:
+    Value: !Ref MigrationFunction
