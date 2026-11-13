@@ -15,7 +15,8 @@ interface RoleConfig {
   badge: string;
   desc: string;
   redirectUrl: string;
-  icon: string;
+  pill: string;
+  badgeClass: string;
   steps: {
     title: string;
     subtitle: string;
@@ -36,8 +37,9 @@ const ROLES: RoleConfig[] = [
     title: "Commercial Buyer / Consignor",
     badge: "Buyer & Consignor",
     desc: "Procuring bulk commodities, funding escrow, managing multi-destination consignments.",
-    redirectUrl: "/html/orders.html",
-    icon: "🏢",
+    redirectUrl: "/html/client-dashboard.html",
+    pill: "CLIENT",
+    badgeClass: "badge badge-gold",
     steps: [
       {
         title: "Company & CIPC Registration",
@@ -153,8 +155,9 @@ const ROLES: RoleConfig[] = [
     title: "Freight Logistics Carrier / Fleet Operator",
     badge: "Freight Carrier",
     desc: "Transporting cargo, bidding on freight corridors, managing drivers and vehicle assets.",
-    redirectUrl: "/html/tender-trail.html",
-    icon: "🚛",
+    redirectUrl: "/html/worker-dashboard.html",
+    pill: "WORKER",
+    badgeClass: "badge badge-blue",
     steps: [
       {
         title: "Fleet Capacity & Configuration",
@@ -272,8 +275,9 @@ const ROLES: RoleConfig[] = [
     title: "Supplier / Commodity Producer",
     badge: "Supplier / Producer",
     desc: "Supplying bulk commodities, confirming dispatch weighbridge slips, receiving milestone payouts.",
-    redirectUrl: "/html/order-detail.html",
-    icon: "🏭",
+    redirectUrl: "/html/worker-dashboard.html",
+    pill: "SUPPLIER",
+    badgeClass: "badge badge-blue",
     steps: [
       {
         title: "Commodity & Production Profile",
@@ -367,7 +371,8 @@ const ROLES: RoleConfig[] = [
     badge: "Frontline Logistics",
     desc: "Physical cargo handling, mobile guest handoffs without apps or wallets, tailgate signatures.",
     redirectUrl: "/html/guest-handoff.html",
-    icon: "🚚",
+    pill: "DRIVER",
+    badgeClass: "badge badge-gold",
     steps: [
       {
         title: "Driver Credentials & License",
@@ -434,7 +439,8 @@ const ROLES: RoleConfig[] = [
     badge: "Auditor & Inspector",
     desc: "Read-only custody inspection, SHA-256 byte proof verification, Base Sepolia block checks.",
     redirectUrl: "/html/auditor-trail.html",
-    icon: "🔍",
+    pill: "AUDITOR",
+    badgeClass: "badge badge-neutral",
     steps: [
       {
         title: "Auditing Firm & Accreditation",
@@ -575,11 +581,13 @@ export function SignUpView() {
       setCurrentStepIdx((idx) => idx + 1);
     } else {
       // Finished all extra questions one by one!
+      const appRole = role === "buyer" ? "client" : role === "auditor" ? "auditor" : "worker";
       const userProfile = {
         fullName,
         email,
         phone,
-        role,
+        role: appRole,
+        rawRole: role,
         roleTitle: activeRoleConfig.title,
         extraData,
         registeredAt: new Date().toISOString(),
@@ -587,6 +595,7 @@ export function SignUpView() {
       };
       try {
         localStorage.setItem("patela_auth_user", JSON.stringify(userProfile));
+        localStorage.setItem("patela_current_role", appRole);
       } catch {
         /* storage safe */
       }
@@ -658,7 +667,16 @@ export function SignUpView() {
                         <div
                           style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}
                         >
-                          <span style={{ fontSize: "1.3rem" }}>{r.icon}</span>
+                          <span
+                            className={r.badgeClass}
+                            style={{
+                              fontSize: "0.68rem",
+                              padding: "2px 7px",
+                              letterSpacing: "0.04em",
+                            }}
+                          >
+                            {r.pill}
+                          </span>
                           <span
                             style={{
                               fontWeight: 600,
@@ -807,7 +825,7 @@ export function SignUpView() {
                 }}
               >
                 <span className="pt-eyebrow" style={{ margin: 0 }}>
-                  {activeRoleConfig.icon} {activeRoleConfig.title} Onboarding
+                  {activeRoleConfig.title} Onboarding
                 </span>
                 <span
                   className="pt-badge"
@@ -925,11 +943,23 @@ export function SignUpView() {
                                     placeItems: "center",
                                     background: isChecked ? "#ffe2b2" : "transparent",
                                     color: "#02060f",
-                                    fontWeight: "bold",
-                                    fontSize: "0.75rem",
                                   }}
                                 >
-                                  {isChecked ? "✓" : ""}
+                                  {isChecked ? (
+                                    <svg
+                                      viewBox="0 0 16 16"
+                                      width="11"
+                                      height="11"
+                                      stroke="#02060f"
+                                      strokeWidth="2.5"
+                                      fill="none"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      aria-hidden="true"
+                                    >
+                                      <path d="M3 8.5 L6.5 12 L13 4" />
+                                    </svg>
+                                  ) : null}
                                 </span>
                                 <span style={{ fontSize: "0.9rem" }}>{opt}</span>
                               </div>
@@ -962,7 +992,7 @@ export function SignUpView() {
                 <button type="submit" className="pt-btn" style={{ padding: "12px 28px" }}>
                   <span>
                     {currentStepIdx === totalExtraSteps - 1
-                      ? "Complete Verification & Finish Setup ✓"
+                      ? "Complete Verification & Finish Setup →"
                       : "Save & Next Step →"}
                   </span>
                 </button>
@@ -985,11 +1015,22 @@ export function SignUpView() {
                   border: "1px solid rgba(255, 228, 182, 0.6)",
                   display: "grid",
                   placeItems: "center",
-                  fontSize: "2rem",
                   margin: "0 auto 20px",
                 }}
               >
-                ✓
+                <svg
+                  viewBox="0 0 24 24"
+                  width="32"
+                  height="32"
+                  stroke="#ffe2b2"
+                  strokeWidth="2.2"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
               </div>
               <span className="pt-eyebrow">Onboarding Complete</span>
               <h1 className="pt-h2" style={{ margin: "8px 0 12px" }}>

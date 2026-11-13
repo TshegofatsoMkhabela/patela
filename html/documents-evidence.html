@@ -37,7 +37,13 @@
 
         <!-- AI Invoice OCR Advisory Disclosure (Section 4.5 & 6) -->
         <div class="trust-boundary-card" style="margin-bottom:24px;">
-          <div style="color:var(--gold);font-size:1.3rem;">🤖</div>
+          <div style="color:var(--gold);line-height:1;display:flex;align-items:center;">
+            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="4" y="4" width="16" height="16" rx="2"/>
+              <rect x="9" y="9" width="6" height="6"/>
+              <path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/>
+            </svg>
+          </div>
           <div>
             <strong>AI &amp; OCR Verification Invariant (Section 4.5 &amp; 6):</strong>
             Automated OCR and AI document extractions are strictly advisory suggestions for user convenience. <strong>AI extraction never autonomously modifies commercial terms, routes, or payment releases without verified human review and signature.</strong>
@@ -47,7 +53,11 @@
         <!-- Document Upload & Drag-Drop Box -->
         <section class="card" style="margin-bottom:28px;">
           <div class="drop-zone-verifier" id="doc-drop-zone">
-            <div style="font-size:2.2rem;color:var(--gold);margin-bottom:8px;">📁</div>
+            <div style="color:var(--gold);margin-bottom:8px;display:flex;justify-content:center;">
+              <svg viewBox="0 0 24 24" width="36" height="36" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              </svg>
+            </div>
             <h3 style="font-size:1.1rem;font-weight:600;margin:0 0 6px;color:var(--text-primary);">
               Drag &amp; drop document or photo to calculate SHA-256 hash
             </h3>

@@ -327,7 +327,7 @@
       '<div class="topbar-right">' +
         '<div class="topbar-site-links">' +
           '<a href="orders.html" class="topbar-site-pill" title="Supply Chain Orders">Orders</a>' +
-          '<a href="guest-handoff.html" class="topbar-site-pill" style="border-color:var(--border-gold);color:var(--gold-light);" title="Driver / Warehouse Guest Handoff">Guest Handoff ⚡</a>' +
+          '<a href="guest-handoff.html" class="topbar-site-pill" style="border-color:var(--border-gold);color:var(--gold-light);" title="Driver / Warehouse Guest Handoff">Guest Handoff</a>' +
           '<a href="signin.html" class="topbar-site-pill" title="Sign In">Sign In</a>' +
           '<a href="signup.html" class="topbar-site-pill" style="border-color:rgba(255,228,182,0.5);color:#ffe2b2;" title="Sign Up">Sign Up</a>' +
           '<a href="index.html" class="topbar-site-pill" title="Blueprint Overview Hub">Blueprint Hub ↗</a>' +

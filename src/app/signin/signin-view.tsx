@@ -10,50 +10,62 @@ import { Reveal } from "@/components/Reveal";
 interface DemoAccount {
   name: string;
   role: string;
+  roleCategory: "client" | "worker" | "auditor";
   company: string;
-  icon: string;
+  badgeLabel: string;
+  badgeClass: string;
   email: string;
   redirectUrl: string;
 }
 
 const DEMO_ACCOUNTS: DemoAccount[] = [
   {
-    name: "Alex Vance",
-    role: "Commercial Buyer / Consignor",
-    company: "Anglo African Resources (Pty) Ltd",
-    icon: "🏢",
+    name: "Alex Morgan / Alex Vance",
+    role: "Commercial Buyer & Consignor",
+    roleCategory: "client",
+    company: "Anglo-Bavarian Mineral Trade (Pty) Ltd",
+    badgeLabel: "CLIENT",
+    badgeClass: "badge badge-gold",
     email: "alex@resources.co.za",
-    redirectUrl: "/html/orders.html",
+    redirectUrl: "/html/client-dashboard.html",
   },
   {
-    name: "Dumisani Khumalo",
-    role: "Freight Fleet Operator",
-    company: "Trans-Limpopo Freight Logistics",
-    icon: "🚛",
-    email: "dumisani@translimpopo.co.za",
-    redirectUrl: "/html/tender-trail.html",
+    name: "Jordan Blake / Dumisani Khumalo",
+    role: "Freight Carrier & Fleet Operator",
+    roleCategory: "worker",
+    company: "Trans-Limpopo Freight Logistics Ltd",
+    badgeLabel: "WORKER",
+    badgeClass: "badge badge-blue",
+    email: "jordan@translimpopo.co.za",
+    redirectUrl: "/html/worker-dashboard.html",
   },
   {
     name: "Johan van der Merwe",
-    role: "Commodity Supplier",
+    role: "Commodity Supplier & Producer",
+    roleCategory: "worker",
     company: "Witbank Minerals & Mining Co",
-    icon: "🏭",
+    badgeLabel: "SUPPLIER",
+    badgeClass: "badge badge-blue",
     email: "johan@witbankminerals.co.za",
-    redirectUrl: "/html/order-detail.html",
+    redirectUrl: "/html/worker-dashboard.html",
   },
   {
     name: "Sipho Ndlovu",
-    role: "Frontline Driver / Clerk",
-    company: "Cross-Dock Heavy Articulated Driver",
-    icon: "🚚",
+    role: "Frontline Driver & Custody Clerk",
+    roleCategory: "worker",
+    company: "Cross-Dock Depot Heavy Haulage",
+    badgeLabel: "DRIVER",
+    badgeClass: "badge badge-gold",
     email: "sipho.driver@patella.demo",
     redirectUrl: "/html/guest-handoff.html",
   },
   {
     name: "Dr. Nomsa Mthembu",
-    role: "Forensic Auditor / Inspector",
-    company: "IRBA Registered Compliance Audit",
-    icon: "🔍",
+    role: "Forensic Auditor & Block Verifier",
+    roleCategory: "auditor",
+    company: "Independent IRBA Registered Audit",
+    badgeLabel: "AUDITOR",
+    badgeClass: "badge badge-neutral",
     email: "nomsa.audit@deloitte.demo",
     redirectUrl: "/html/auditor-trail.html",
   },
@@ -61,6 +73,7 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
 
 export function SignInView() {
   const router = useRouter();
+  const [selectedRole, setSelectedRole] = useState<"client" | "worker">("client");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
@@ -80,19 +93,23 @@ export function SignInView() {
     const authUser = {
       fullName: email.split("@")[0].toUpperCase(),
       email,
-      role: "buyer",
-      roleTitle: "Commercial Consignor / Buyer",
+      role: selectedRole,
+      roleTitle:
+        selectedRole === "client" ? "Commercial Consignor / Buyer" : "Logistics Partner / Supplier",
       verified: true,
       signedInAt: new Date().toISOString(),
     };
     try {
       localStorage.setItem("patela_auth_user", JSON.stringify(authUser));
+      localStorage.setItem("patela_current_role", selectedRole);
     } catch {
       /* safe */
     }
 
     toast.success(`Welcome back! Signed in as ${email}.`);
-    router.push("/html/orders.html");
+    router.push(
+      selectedRole === "client" ? "/html/client-dashboard.html" : "/html/worker-dashboard.html",
+    );
   }
 
   function handleDemoLogin(account: DemoAccount) {
@@ -100,13 +117,17 @@ export function SignInView() {
       fullName: account.name,
       email: account.email,
       company: account.company,
-      role: account.role,
+      role: account.roleCategory,
       roleTitle: account.role,
       verified: true,
       signedInAt: new Date().toISOString(),
     };
     try {
       localStorage.setItem("patela_auth_user", JSON.stringify(authUser));
+      localStorage.setItem(
+        "patela_current_role",
+        account.roleCategory === "worker" ? "worker" : "client",
+      );
     } catch {
       /* safe */
     }
@@ -151,6 +172,85 @@ export function SignInView() {
                 <p style={{ color: "#a2a9b8", fontSize: "0.875rem", margin: 0 }}>
                   Enter your registered enterprise email and password.
                 </p>
+              </div>
+
+              <div style={{ marginBottom: 18 }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "0.8rem",
+                    color: "#d9c39a",
+                    marginBottom: 8,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                  }}
+                >
+                  Select Operating Workspace
+                </label>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "10px 12px",
+                      borderRadius: 10,
+                      border:
+                        selectedRole === "client"
+                          ? "1px solid #ffe2b2"
+                          : "1px solid rgba(196,214,232,0.15)",
+                      background:
+                        selectedRole === "client" ? "rgba(255,226,178,0.08)" : "transparent",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="wsRole"
+                      value="client"
+                      checked={selectedRole === "client"}
+                      onChange={() => setSelectedRole("client")}
+                      style={{ accentColor: "#ffe2b2" }}
+                    />
+                    <div>
+                      <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#fff" }}>
+                        Client
+                      </div>
+                      <div style={{ fontSize: "0.7rem", color: "#a2a9b8" }}>Buyer / Consignor</div>
+                    </div>
+                  </label>
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "10px 12px",
+                      borderRadius: 10,
+                      border:
+                        selectedRole === "worker"
+                          ? "1px solid #7ea6e0"
+                          : "1px solid rgba(196,214,232,0.15)",
+                      background:
+                        selectedRole === "worker" ? "rgba(126,166,224,0.08)" : "transparent",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="wsRole"
+                      value="worker"
+                      checked={selectedRole === "worker"}
+                      onChange={() => setSelectedRole("worker")}
+                      style={{ accentColor: "#ffe2b2" }}
+                    />
+                    <div>
+                      <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#fff" }}>
+                        Worker
+                      </div>
+                      <div style={{ fontSize: "0.7rem", color: "#a2a9b8" }}>Carrier / Supplier</div>
+                    </div>
+                  </label>
+                </div>
               </div>
 
               <div className="pt-field">
@@ -282,7 +382,12 @@ export function SignInView() {
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <span style={{ fontSize: "1.4rem" }}>{acc.icon}</span>
+                      <span
+                        className={acc.badgeClass}
+                        style={{ fontSize: "0.7rem", padding: "4px 8px", letterSpacing: "0.04em" }}
+                      >
+                        {acc.badgeLabel}
+                      </span>
                       <div>
                         <div style={{ fontWeight: 600, fontSize: "0.9rem", color: "#fff" }}>
                           {acc.name}
