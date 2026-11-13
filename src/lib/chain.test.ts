@@ -16,7 +16,9 @@ import {
   CONTRACT_ERROR_MESSAGES,
   contractErrorMessage,
   createAndFundOrder,
-  ensureBaseSepolia,
+  ensureChain,
+  explorerTxUrl,
+  NETWORK,
   getTestZarp,
   readBalances,
   signWalletLink,
@@ -277,8 +279,16 @@ describe("readBalances", () => {
   });
 });
 
-describe("ensureBaseSepolia", () => {
-  it("Given MetaMask lacks Base Sepolia (4902), When switching, Then it adds the chain", async () => {
+describe("NETWORK", () => {
+  it("Given the default config, Then the app targets Celo Sepolia with Mento ZARm", () => {
+    expect(NETWORK.chain.id).toBe(11142220);
+    expect(NETWORK.tokenSymbol).toBe("ZARm");
+    expect(explorerTxUrl("0xabc")).toBe("https://celo-sepolia.blockscout.com/tx/0xabc");
+  });
+});
+
+describe("ensureChain", () => {
+  it("Given MetaMask lacks Celo Sepolia (4902), When switching, Then it adds the chain with CELO gas", async () => {
     const calls: string[] = [];
     const eth = {
       request: vi.fn(async ({ method }: { method: string }) => {
@@ -288,11 +298,24 @@ describe("ensureBaseSepolia", () => {
         return null;
       }),
     };
-    await ensureBaseSepolia(eth);
+    await ensureChain(eth);
     expect(calls).toEqual(["wallet_switchEthereumChain", "wallet_addEthereumChain"]);
-    const addParams = (eth.request.mock.calls[1][0] as unknown as { params: [{ chainId: string }] })
-      .params[0];
-    expect(addParams.chainId).toBe("0x14a34");
+    const addParams = (
+      eth.request.mock.calls[1][0] as unknown as {
+        params: [
+          {
+            chainId: string;
+            chainName: string;
+            nativeCurrency: { symbol: string };
+            rpcUrls: string[];
+          },
+        ];
+      }
+    ).params[0];
+    expect(addParams.chainId).toBe("0xaa044c");
+    expect(addParams.chainName).toMatch(/^Celo Sepolia/);
+    expect(addParams.nativeCurrency.symbol).toMatch(/CELO$/);
+    expect(addParams.rpcUrls[0]).toMatch(/^https:\/\//);
   });
 
   it("Given the user rejects the switch, Then it throws", async () => {
@@ -301,7 +324,7 @@ describe("ensureBaseSepolia", () => {
         throw Object.assign(new Error("rejected"), { code: 4001 });
       }),
     };
-    await expect(ensureBaseSepolia(eth)).rejects.toThrow();
+    await expect(ensureChain(eth)).rejects.toThrow();
   });
 });
 

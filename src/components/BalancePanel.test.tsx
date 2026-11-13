@@ -40,10 +40,10 @@ describe("BalancePanelView", () => {
     for (const label of ["Buyer", "Supplier", "Driver", "Escrow"]) expect(html).toContain(label);
   });
 
-  it("Given balances, Then amounts render in ZARP", () => {
+  it("Given balances, Then amounts render in ZARm", () => {
     expect(html).toContain("900.00");
     expect(html).toContain("100.00");
-    expect(html).toContain("ZARP");
+    expect(html).toContain("ZARm");
   });
 
   it("Given a driver not yet assigned, Then it shows a placeholder instead of an address", () => {
@@ -54,8 +54,9 @@ describe("BalancePanelView", () => {
     expect(html).toContain("0xb0b0…0003");
   });
 
-  it("Given the demo rule in AGENTS.md, Then the panel is labelled testnet demo", () => {
-    expect(html).toMatch(/Testnet demo/);
+  it("Given real Mento ZARm, Then the panel warns it is the real token and names the network", () => {
+    expect(html).toContain("Real ZARm on Celo");
+    expect(html).toContain("Celo Sepolia");
   });
 
   it("Given a read error, Then the panel shows it", () => {

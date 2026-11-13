@@ -1,4 +1,4 @@
-// Buyer-side chain helpers: MetaMask (extension) on Base Sepolia, MockZARP and the escrow.
+// Buyer-side chain helpers: MetaMask (extension) on Celo Sepolia, Mento ZARm and the escrow.
 // Every write is simulated on the public RPC first: that is where custom errors decode reliably
 // (MetaMask's own gas estimate often drops the revert data), and nothing is sent if it would revert.
 import {
@@ -16,7 +16,7 @@ import {
   type PublicClient,
   type WalletClient,
 } from "viem";
-import { baseSepolia, hardhat } from "viem/chains";
+import { baseSepolia, celo, celoSepolia, hardhat, type Chain } from "viem/chains";
 import {
   CHAIN_ID,
   ESCROW_ADDRESS,
@@ -38,13 +38,35 @@ export type Eip1193 = {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
 };
 
-export const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || "https://sepolia.base.org";
+// The token is Mento ZARm (South African rand, 18 decimals). Default network: Celo Sepolia
+// (11142220, ZARm 0x10CCfB235b0E1Ed394bACE4560C3ed016697687e). contracts.ts still falls back to
+// 84532 when NEXT_PUBLIC_CHAIN_ID is unset, so the env var must be set for EIP-712 domains to match.
+const CHAINS: Record<number, Chain> = {
+  [celoSepolia.id]: celoSepolia,
+  [celo.id]: celo,
+  [hardhat.id]: hardhat,
+  [baseSepolia.id]: baseSepolia,
+};
+const chain: Chain =
+  CHAINS[process.env.NEXT_PUBLIC_CHAIN_ID ? CHAIN_ID : celoSepolia.id] ?? celoSepolia;
+
+export const NETWORK = {
+  chain,
+  name: chain.name,
+  tokenSymbol: chain.id === hardhat.id ? "MockZARP" : "ZARm",
+  explorer: chain.blockExplorers?.default.url.replace(/\/+$/, "") ?? "",
+};
+
+export const explorerTxUrl = (hash: string) =>
+  NETWORK.explorer ? `${NETWORK.explorer}/tx/${hash}` : "";
+
+export const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || chain.rpcUrls.default.http[0];
 export const TEST_ZARP_AMOUNT = parseUnits("1000", ZARP_DECIMALS);
-/** Minting MockZARP is only offered on testnets (Base Sepolia, local Hardhat). */
-export const isTestnet = (chainId: number = CHAIN_ID) => chainId === 84532 || chainId === 31337;
+/** Real ZARm can't be minted; minting is only offered for MockZARP on a local Hardhat node. */
+export const canMintTestToken = () => chain.id === hardhat.id;
 export const contractsConfigured = () => Boolean(ESCROW_ADDRESS && ZARP_ADDRESS);
 
-const activeChain = () => (CHAIN_ID === hardhat.id ? hardhat : baseSepolia);
+const activeChain = () => chain;
 
 // ---------------------------------------------------------------------------------------------
 // Error messages: one per custom error in the escrow ABI (a test guards against drift).
@@ -92,14 +114,11 @@ export function contractErrorMessage(err: unknown): string {
 // ---------------------------------------------------------------------------------------------
 // MetaMask connection
 
-const BASE_SEPOLIA_HEX = "0x14a34"; // 84532
-
-export async function ensureBaseSepolia(eth: Eip1193): Promise<void> {
+/** Switch MetaMask to the app network, adding it first if MetaMask doesn't know it (4902). */
+export async function ensureChain(eth: Eip1193, target: Chain = chain): Promise<void> {
+  const hexId = `0x${target.id.toString(16)}`;
   try {
-    await eth.request({
-      method: "wallet_switchEthereumChain",
-      params: [{ chainId: BASE_SEPOLIA_HEX }],
-    });
+    await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: hexId }] });
   } catch (err) {
     const e = err as { code?: number; data?: { originalError?: { code?: number } } };
     const unknownChain = e.code === 4902 || e.data?.originalError?.code === 4902;
@@ -108,11 +127,13 @@ export async function ensureBaseSepolia(eth: Eip1193): Promise<void> {
       method: "wallet_addEthereumChain",
       params: [
         {
-          chainId: BASE_SEPOLIA_HEX,
-          chainName: "Base Sepolia",
-          nativeCurrency: { name: "Sepolia Ether", symbol: "ETH", decimals: 18 },
-          rpcUrls: [RPC_URL],
-          blockExplorerUrls: ["https://sepolia.basescan.org"],
+          chainId: hexId,
+          chainName: target.name,
+          nativeCurrency: target.nativeCurrency,
+          rpcUrls: [target.id === chain.id ? RPC_URL : target.rpcUrls.default.http[0]],
+          ...(target.blockExplorers
+            ? { blockExplorerUrls: [target.blockExplorers.default.url] }
+            : {}),
         },
       ],
     });
@@ -136,7 +157,7 @@ export async function connectMetaMask(): Promise<ChainClients> {
   const accounts = (await eth.request({ method: "eth_requestAccounts" })) as Address[];
   const account = accounts[0];
   if (!account) throw new Error("MetaMask returned no account.");
-  if (CHAIN_ID === baseSepolia.id) await ensureBaseSepolia(eth);
+  if (chain.id !== hardhat.id) await ensureChain(eth);
   const walletClient = createWalletClient({
     account,
     chain: activeChain(),
@@ -324,3 +345,9 @@ export async function readBalances<K extends string>(
   );
   return Object.fromEntries(keys.map((k, i) => [k, values[i]])) as Record<K, bigint | null>;
 }
+
+/** Badge text for every buyer screen: real Mento ZARm on Celo, or a local MockZARP demo. */
+export const NETWORK_LABEL =
+  NETWORK.chain.id === hardhat.id
+    ? "Local demo · MockZARP on Hardhat"
+    : `Real ${NETWORK.tokenSymbol} on Celo · ${NETWORK.name}`;

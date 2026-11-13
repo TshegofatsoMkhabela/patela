@@ -4,7 +4,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { formatUnits } from "viem";
 import { ZARP_DECIMALS } from "@/lib/contracts";
-import { createReadClient, readBalances } from "@/lib/chain";
+import { NETWORK, NETWORK_LABEL, createReadClient, readBalances } from "@/lib/chain";
 
 void React;
 
@@ -79,7 +79,7 @@ export function BalancePanelView({
       >
         <h2 style={{ margin: 0, fontSize: "1.6rem", fontWeight: 700 }}>Live balances</h2>
         <span className="badge badge-gold" style={{ fontSize: "0.85rem" }}>
-          Testnet demo · MockZARP on Base Sepolia
+          {NETWORK_LABEL}
         </span>
       </div>
       <div
@@ -122,7 +122,7 @@ export function BalancePanelView({
                 <span
                   style={{ fontSize: "1rem", fontWeight: 600, marginLeft: 8, color: "#a2a9b8" }}
                 >
-                  ZARP
+                  {NETWORK.tokenSymbol}
                 </span>
               </div>
               <div style={{ fontFamily: "monospace", fontSize: "0.95rem", color: "#a2a9b8" }}>
@@ -141,7 +141,7 @@ export function BalancePanelView({
   );
 }
 
-/** Four-wallet panel that reads MockZARP balances from the chain every ~2 seconds. */
+/** Four-wallet panel that reads ZARm balances from the chain every ~2 seconds. */
 export function BalancePanel({
   addresses,
   intervalMs = 2000,
