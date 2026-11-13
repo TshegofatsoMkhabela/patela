@@ -77,6 +77,8 @@ export class OutboxMailer {
     private readonly db: Database,
     private readonly transport: MailTransport | undefined,
     private readonly timeoutMs = 5_000,
+    /** Total time one flush may spend sending, so a stalled server delays a request once, not per email. */
+    private readonly budgetMs = 5_000,
   ) {}
 
   get enabled() { return Boolean(this.transport); }
@@ -95,11 +97,17 @@ export class OutboxMailer {
 
   async flush(): Promise<void> {
     if (!this.transport) return;
+    const started = Date.now();
+    // A sign-in code lives 10 minutes; sending it later would only confuse the person who asked.
+    await this.db.query(`update email_outbox set status='failed', last_error='Sign-in code expired before it was sent'
+      where status='pending' and template='login_otp' and created_at < now() - interval '10 minutes'`);
     const rows = (await this.db.query<{ id: string; to_email: string; template: string; payload: Payload }>(
       `select id,to_email,template,payload from email_outbox where status='pending'
        order by created_at, id limit ${BATCH}`,
     )).rows;
     for (const row of rows) {
+      if (Date.now() - started >= this.budgetMs) break;
+      const remaining = Math.min(this.timeoutMs, this.budgetMs - (Date.now() - started));
       // Counts the attempt before sending. Two flushes running at the same moment can still both
       // send one row (a duplicate email, never a lost one); acceptable for the demo's traffic.
       const claimed = await this.db.query(
@@ -109,7 +117,7 @@ export class OutboxMailer {
       try {
         await withTimeout(this.transport.send({ to: row.to_email,
           ...renderEmail(row.template as EmailTemplate, row.payload) }),
-          this.timeoutMs);
+          remaining);
         await this.db.query("update email_outbox set status='sent',sent_at=now(),last_error=null where id=$1",
           [row.id]);
       } catch (error) {

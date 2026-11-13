@@ -59,3 +59,8 @@ alter table email_outbox add column if not exists sent_at timestamptz;
 
 alter table order_invitations enable row level security;
 alter table handoff_sessions enable row level security;
+
+-- Rows queued before any sender existed were documented as never delivered. Close them out so turning
+-- on Gmail doesn't mail a backlog of stale codes and invites, or delay a fresh sign-in code behind them.
+update email_outbox set status='failed', last_error='Queued before email delivery existed; not sent'
+  where status='pending';

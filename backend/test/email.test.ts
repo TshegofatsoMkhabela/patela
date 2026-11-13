@@ -80,3 +80,35 @@ test("requesting a sign-in code sends the email before the response", async () =
     assert.ok(mail.sent[0].text.includes("123456"));
   } finally { await app.close(); await db.close(); }
 });
+
+test("a stalled mail server holds a request up for one time budget, not per email", async () => {
+  const db = new TestDatabase();
+  const hanging = { send: () => new Promise<void>(() => {}) };
+  const mailer = new OutboxMailer(db, hanging, 50, 120);
+  try {
+    await db.migrate();
+    for (let i = 0; i < 5; i++) {
+      await db.query(`insert into email_outbox (id,to_email,template,payload)
+        values (gen_random_uuid(),'a@example.test','order_driver_invited','{}')`);
+    }
+    const started = Date.now();
+    await mailer.flush();
+    assert.ok(Date.now() - started < 400, `flush took ${Date.now() - started} ms`);
+    const rows = (await db.query("select status, attempts from email_outbox")).rows;
+    assert.ok(rows.every(r => r.status === "pending"), "unsent rows stay pending");
+    assert.ok(rows.some(r => r.attempts === 0), "rows past the budget are left for the next flush");
+  } finally { await db.close(); }
+});
+
+test("a sign-in code older than ten minutes is never sent", async () => {
+  const db = new TestDatabase();
+  const mail = new TestMail();
+  try {
+    await db.migrate();
+    await db.query(`insert into email_outbox (id,to_email,template,payload,created_at)
+      values (gen_random_uuid(),'late@example.test','login_otp','{"code":"111111"}',now() - interval '11 minutes')`);
+    await new OutboxMailer(db, mail).flush();
+    assert.deepEqual(mail.sent, []);
+    assert.equal((await db.query("select status from email_outbox")).rows[0].status, "failed");
+  } finally { await db.close(); }
+});
