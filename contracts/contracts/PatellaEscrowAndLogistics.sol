@@ -53,6 +53,7 @@ contract PatellaEscrowAndLogistics is ReentrancyGuard, EIP712 {
     event PaymentReleased(uint256 indexed orderId, uint8 stage, address indexed recipient, uint256 amount);
     event OrderDisputed(uint256 indexed orderId, address indexed raisedBy);
     event DisputeResolved(uint256 indexed orderId, bool releasedToSupplier);
+    event OrderRefunded(uint256 indexed orderId, address indexed buyer, uint256 amount);
 
     error SplitMismatch();
     error NotBuyer();
@@ -63,6 +64,10 @@ contract PatellaEscrowAndLogistics is ReentrancyGuard, EIP712 {
     error HandoffExpired();
     error NonceUsed();
     error StageOutOfOrder();
+    error OrderInDispute();
+    error OrderNotFunded();
+    error DriverNotAssigned();
+    error RefundTooEarly();
 
     constructor(address _zarpToken, address _registry) EIP712("Patela Escrow", "1") {
         zarpToken = IERC20(_zarpToken);
@@ -106,6 +111,7 @@ contract PatellaEscrowAndLogistics is ReentrancyGuard, EIP712 {
     function assignDriver(uint256 orderId, address driver) external {
         Order storage o = orders[orderId];
         if (msg.sender != o.supplier) revert NotSupplier();
+        if (o.status != OrderStatus.Funded) revert OrderNotFunded();
         if (o.driver != address(0)) revert DriverAlreadyAssigned();
 
         o.driver = driver;
@@ -125,10 +131,12 @@ contract PatellaEscrowAndLogistics is ReentrancyGuard, EIP712 {
         bytes calldata receiverSig
     ) external nonReentrant {
         Order storage o = orders[orderId];
+        if (o.status == OrderStatus.Disputed) revert OrderInDispute();
         if (o.status != OrderStatus.Funded && o.status != OrderStatus.InTransit) revert InvalidState();
         if (block.timestamp > expiresAt) revert HandoffExpired();
         if (usedNonces[nonce]) revert NonceUsed();
         if (stage != o.stagesDone + 1) revert StageOutOfOrder();
+        if (o.driver == address(0)) revert DriverNotAssigned();
 
         (address giver, address receiver) = _partiesFor(o, stage);
         bytes32 digest = _hashTypedDataV4(
@@ -151,6 +159,21 @@ contract PatellaEscrowAndLogistics is ReentrancyGuard, EIP712 {
             o.status = OrderStatus.Completed;
             _pay(o, orderId, stage, o.supplier, o.supplierAtDelivery);
         }
+    }
+
+    /// If the goods never arrive: after the deadline, the buyer (and only the
+    /// buyer) takes back everything that hasn't been paid out.
+    function refund(uint256 orderId) external nonReentrant {
+        Order storage o = orders[orderId];
+        if (msg.sender != o.buyer) revert NotBuyer();
+        if (block.timestamp < o.refundDeadline) revert RefundTooEarly();
+        if (o.status != OrderStatus.Funded && o.status != OrderStatus.InTransit) revert InvalidState();
+
+        uint256 remaining = o.total - o.released;
+        o.released = o.total;
+        o.status = OrderStatus.Cancelled;
+        zarpToken.safeTransfer(o.buyer, remaining);
+        emit OrderRefunded(orderId, o.buyer, remaining);
     }
 
     function raiseDispute(uint256 orderId) external {

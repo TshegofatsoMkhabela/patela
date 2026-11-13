@@ -268,3 +268,79 @@ describe("PatellaEscrowAndLogistics — cycle 2", () => {
     );
   });
 });
+
+describe("PatellaEscrowAndLogistics — cycle 3", () => {
+  it("returns everything not yet paid to the buyer, only to the buyer and only after the refund deadline", async () => {
+    const f = await networkHelpers.loadFixture(deployFixture);
+    const orderId = await fundedOrderWithDriver(f);
+    await signedRelease(f, pickupMessage(f, orderId), f.supplier, f.driver); // 500 paid, 500 left
+
+    await viem.assertions.revertWithCustomError(
+      f.escrow.write.refund([orderId], { account: f.buyer.account }),
+      f.escrow,
+      "RefundTooEarly",
+    );
+
+    await networkHelpers.time.increaseTo(f.refundDeadline);
+
+    await viem.assertions.revertWithCustomError(
+      f.escrow.write.refund([orderId], { account: f.supplier.account }),
+      f.escrow,
+      "NotBuyer",
+    );
+
+    const buyerBefore = await balance(f, f.buyer.account.address);
+    await f.escrow.write.refund([orderId], { account: f.buyer.account });
+    assert.equal((await balance(f, f.buyer.account.address)) - buyerBefore, SUPPLIER_AT_DELIVERY);
+    assert.equal(await balance(f, f.escrow.address), 0n);
+  });
+
+  it("blocks handoffs while a dispute is open", async () => {
+    const f = await networkHelpers.loadFixture(deployFixture);
+    const orderId = await fundedOrderWithDriver(f);
+    await f.escrow.write.raiseDispute([orderId], { account: f.buyer.account });
+
+    await viem.assertions.revertWithCustomError(
+      signedRelease(f, pickupMessage(f, orderId), f.supplier, f.driver),
+      f.escrow,
+      "OrderInDispute",
+    );
+  });
+
+  it("accepts a valid handoff signature from a smart-account wallet and pays it", async () => {
+    const f = await networkHelpers.loadFixture(deployFixture);
+    const orderId = await createOrder(f);
+    await f.escrow.write.fundEscrow([orderId], { account: f.buyer.account });
+    // The driver's wallet is a smart account owned by the driver's key.
+    const driverWallet = await viem.deployContract("MockSmartWallet", [f.driver.account.address]);
+    await f.escrow.write.assignDriver([orderId, driverWallet.address], { account: f.supplier.account });
+    const msg = { ...pickupMessage(f, orderId), receiver: driverWallet.address };
+
+    await release(f, msg, await signHandoff(f, f.supplier, msg), await signHandoff(f, f.driver, msg));
+
+    assert.equal(await balance(f, driverWallet.address), DRIVER_AT_PICKUP);
+  });
+
+  it("rejects a pickup before a driver has been assigned", async () => {
+    const f = await networkHelpers.loadFixture(deployFixture);
+    const orderId = await createOrder(f);
+    await f.escrow.write.fundEscrow([orderId], { account: f.buyer.account });
+
+    await viem.assertions.revertWithCustomError(
+      signedRelease(f, pickupMessage(f, orderId), f.supplier, f.driver),
+      f.escrow,
+      "DriverNotAssigned",
+    );
+  });
+
+  it("rejects assigning a driver before the order is funded", async () => {
+    const f = await networkHelpers.loadFixture(deployFixture);
+    const orderId = await createOrder(f);
+
+    await viem.assertions.revertWithCustomError(
+      f.escrow.write.assignDriver([orderId, f.driver.account.address], { account: f.supplier.account }),
+      f.escrow,
+      "OrderNotFunded",
+    );
+  });
+});
