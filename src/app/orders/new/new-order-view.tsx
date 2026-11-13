@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { isAddress, type Address } from "viem";
 import { SiteNav } from "@/components/SiteNav";
-import { formatZarp } from "@/components/BalancePanel";
+import { BalancePanel, formatZarp } from "@/components/BalancePanel";
 import { ApiError, api, type Profile } from "@/lib/api";
 import {
   connectMetaMask,
@@ -18,7 +18,7 @@ import {
   signWalletLink,
   type ChainClients,
 } from "@/lib/chain";
-import { CHAIN_ID } from "@/lib/contracts";
+import { CHAIN_ID, ESCROW_ADDRESS } from "@/lib/contracts";
 import { STEP_LABELS, runOrderFlow, type FlowProgress, type FlowState, type StepKey } from "./flow";
 
 const STATUS_ICON = { idle: "○", pending: "…", done: "✓", error: "✕" } as const;
@@ -189,6 +189,19 @@ export function NewOrderView() {
           <p role="alert" className="pt-card" style={{ padding: 18, color: "#ff9b8a" }}>
             Contracts not configured: set NEXT_PUBLIC_ESCROW_ADDRESS and NEXT_PUBLIC_ZARP_ADDRESS.
           </p>
+        ) : null}
+
+        {configured ? (
+          <div style={{ marginBottom: 28 }}>
+            <BalancePanel
+              addresses={{
+                buyer: clients?.account ?? null,
+                supplier: isAddress(supplierWallet.trim()) ? supplierWallet.trim() : null,
+                driver: null,
+                escrow: ESCROW_ADDRESS,
+              }}
+            />
+          </div>
         ) : null}
 
         {/* 1. Account */}
