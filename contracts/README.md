@@ -30,6 +30,11 @@ Located in `contracts/contracts/`:
 - **Key Functionality**:
   - Open minting (`mint(to, amount)`) for simulated buyers and escrow funding during testing.
 
+### `CZARToken.sol` (test only)
+- **Purpose**: "Crypto ZAR" (CZAR), an 18-decimal rand token Patela mints itself, for test networks and faucets. It has no rand reserve behind it, so it cannot be redeemed for rand. Real orders use Mento **ZARm**, and the backend's `chain:check` rejects an escrow that pays out CZAR.
+- **Key Functionality**: the deployer receives the initial supply; only the owner can `mint(to, amount)`.
+- An earlier CZAR deployment on Celo Sepolia (token `0x7471d4970a715b760d193681fc03dC5168C27B92`) belongs to the older milestone escrow at `0x3889DcC349DB4a100d30F64481C766ffafB0EEf6`. The backend does not use either.
+
 ### 2. `PatellaRegistry.sol`
 - **Purpose**: The central identity and Role-Based Access Control (RBAC) registry leveraging OpenZeppelin's `AccessControl`.
 - **Roles & State**:
