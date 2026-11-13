@@ -1,7 +1,14 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import type { Database, Queryable } from "./db.js";
 import { queueEmail } from "./email.js";
-import { DomainError, isUniqueViolation, requiredEmail, requiredText, requiredUuid, sha256Hex } from "./validation.js";
+import {
+  DomainError,
+  isUniqueViolation,
+  requiredEmail,
+  requiredText,
+  requiredUuid,
+  sha256Hex,
+} from "./validation.js";
 
 type Row = Record<string, unknown>;
 
@@ -17,13 +24,20 @@ const ORG_COLUMNS = `o.id,o.legal_name,o.registration_number,o.vat_number,o.capa
   o.rejection_reason,o.submitted_at,o.reviewed_at,o.created_at`;
 
 function businessDetails(body: Record<string, unknown>, partial: boolean) {
-  const details: { legal_name?: string; registration_number?: string; vat_number?: string | null;
-    capabilities?: Capability[] } = {};
+  const details: {
+    legal_name?: string;
+    registration_number?: string;
+    vat_number?: string | null;
+    capabilities?: Capability[];
+  } = {};
   if (!partial || body.legalName !== undefined) {
     details.legal_name = requiredText(body.legalName, "Legal name", 2, 200);
   }
   if (!partial || body.registrationNumber !== undefined) {
-    if (typeof body.registrationNumber !== "string" || !CIPC_NUMBER.test(body.registrationNumber.trim())) {
+    if (
+      typeof body.registrationNumber !== "string" ||
+      !CIPC_NUMBER.test(body.registrationNumber.trim())
+    ) {
       throw new DomainError("CIPC registration number must look like 2019/123456/07");
     }
     details.registration_number = body.registrationNumber.trim();
@@ -38,11 +52,15 @@ function businessDetails(body: Record<string, unknown>, partial: boolean) {
   }
   if (!partial || body.capabilities !== undefined) {
     const raw = body.capabilities;
-    if (!Array.isArray(raw) || raw.length < 1
-      || raw.some(c => !CAPABILITIES.includes(c as Capability)) || new Set(raw).size !== raw.length) {
+    if (
+      !Array.isArray(raw) ||
+      raw.length < 1 ||
+      raw.some((c) => !CAPABILITIES.includes(c as Capability)) ||
+      new Set(raw).size !== raw.length
+    ) {
       throw new DomainError(`Capabilities must be one or more of ${CAPABILITIES.join(", ")}`);
     }
-    details.capabilities = CAPABILITIES.filter(c => raw.includes(c));
+    details.capabilities = CAPABILITIES.filter((c) => raw.includes(c));
   }
   return details;
 }
@@ -51,14 +69,18 @@ const hashToken = sha256Hex;
 
 /** Platform staff check shared by every admin route. */
 export async function requireAdmin(db: Queryable, userId: string): Promise<void> {
-  const role = (await db.query<Row>("select role from profiles where id=$1", [userId])).rows[0]?.role;
+  const role = (await db.query<Row>("select role from profiles where id=$1", [userId])).rows[0]
+    ?.role;
   if (role !== "admin") throw new DomainError("Admin role required", 403);
 }
 
 /** Rethrows a duplicate CIPC number as a 409 instead of a server error. */
 async function rejectDuplicateCipc<T>(run: () => Promise<T>): Promise<T> {
-  try { return await run(); } catch (error) {
-    if (isUniqueViolation(error)) throw new DomainError("A business with this CIPC number is already registered", 409);
+  try {
+    return await run();
+  } catch (error) {
+    if (isUniqueViolation(error))
+      throw new DomainError("A business with this CIPC number is already registered", 409);
     throw error;
   }
 }
@@ -69,7 +91,10 @@ async function rejectDuplicateCipc<T>(run: () => Promise<T>): Promise<T> {
  * and unapproved organizations never satisfy it. Returns the first missing
  * capability, or null.
  */
-export async function missingCapability(db: Queryable, required: ReadonlyArray<readonly [string, Capability]>) {
+export async function missingCapability(
+  db: Queryable,
+  required: ReadonlyArray<readonly [string, Capability]>,
+) {
   const result = await db.query<{ user_id: string; capability: string }>(
     `select distinct p.user_id::text as user_id, p.capability
      from unnest($1::uuid[], $2::text[]) as p(user_id, capability)
@@ -77,28 +102,41 @@ export async function missingCapability(db: Queryable, required: ReadonlyArray<r
      join organizations o on o.id=m.organization_id and o.status='approved' and p.capability = any(o.capabilities)`,
     [required.map(([userId]) => userId), required.map(([, capability]) => capability)],
   );
-  const met = new Set(result.rows.map(r => `${r.user_id}:${r.capability}`));
+  const met = new Set(result.rows.map((r) => `${r.user_id}:${r.capability}`));
   return required.find(([userId, capability]) => !met.has(`${userId}:${capability}`))?.[1] ?? null;
 }
 
 export class OnboardingService {
-  constructor(private readonly db: Database, private readonly publicOrigin: string) {}
+  constructor(
+    private readonly db: Database,
+    private readonly publicOrigin: string,
+  ) {}
 
   private async profile(db: Queryable, userId: string): Promise<Row> {
-    const result = await db.query<Row>("select id,email,full_name,role from profiles where id=$1", [userId]);
+    const result = await db.query<Row>("select id,email,full_name,role from profiles where id=$1", [
+      userId,
+    ]);
     if (!result.rows[0]) throw new DomainError("Profile not found", 404);
     return result.rows[0];
   }
 
-  private requireAdmin(userId: string) { return requireAdmin(this.db, userId); }
+  private requireAdmin(userId: string) {
+    return requireAdmin(this.db, userId);
+  }
 
   /** The caller's view of one organization. Non-members get 404 so existence is not revealed. */
-  private async membership(db: Queryable, userId: string, orgIdInput: unknown, lock = false): Promise<Row> {
+  private async membership(
+    db: Queryable,
+    userId: string,
+    orgIdInput: unknown,
+    lock = false,
+  ): Promise<Row> {
     const orgId = requiredUuid(orgIdInput, "organization ID");
     const result = await db.query<Row>(
       `select ${ORG_COLUMNS},m.member_role from organizations o
        join organization_members m on m.organization_id=o.id and m.user_id=$2
-       where o.id=$1${lock ? " for update of o" : ""}`, [orgId, userId],
+       where o.id=$1${lock ? " for update of o" : ""}`,
+      [orgId, userId],
     );
     if (!result.rows[0]) throw new DomainError("Organization not found", 404);
     return result.rows[0];
@@ -114,34 +152,51 @@ export class OnboardingService {
 
   async state(userId: string) {
     const profile = await this.profile(this.db, userId);
-    const organizations = (await this.db.query<Row>(
-      `select ${ORG_COLUMNS},m.member_role from organizations o
+    const organizations = (
+      await this.db.query<Row>(
+        `select ${ORG_COLUMNS},m.member_role from organizations o
        join organization_members m on m.organization_id=o.id
-       where m.user_id=$1 order by o.created_at`, [userId],
-    )).rows;
-    const has = (status: string) => organizations.some(o => o.status === status);
-    const nextStep = organizations.length === 0 ? "create_organization"
-      : has("approved") ? "ready"
-      : has("submitted") ? "awaiting_review"
-      : has("rejected") ? "fix_and_resubmit"
-      : "submit_for_review";
+       where m.user_id=$1 order by o.created_at`,
+        [userId],
+      )
+    ).rows;
+    const has = (status: string) => organizations.some((o) => o.status === status);
+    const nextStep =
+      organizations.length === 0
+        ? "create_organization"
+        : has("approved")
+          ? "ready"
+          : has("submitted")
+            ? "awaiting_review"
+            : has("rejected")
+              ? "fix_and_resubmit"
+              : "submit_for_review";
     return { profile, organizations, nextStep };
   }
 
   async create(userId: string, body: Record<string, unknown>) {
     const details = businessDetails(body, false);
     const id = randomUUID();
-    await rejectDuplicateCipc(() => this.db.transaction(async db => {
-      await db.query(
-        `insert into organizations (id,legal_name,registration_number,vat_number,capabilities,created_by)
+    await rejectDuplicateCipc(() =>
+      this.db.transaction(async (db) => {
+        await db.query(
+          `insert into organizations (id,legal_name,registration_number,vat_number,capabilities,created_by)
          values ($1,$2,$3,$4,$5,$6)`,
-        [id, details.legal_name, details.registration_number, details.vat_number, details.capabilities, userId],
-      );
-      await db.query(
-        "insert into organization_members (organization_id,user_id,member_role) values ($1,$2,'owner')",
-        [id, userId],
-      );
-    }));
+          [
+            id,
+            details.legal_name,
+            details.registration_number,
+            details.vat_number,
+            details.capabilities,
+            userId,
+          ],
+        );
+        await db.query(
+          "insert into organization_members (organization_id,user_id,member_role) values ($1,$2,'owner')",
+          [id, userId],
+        );
+      }),
+    );
     return this.membership(this.db, userId, id);
   }
 
@@ -149,32 +204,41 @@ export class OnboardingService {
     const details = businessDetails(body, true);
     const columns = Object.keys(details) as (keyof typeof details)[];
     if (columns.length === 0) throw new DomainError("Nothing to update");
-    return rejectDuplicateCipc(() => this.db.transaction(async db => {
-      const org = await this.requireManager(db, userId, orgId, true);
-      if (!EDITABLE.has(String(org.status))) {
-        throw new DomainError("Business details are locked while under review or once approved", 409);
-      }
-      await db.query(
-        `update organizations set ${columns.map((c, i) => `${c}=$${i + 2}`).join(",")},updated_at=now()
-         where id=$1`, [org.id, ...columns.map(c => details[c])],
-      );
-      return this.membership(db, userId, org.id);
-    }));
+    return rejectDuplicateCipc(() =>
+      this.db.transaction(async (db) => {
+        const org = await this.requireManager(db, userId, orgId, true);
+        if (!EDITABLE.has(String(org.status))) {
+          throw new DomainError(
+            "Business details are locked while under review or once approved",
+            409,
+          );
+        }
+        await db.query(
+          `update organizations set ${columns.map((c, i) => `${c}=$${i + 2}`).join(",")},updated_at=now()
+         where id=$1`,
+          [org.id, ...columns.map((c) => details[c])],
+        );
+        return this.membership(db, userId, org.id);
+      }),
+    );
   }
 
   async submit(userId: string, orgId: unknown) {
-    return this.db.transaction(async db => {
+    return this.db.transaction(async (db) => {
       const org = await this.requireManager(db, userId, orgId, true);
       if (!EDITABLE.has(String(org.status))) {
         throw new DomainError("Only a draft or rejected business can be submitted", 409);
       }
       await db.query(
         `update organizations set status='submitted',submitted_at=now(),rejection_reason=null,
-         reviewed_by=null,reviewed_at=null,updated_at=now() where id=$1`, [org.id],
+         reviewed_by=null,reviewed_at=null,updated_at=now() where id=$1`,
+        [org.id],
       );
       const submitter = await this.profile(db, userId);
-      await queueEmail(db, String(submitter.email), "organization_submitted",
-        { organizationId: org.id, legalName: org.legal_name });
+      await queueEmail(db, String(submitter.email), "organization_submitted", {
+        organizationId: org.id,
+        legalName: org.legal_name,
+      });
       return this.membership(db, userId, org.id);
     });
   }
@@ -182,10 +246,12 @@ export class OnboardingService {
   async listForReview(adminId: string, statusInput: unknown) {
     await this.requireAdmin(adminId);
     const status = statusInput ?? "submitted";
-    if (!STATUSES.includes(status as (typeof STATUSES)[number])) throw new DomainError("Invalid status");
+    if (!STATUSES.includes(status as (typeof STATUSES)[number]))
+      throw new DomainError("Invalid status");
     const result = await this.db.query<Row>(
       `select ${ORG_COLUMNS} from organizations o where o.status=$1
-       order by o.submitted_at nulls last, o.created_at limit 100`, [status],
+       order by o.submitted_at nulls last, o.created_at limit 100`,
+      [status],
     );
     return result.rows;
   }
@@ -193,9 +259,11 @@ export class OnboardingService {
   async review(adminId: string, orgIdInput: unknown, decision: unknown, reasonInput: unknown) {
     await this.requireAdmin(adminId);
     const orgId = requiredUuid(orgIdInput, "organization ID");
-    if (decision !== "approve" && decision !== "reject") throw new DomainError("Decision must be approve or reject");
-    const reason = decision === "reject" ? requiredText(reasonInput, "Rejection reason", 10, 500) : null;
-    return this.db.transaction(async db => {
+    if (decision !== "approve" && decision !== "reject")
+      throw new DomainError("Decision must be approve or reject");
+    const reason =
+      decision === "reject" ? requiredText(reasonInput, "Rejection reason", 10, 500) : null;
+    return this.db.transaction(async (db) => {
       const result = await db.query<Row>(
         `update organizations set status=$2,rejection_reason=$3,reviewed_by=$4,reviewed_at=now(),updated_at=now()
          where id=$1 and status='submitted' returning id,legal_name,status,rejection_reason,reviewed_at`,
@@ -208,8 +276,15 @@ export class OnboardingService {
         `insert into email_outbox (id,to_email,template,payload)
          select gen_random_uuid(), p.email, $2, $3::jsonb from organization_members m
          join profiles p on p.id=m.user_id where m.organization_id=$1 and m.member_role='owner'`,
-        [orgId, decision === "approve" ? "organization_approved" : "organization_rejected",
-          JSON.stringify({ organizationId: orgId, legalName: org.legal_name, ...(reason ? { reason } : {}) })],
+        [
+          orgId,
+          decision === "approve" ? "organization_approved" : "organization_rejected",
+          JSON.stringify({
+            organizationId: orgId,
+            legalName: org.legal_name,
+            ...(reason ? { reason } : {}),
+          }),
+        ],
       );
       return org;
     });
@@ -217,9 +292,10 @@ export class OnboardingService {
 
   async invite(userId: string, orgId: unknown, emailInput: unknown, roleInput: unknown) {
     const email = requiredEmail(emailInput);
-    if (roleInput !== "admin" && roleInput !== "member") throw new DomainError("Member role must be admin or member");
+    if (roleInput !== "admin" && roleInput !== "member")
+      throw new DomainError("Member role must be admin or member");
     const token = randomBytes(32).toString("base64url");
-    return this.db.transaction(async db => {
+    return this.db.transaction(async (db) => {
       const org = await this.requireManager(db, userId, orgId);
       const result = await db.query<Row>(
         `insert into invitations (id,organization_id,email,member_role,token_hash,invited_by,expires_at)
@@ -230,7 +306,9 @@ export class OnboardingService {
       const acceptUrl = new URL("/invite", this.publicOrigin);
       acceptUrl.searchParams.set("token", token);
       await queueEmail(db, email, "member_invited", {
-        organizationId: org.id, legalName: org.legal_name, memberRole: roleInput,
+        organizationId: org.id,
+        legalName: org.legal_name,
+        memberRole: roleInput,
         acceptUrl: acceptUrl.toString(),
       });
       return result.rows[0];
@@ -241,10 +319,12 @@ export class OnboardingService {
     if (typeof tokenInput !== "string" || tokenInput.length < 20 || tokenInput.length > 200) {
       throw new DomainError("Invitation token required");
     }
-    return this.db.transaction(async db => {
-      const invitation = (await db.query<Row>(
-        "select * from invitations where token_hash=$1 for update", [hashToken(tokenInput)],
-      )).rows[0];
+    return this.db.transaction(async (db) => {
+      const invitation = (
+        await db.query<Row>("select * from invitations where token_hash=$1 for update", [
+          hashToken(tokenInput),
+        ])
+      ).rows[0];
       if (!invitation) throw new DomainError("Invitation not found", 404);
       const me = await this.profile(db, userId);
       if (String(me.email).toLowerCase() !== invitation.email) {
@@ -260,8 +340,10 @@ export class OnboardingService {
          on conflict (organization_id,user_id) do nothing`,
         [invitation.organization_id, userId, invitation.member_role],
       );
-      await db.query("update invitations set accepted_by=$2,accepted_at=now() where id=$1",
-        [invitation.id, userId]);
+      await db.query("update invitations set accepted_by=$2,accepted_at=now() where id=$1", [
+        invitation.id,
+        userId,
+      ]);
       return this.membership(db, userId, invitation.organization_id);
     });
   }

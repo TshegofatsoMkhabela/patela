@@ -3,7 +3,12 @@ import { isAddress, type Address, type Hex } from "viem";
 
 /** An expected, user-facing failure. The HTTP layer turns it into `{ error }` with this status. */
 export class DomainError extends Error {
-  constructor(message: string, public readonly status = 400) { super(message); }
+  constructor(
+    message: string,
+    public readonly status = 400,
+  ) {
+    super(message);
+  }
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -41,7 +46,8 @@ export function sha256Hex(value: string): string {
 }
 
 export function requiredAddress(value: unknown): Address {
-  if (typeof value !== "string" || !isAddress(value)) throw new DomainError("Invalid wallet address");
+  if (typeof value !== "string" || !isAddress(value))
+    throw new DomainError("Invalid wallet address");
   return value as Address;
 }
 
@@ -55,7 +61,11 @@ export function requiredTx(value: unknown): Hex {
 }
 
 export function sameAddress(left: unknown, right: unknown): boolean {
-  return typeof left === "string" && typeof right === "string" && left.toLowerCase() === right.toLowerCase();
+  return (
+    typeof left === "string" &&
+    typeof right === "string" &&
+    left.toLowerCase() === right.toLowerCase()
+  );
 }
 
 export function utcSeconds(value: unknown): number {

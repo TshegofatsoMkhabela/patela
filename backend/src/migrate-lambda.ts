@@ -7,8 +7,11 @@ export async function handler() {
   const db = new PgDatabase(process.env.DATABASE_URL, 1, process.env.DATABASE_SSL === "true");
   try {
     const applied = await applyMigrations({
-      exec: sql => db.query(sql), query: (sql, values) => db.query(sql, values),
+      exec: (sql) => db.query(sql),
+      query: (sql, values) => db.query(sql, values),
     });
     return { applied };
-  } finally { await db.close(); }
+  } finally {
+    await db.close();
+  }
 }

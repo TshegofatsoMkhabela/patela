@@ -1,6 +1,4 @@
-import {
-  createPublicClient, decodeEventLog, http, parseAbi, type Address, type Hex,
-} from "viem";
+import { createPublicClient, decodeEventLog, http, parseAbi, type Address, type Hex } from "viem";
 import { celo, celoSepolia } from "viem/chains";
 import { ZARM_DECIMALS } from "./service.js";
 import { sameAddress } from "./validation.js";
@@ -32,16 +30,21 @@ export interface ChainReader {
 
 export function rpcChainReader(rpcUrl: string): ChainReader {
   const client = createPublicClient({ transport: http(rpcUrl) });
-  const read = <F extends "symbol" | "decimals" | "paymentToken">(address: Address, functionName: F) =>
-    client.readContract({ address, abi: setupAbi, functionName });
+  const read = <F extends "symbol" | "decimals" | "paymentToken">(
+    address: Address,
+    functionName: F,
+  ) => client.readContract({ address, abi: setupAbi, functionName });
   return {
     chainId: () => client.getChainId(),
-    code: address => client.getCode({ address }),
-    token: async address => {
-      const [symbol, decimals] = await Promise.all([read(address, "symbol"), read(address, "decimals")]);
+    code: (address) => client.getCode({ address }),
+    token: async (address) => {
+      const [symbol, decimals] = await Promise.all([
+        read(address, "symbol"),
+        read(address, "decimals"),
+      ]);
       return { symbol: symbol as string, decimals: decimals as number };
     },
-    paymentToken: async escrow => (await read(escrow, "paymentToken")) as Address,
+    paymentToken: async (escrow) => (await read(escrow, "paymentToken")) as Address,
   };
 }
 
@@ -51,12 +54,23 @@ export type SetupCheck = { name: "chain" | "token" | "escrow"; ok: boolean; deta
  * Confirms the RPC, token and escrow agree before real money depends on them: the RPC is on the
  * configured chain, the token is 18-decimal ZARm, and the escrow exists and pays out that token.
  */
-export async function checkChainSetup(reader: ChainReader, expected: {
-  chainId: number; tokenAddress: Address; escrowAddress?: Address;
-}): Promise<SetupCheck[]> {
-  const run = async (name: SetupCheck["name"], check: () => Promise<string>): Promise<SetupCheck> => {
-    try { return { name, ok: true, detail: await check() }; }
-    catch (error) { return { name, ok: false, detail: error instanceof Error ? error.message : String(error) }; }
+export async function checkChainSetup(
+  reader: ChainReader,
+  expected: {
+    chainId: number;
+    tokenAddress: Address;
+    escrowAddress?: Address;
+  },
+): Promise<SetupCheck[]> {
+  const run = async (
+    name: SetupCheck["name"],
+    check: () => Promise<string>,
+  ): Promise<SetupCheck> => {
+    try {
+      return { name, ok: true, detail: await check() };
+    } catch (error) {
+      return { name, ok: false, detail: error instanceof Error ? error.message : String(error) };
+    }
   };
   const { chainId, tokenAddress, escrowAddress } = expected;
   return Promise.all([
@@ -66,16 +80,20 @@ export async function checkChainSetup(reader: ChainReader, expected: {
       return `RPC is on chain ${actual}`;
     }),
     run("token", async () => {
-      if (!await reader.code(tokenAddress)) throw new Error(`No contract at token ${tokenAddress}`);
+      if (!(await reader.code(tokenAddress)))
+        throw new Error(`No contract at token ${tokenAddress}`);
       const { symbol, decimals } = await reader.token(tokenAddress);
       if (symbol !== "ZARm" || decimals !== ZARM_DECIMALS) {
-        throw new Error(`Token ${tokenAddress} is ${symbol}/${decimals}, expected ZARm/${ZARM_DECIMALS}`);
+        throw new Error(
+          `Token ${tokenAddress} is ${symbol}/${decimals}, expected ZARm/${ZARM_DECIMALS}`,
+        );
       }
       return `${tokenAddress} is ZARm with ${ZARM_DECIMALS} decimals`;
     }),
     run("escrow", async () => {
       if (!escrowAddress) throw new Error("ESCROW_ADDRESS is not set");
-      if (!await reader.code(escrowAddress)) throw new Error(`No contract at escrow ${escrowAddress}`);
+      if (!(await reader.code(escrowAddress)))
+        throw new Error(`No contract at escrow ${escrowAddress}`);
       const paid = await reader.paymentToken(escrowAddress);
       if (!sameAddress(paid, tokenAddress)) {
         throw new Error(`Escrow pays out ${paid}, not the configured token ${tokenAddress}`);
@@ -120,14 +138,24 @@ type RawLog = { address: Address; data: Hex; topics: Hex[]; logIndex: number | n
 type ReceiptMeta = { chainId: number; txHash: Hex; blockNumber: bigint; blockHash: Hex };
 
 /** Decodes the escrow's frozen events from a receipt's logs, skipping other contracts and unknown events. */
-export function decodeEscrowLogs(logs: readonly RawLog[], escrowAddress: Address, meta: ReceiptMeta): ChainEvent[] {
+export function decodeEscrowLogs(
+  logs: readonly RawLog[],
+  escrowAddress: Address,
+  meta: ReceiptMeta,
+): ChainEvent[] {
   const found: ChainEvent[] = [];
   for (const log of logs) {
     if (log.address.toLowerCase() !== escrowAddress.toLowerCase()) continue;
     let decoded;
     try {
-      decoded = decodeEventLog({ abi: escrowEventsAbi, data: log.data, topics: log.topics as [Hex, ...Hex[]] });
-    } catch { continue; }
+      decoded = decodeEventLog({
+        abi: escrowEventsAbi,
+        data: log.data,
+        topics: log.topics as [Hex, ...Hex[]],
+      });
+    } catch {
+      continue;
+    }
     const args = decoded.args as Record<string, unknown>;
     found.push({
       name: decoded.eventName,
@@ -142,7 +170,8 @@ export function decodeEscrowLogs(logs: readonly RawLog[], escrowAddress: Address
       recipient: args.recipient as Address | undefined,
       agreementHash: args.agreementHash as Hex | undefined,
       evidenceHash: args.evidenceHash as Hex | undefined,
-      ...meta, logIndex: log.logIndex ?? 0,
+      ...meta,
+      logIndex: log.logIndex ?? 0,
     });
   }
   return found;
@@ -160,28 +189,47 @@ export class EvmChainVerifier implements ChainVerifier {
     private readonly chainId: 42220 | 11142220 = 11142220,
     private readonly tokenAddress?: Address,
   ) {
-    this.client = createPublicClient({ chain: chainId === 42220 ? celo : celoSepolia, transport: http(rpcUrl) });
+    this.client = createPublicClient({
+      chain: chainId === 42220 ? celo : celoSepolia,
+      transport: http(rpcUrl),
+    });
   }
 
   async events(txHash: Hex): Promise<ChainEvent[]> {
-    this.chainChecked ??= this.client.getChainId().then(id => {
-      if (id !== this.chainId) throw new Error("RPC is connected to the wrong chain");
-    }).catch(error => { this.chainChecked = undefined; throw error; });
-    const [, receipt, currentBlock] = await Promise.all([this.chainChecked,
-      this.client.getTransactionReceipt({ hash: txHash }), this.client.getBlockNumber()]);
+    this.chainChecked ??= this.client
+      .getChainId()
+      .then((id) => {
+        if (id !== this.chainId) throw new Error("RPC is connected to the wrong chain");
+      })
+      .catch((error) => {
+        this.chainChecked = undefined;
+        throw error;
+      });
+    const [, receipt, currentBlock] = await Promise.all([
+      this.chainChecked,
+      this.client.getTransactionReceipt({ hash: txHash }),
+      this.client.getBlockNumber(),
+    ]);
     if (receipt.status !== "success") throw new Error("Transaction reverted");
     if (currentBlock - receipt.blockNumber + 1n < BigInt(this.confirmations)) {
       throw new Error("Transaction is not sufficiently confirmed");
     }
     return decodeEscrowLogs(receipt.logs, this.escrowAddress, {
-      chainId: this.chainId, txHash, blockNumber: receipt.blockNumber, blockHash: receipt.blockHash,
+      chainId: this.chainId,
+      txHash,
+      blockNumber: receipt.blockNumber,
+      blockHash: receipt.blockHash,
     });
   }
 
   async balanceOf(wallet: Address): Promise<bigint> {
     if (!this.tokenAddress) throw new Error("Token address is not configured");
-    return this.client.readContract({ address: this.tokenAddress, abi: balanceAbi, functionName: "balanceOf",
-      args: [wallet] });
+    return this.client.readContract({
+      address: this.tokenAddress,
+      abi: balanceAbi,
+      functionName: "balanceOf",
+      args: [wallet],
+    });
   }
 }
 

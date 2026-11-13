@@ -17,11 +17,17 @@ const FILE_NAME = /^[\w.-]+\.sql$/;
 export async function applyMigrations(db: MigrationTarget, dir = resolve("migrations")) {
   await db.exec(`create table if not exists schema_migrations (
     name text primary key, applied_at timestamptz not null default now())`);
-  const done = new Set((await db.query("select name from schema_migrations")).rows.map(r => String(r.name)));
-  const pending = (await readdir(dir)).filter(name => FILE_NAME.test(name) && !done.has(name)).sort();
+  const done = new Set(
+    (await db.query("select name from schema_migrations")).rows.map((r) => String(r.name)),
+  );
+  const pending = (await readdir(dir))
+    .filter((name) => FILE_NAME.test(name) && !done.has(name))
+    .sort();
   for (const file of pending) {
     const sql = await readFile(resolve(dir, file), "utf8");
-    await db.exec(`begin;\n${sql}\n;insert into schema_migrations (name) values ('${file}');\ncommit;`);
+    await db.exec(
+      `begin;\n${sql}\n;insert into schema_migrations (name) values ('${file}');\ncommit;`,
+    );
   }
   return pending;
 }

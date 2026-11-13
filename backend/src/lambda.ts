@@ -23,15 +23,25 @@ export function createLambdaHandler(app: FastifyInstance) {
     if (event.cookies?.length) headers.cookie = event.cookies.join("; ");
     const method = event.requestContext.http.method.toUpperCase();
     if (!["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"].includes(method)) {
-      return { statusCode: 405, headers: {}, cookies: [], body: "Method Not Allowed", isBase64Encoded: false };
+      return {
+        statusCode: 405,
+        headers: {},
+        cookies: [],
+        body: "Method Not Allowed",
+        isBase64Encoded: false,
+      };
     }
     const response = await app.inject({
       method: method as "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS",
       url: event.rawPath + (event.rawQueryString ? `?${event.rawQueryString}` : ""),
       headers,
       remoteAddress: event.requestContext.http.sourceIp,
-      payload: event.body === undefined ? undefined
-        : event.isBase64Encoded ? Buffer.from(event.body, "base64") : event.body,
+      payload:
+        event.body === undefined
+          ? undefined
+          : event.isBase64Encoded
+            ? Buffer.from(event.body, "base64")
+            : event.body,
     });
     const outHeaders: Record<string, string> = {};
     let cookies: string[] = [];
@@ -42,8 +52,13 @@ export function createLambdaHandler(app: FastifyInstance) {
         outHeaders[key] = Array.isArray(value) ? value.join(", ") : String(value);
       }
     }
-    return { statusCode: response.statusCode, headers: outHeaders, cookies,
-      body: response.body, isBase64Encoded: false };
+    return {
+      statusCode: response.statusCode,
+      headers: outHeaders,
+      cookies,
+      body: response.body,
+      isBase64Encoded: false,
+    };
   };
 }
 

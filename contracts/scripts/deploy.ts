@@ -26,7 +26,9 @@ const publicClient = await viem.getPublicClient();
 const chainId = await publicClient.getChainId();
 const maxOrderInput = process.env.MAX_ORDER_ZARM;
 if (chainId !== 31337 && (!maxOrderInput || !/^\d+(\.\d{1,2})?$/.test(maxOrderInput))) {
-  throw new Error("MAX_ORDER_ZARM is required for Celo deployments and must have at most two decimals");
+  throw new Error(
+    "MAX_ORDER_ZARM is required for Celo deployments and must have at most two decimals",
+  );
 }
 const maxOrderAmount = parseUnits(chainId === 31337 ? "1000000000" : maxOrderInput!, 18);
 
@@ -43,7 +45,8 @@ if (!tokenAddress) {
     publicClient.readContract({ address: tokenAddress, abi: tokenAbi, functionName: "symbol" }),
     publicClient.readContract({ address: tokenAddress, abi: tokenAbi, functionName: "decimals" }),
   ]);
-  if (symbol !== "ZARm" || decimals !== 18) throw new Error(`Unexpected payment token ${symbol}/${decimals}`);
+  if (symbol !== "ZARm" || decimals !== 18)
+    throw new Error(`Unexpected payment token ${symbol}/${decimals}`);
 }
 const registry = await viem.deployContract("PatellaRegistry");
 const tenderTrail = await viem.deployContract("PatellaTenderTrail", [registry.address]);
@@ -84,5 +87,6 @@ const outFile = path.join(outDir, `${networkName}.json`);
 writeFileSync(outFile, JSON.stringify(deployment, null, 2));
 
 console.log(`Deployed to ${networkName} (chain ${chainId}):`);
-for (const [name, c] of Object.entries(deployment.contracts)) console.log(`  ${name}: ${c.address}`);
+for (const [name, c] of Object.entries(deployment.contracts))
+  console.log(`  ${name}: ${c.address}`);
 console.log(`Wrote ${outFile}`);

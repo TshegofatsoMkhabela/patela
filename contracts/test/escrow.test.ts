@@ -23,19 +23,40 @@ async function deployFixture() {
   const [deployer, buyer, supplier, driver, stranger, stranger2] = await viem.getWalletClients();
   const zarp = await viem.deployContract("MockZARP");
   const registry = await viem.deployContract("PatellaRegistry");
-  const escrow = await viem.deployContract("PatellaEscrowAndLogistics", [zarp.address, registry.address, TOTAL]);
+  const escrow = await viem.deployContract("PatellaEscrowAndLogistics", [
+    zarp.address,
+    registry.address,
+    TOTAL,
+  ]);
   await zarp.write.mint([buyer.account.address, TOTAL]);
   await zarp.write.approve([escrow.address, TOTAL], { account: buyer.account });
   const now = BigInt(await networkHelpers.time.latest());
-  return { deployer, buyer, supplier, driver, stranger, stranger2, zarp, escrow, refundDeadline: now + ONE_DAY };
+  return {
+    deployer,
+    buyer,
+    supplier,
+    driver,
+    stranger,
+    stranger2,
+    zarp,
+    escrow,
+    refundDeadline: now + ONE_DAY,
+  };
 }
 
 type Fixture = Awaited<ReturnType<typeof deployFixture>>;
 
 async function createOrder(f: Fixture, supplierAtDelivery = SUPPLIER_AT_DELIVERY) {
   await f.escrow.write.createOrder(
-    [f.supplier.account.address, TOTAL, DRIVER_AT_PICKUP, SUPPLIER_AT_PICKUP, supplierAtDelivery,
-      f.refundDeadline, AGREEMENT_HASH],
+    [
+      f.supplier.account.address,
+      TOTAL,
+      DRIVER_AT_PICKUP,
+      SUPPLIER_AT_PICKUP,
+      supplierAtDelivery,
+      f.refundDeadline,
+      AGREEMENT_HASH,
+    ],
     { account: f.buyer.account },
   );
   return f.escrow.read.orderCounter();
@@ -45,12 +66,21 @@ async function fundedOrderWithDriver(f: Fixture) {
   const orderId = await createOrder(f);
   await f.escrow.write.fundEscrow([orderId], { account: f.buyer.account });
   await f.escrow.write.acceptOrder([orderId, AGREEMENT_HASH], { account: f.supplier.account });
-  await f.escrow.write.assignDriver([orderId, f.driver.account.address], { account: f.supplier.account });
+  await f.escrow.write.assignDriver([orderId, f.driver.account.address], {
+    account: f.supplier.account,
+  });
   return orderId;
 }
 
-type HandoffMessage = { orderId: bigint; stage: number; giver: Address; receiver: Address; nonce: `0x${string}`;
-  expiresAt: bigint; evidenceHash: `0x${string}` };
+type HandoffMessage = {
+  orderId: bigint;
+  stage: number;
+  giver: Address;
+  receiver: Address;
+  nonce: `0x${string}`;
+  expiresAt: bigint;
+  evidenceHash: `0x${string}`;
+};
 
 async function signHandoff(
   f: Fixture,
@@ -107,14 +137,24 @@ function deliveryMessage(f: Fixture, orderId: bigint) {
   };
 }
 
-async function release(f: Fixture, msg: HandoffMessage, giverSig: `0x${string}`, receiverSig: `0x${string}`) {
+async function release(
+  f: Fixture,
+  msg: HandoffMessage,
+  giverSig: `0x${string}`,
+  receiverSig: `0x${string}`,
+) {
   return f.escrow.write.releaseHandoff(
     [msg.orderId, msg.stage, msg.nonce, msg.expiresAt, msg.evidenceHash, giverSig, receiverSig],
     { account: f.stranger.account },
   );
 }
 
-async function signedRelease(f: Fixture, msg: HandoffMessage, giver: Fixture["buyer"], receiver: Fixture["buyer"]) {
+async function signedRelease(
+  f: Fixture,
+  msg: HandoffMessage,
+  giver: Fixture["buyer"],
+  receiver: Fixture["buyer"],
+) {
   return release(f, msg, await signHandoff(f, giver, msg), await signHandoff(f, receiver, msg));
 }
 
@@ -124,7 +164,11 @@ const STATUS_COMPLETED = 4;
 describe("PatellaEscrowAndLogistics — cycle 1", () => {
   it("rejects creating an order whose splits don't add up to the total", async () => {
     const f = await networkHelpers.loadFixture(deployFixture);
-    await viem.assertions.revertWithCustomError(createOrder(f, ZARP("499")), f.escrow, "SplitMismatch");
+    await viem.assertions.revertWithCustomError(
+      createOrder(f, ZARP("499")),
+      f.escrow,
+      "SplitMismatch",
+    );
   });
 
   it("moves exactly the order total from the buyer into escrow when the buyer funds it", async () => {
@@ -145,8 +189,9 @@ describe("PatellaEscrowAndLogistics — cycle 1", () => {
     await f.escrow.write.fundEscrow([orderId], { account: f.buyer.account });
 
     await viem.assertions.revertWithCustomError(
-      f.escrow.write.acceptOrder([orderId, keccak256(toHex("different agreement"))],
-        { account: f.supplier.account }),
+      f.escrow.write.acceptOrder([orderId, keccak256(toHex("different agreement"))], {
+        account: f.supplier.account,
+      }),
       f.escrow,
       "AgreementMismatch",
     );
@@ -167,25 +212,33 @@ describe("PatellaEscrowAndLogistics — cycle 1", () => {
     await f.escrow.write.fundEscrow([orderId], { account: f.buyer.account });
 
     await viem.assertions.revertWithCustomError(
-      f.escrow.write.assignDriver([orderId, f.driver.account.address], { account: f.stranger.account }),
+      f.escrow.write.assignDriver([orderId, f.driver.account.address], {
+        account: f.stranger.account,
+      }),
       f.escrow,
       "NotSupplier",
     );
 
     await viem.assertions.revertWithCustomError(
-      f.escrow.write.assignDriver([orderId, f.driver.account.address], { account: f.supplier.account }),
+      f.escrow.write.assignDriver([orderId, f.driver.account.address], {
+        account: f.supplier.account,
+      }),
       f.escrow,
       "NotAccepted",
     );
     await f.escrow.write.acceptOrder([orderId, AGREEMENT_HASH], { account: f.supplier.account });
-    await f.escrow.write.assignDriver([orderId, f.driver.account.address], { account: f.supplier.account });
+    await f.escrow.write.assignDriver([orderId, f.driver.account.address], {
+      account: f.supplier.account,
+    });
     assert.equal(
       (await f.escrow.read.driverOf([orderId])).toLowerCase(),
       f.driver.account.address.toLowerCase(),
     );
 
     await viem.assertions.revertWithCustomError(
-      f.escrow.write.assignDriver([orderId, f.stranger.account.address], { account: f.supplier.account }),
+      f.escrow.write.assignDriver([orderId, f.stranger.account.address], {
+        account: f.supplier.account,
+      }),
       f.escrow,
       "DriverAlreadyAssigned",
     );
@@ -207,7 +260,10 @@ describe("PatellaEscrowAndLogistics — cycle 1", () => {
     );
 
     assert.equal((await balance(f, f.driver.account.address)) - driverBefore, DRIVER_AT_PICKUP);
-    assert.equal((await balance(f, f.supplier.account.address)) - supplierBefore, SUPPLIER_AT_PICKUP);
+    assert.equal(
+      (await balance(f, f.supplier.account.address)) - supplierBefore,
+      SUPPLIER_AT_PICKUP,
+    );
   });
 
   it("rejects a pickup signed by anyone other than the supplier and driver, and pays nothing", async () => {
@@ -220,10 +276,12 @@ describe("PatellaEscrowAndLogistics — cycle 1", () => {
     const escrowBefore = await balance(f, f.escrow.address);
 
     await viem.assertions.revertWithCustomError(
-      f.escrow.write.releaseHandoff([orderId, PICKUP, msg.nonce, msg.expiresAt, msg.evidenceHash,
-        giverSig, receiverSig], {
-        account: f.stranger.account,
-      }),
+      f.escrow.write.releaseHandoff(
+        [orderId, PICKUP, msg.nonce, msg.expiresAt, msg.evidenceHash, giverSig, receiverSig],
+        {
+          account: f.stranger.account,
+        },
+      ),
       f.escrow,
       "InvalidSignature",
     );
@@ -240,7 +298,10 @@ describe("PatellaEscrowAndLogistics — cycle 2", () => {
 
     await signedRelease(f, deliveryMessage(f, orderId), f.driver, f.buyer);
 
-    assert.equal((await balance(f, f.supplier.account.address)) - supplierBefore, SUPPLIER_AT_DELIVERY);
+    assert.equal(
+      (await balance(f, f.supplier.account.address)) - supplierBefore,
+      SUPPLIER_AT_DELIVERY,
+    );
     assert.equal(await balance(f, f.escrow.address), 0n);
     const order = await f.escrow.read.orders([orderId]);
     assert.equal(order[order.length - 1], STATUS_COMPLETED);
@@ -256,7 +317,11 @@ describe("PatellaEscrowAndLogistics — cycle 2", () => {
     const escrowBefore = await balance(f, f.escrow.address);
 
     // The screenshot attack: the exact same signed handoff, submitted again.
-    await viem.assertions.revertWithCustomError(release(f, msg, giverSig, receiverSig), f.escrow, "NonceUsed");
+    await viem.assertions.revertWithCustomError(
+      release(f, msg, giverSig, receiverSig),
+      f.escrow,
+      "NonceUsed",
+    );
     assert.equal(await balance(f, f.escrow.address), escrowBefore);
   });
 
@@ -270,7 +335,11 @@ describe("PatellaEscrowAndLogistics — cycle 2", () => {
 
     await networkHelpers.time.increase(121);
 
-    await viem.assertions.revertWithCustomError(release(f, msg, giverSig, receiverSig), f.escrow, "HandoffExpired");
+    await viem.assertions.revertWithCustomError(
+      release(f, msg, giverSig, receiverSig),
+      f.escrow,
+      "HandoffExpired",
+    );
   });
 
   it("rejects signatures made for another chain or another contract", async () => {
@@ -280,14 +349,24 @@ describe("PatellaEscrowAndLogistics — cycle 2", () => {
 
     const otherChain = { chainId: 42220 }; // Celo mainnet instead of the local chain
     await viem.assertions.revertWithCustomError(
-      release(f, msg, await signHandoff(f, f.supplier, msg, otherChain), await signHandoff(f, f.driver, msg, otherChain)),
+      release(
+        f,
+        msg,
+        await signHandoff(f, f.supplier, msg, otherChain),
+        await signHandoff(f, f.driver, msg, otherChain),
+      ),
       f.escrow,
       "InvalidSignature",
     );
 
     const otherContract = { verifyingContract: f.zarp.address };
     await viem.assertions.revertWithCustomError(
-      release(f, msg, await signHandoff(f, f.supplier, msg, otherContract), await signHandoff(f, f.driver, msg, otherContract)),
+      release(
+        f,
+        msg,
+        await signHandoff(f, f.supplier, msg, otherContract),
+        await signHandoff(f, f.driver, msg, otherContract),
+      ),
       f.escrow,
       "InvalidSignature",
     );
@@ -366,10 +445,17 @@ describe("PatellaEscrowAndLogistics — cycle 3", () => {
     await f.escrow.write.acceptOrder([orderId, AGREEMENT_HASH], { account: f.supplier.account });
     // The driver's wallet is a smart account owned by the driver's key.
     const driverWallet = await viem.deployContract("MockSmartWallet", [f.driver.account.address]);
-    await f.escrow.write.assignDriver([orderId, driverWallet.address], { account: f.supplier.account });
+    await f.escrow.write.assignDriver([orderId, driverWallet.address], {
+      account: f.supplier.account,
+    });
     const msg = { ...pickupMessage(f, orderId), receiver: driverWallet.address };
 
-    await release(f, msg, await signHandoff(f, f.supplier, msg), await signHandoff(f, f.driver, msg));
+    await release(
+      f,
+      msg,
+      await signHandoff(f, f.supplier, msg),
+      await signHandoff(f, f.driver, msg),
+    );
 
     assert.equal(await balance(f, driverWallet.address), DRIVER_AT_PICKUP);
   });
@@ -392,7 +478,9 @@ describe("PatellaEscrowAndLogistics — cycle 3", () => {
     const orderId = await createOrder(f);
 
     await viem.assertions.revertWithCustomError(
-      f.escrow.write.assignDriver([orderId, f.driver.account.address], { account: f.supplier.account }),
+      f.escrow.write.assignDriver([orderId, f.driver.account.address], {
+        account: f.supplier.account,
+      }),
       f.escrow,
       "OrderNotFunded",
     );

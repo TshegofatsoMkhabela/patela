@@ -10,8 +10,10 @@ interface LimitOptions {
 
 function milliseconds(value: number | string): number {
   if (typeof value === "number" && Number.isFinite(value) && value > 0) return value;
-  const match = typeof value === "string"
-    ? /^(\d+)\s*(ms|milliseconds?|s|seconds?|m|minutes?|h|hours?)$/i.exec(value.trim()) : null;
+  const match =
+    typeof value === "string"
+      ? /^(\d+)\s*(ms|milliseconds?|s|seconds?|m|minutes?|h|hours?)$/i.exec(value.trim())
+      : null;
   if (!match) throw new Error(`Invalid rate-limit time window: ${value}`);
   const amount = Number(match[1]);
   const unit = match[2].toLowerCase();
@@ -22,7 +24,8 @@ function milliseconds(value: number | string): number {
 }
 
 async function increment(db: Database, keyHash: string, timeWindow: number) {
-  const result = await db.query<{ count: number; ttl: number }>(`
+  const result = await db.query<{ count: number; ttl: number }>(
+    `
     insert into api_rate_limits (key_hash, count, expires_at)
     values ($1, 1, clock_timestamp() + ($2 * interval '1 millisecond'))
     on conflict (key_hash) do update set
@@ -32,7 +35,9 @@ async function increment(db: Database, keyHash: string, timeWindow: number) {
         then excluded.expires_at else api_rate_limits.expires_at end
     returning count,
       greatest(0, ceil(extract(epoch from (expires_at - clock_timestamp())) * 1000))::integer as ttl
-  `, [keyHash, timeWindow]);
+  `,
+    [keyHash, timeWindow],
+  );
   const row = result.rows[0];
   if (!row) throw new Error("Rate-limit counter was not returned");
   return { current: Number(row.count), ttl: Number(row.ttl) };
@@ -57,9 +62,14 @@ export function addPostgresRateLimitHook(app: FastifyInstance, db: Database) {
       "x-ratelimit-reset": String(reset),
     });
     if (current > max) {
-      return reply.code(429).header("retry-after", String(reset)).send({
-        statusCode: 429, error: "Too Many Requests", message: `Rate limit exceeded, retry in ${reset} seconds`,
-      });
+      return reply
+        .code(429)
+        .header("retry-after", String(reset))
+        .send({
+          statusCode: 429,
+          error: "Too Many Requests",
+          message: `Rate limit exceeded, retry in ${reset} seconds`,
+        });
     }
   });
 }
