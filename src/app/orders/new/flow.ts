@@ -1,5 +1,6 @@
-// Buyer order flow (INTERFACES §1 step 3): POST /orders → createOrder → POST /orders/:id/chain
-// → approve → fundEscrow → POST /orders/:id/funding/verify. Progress is kept so a failed step can
+// Buyer order flow (INTERFACES §1 steps 3-5): POST /orders (emails the supplier's accept link)
+// → wait for the supplier to accept and link a wallet (createOrder needs that address) → createOrder
+// → POST /orders/:id/chain → approve → fundEscrow → POST /orders/:id/funding/verify. Progress is kept so a failed step can
 // be retried without creating a second order (off-chain or on-chain).
 import { formatUnits, parseUnits, type Address, type Hex } from "viem";
 import type { CreateOrderInput, CreatedOrder } from "@/lib/api";
@@ -12,21 +13,21 @@ import {
 } from "@/lib/chain";
 import { ZARP_DECIMALS } from "@/lib/contracts";
 
-export type StepKey = "save" | "create" | "record" | "approve" | "fund" | "verify";
+export type StepKey = "save" | "supplier" | "create" | "record" | "approve" | "fund" | "verify";
 export type StepStatus = { status: "idle" | "pending" | "done" | "error"; message?: string };
 
 export const STEP_LABELS: Record<StepKey, string> = {
-  save: "Save order with Patela (agreement hash)",
-  create: "Create order on-chain (MetaMask)",
+  save: "Save order with Patela and invite the supplier",
+  supplier: "Supplier opens the link, signs in and links a wallet",
+  create: "Create order on-chain (your wallet)",
   record: "Record on-chain order id",
-  approve: "Approve ZARm for the escrow (MetaMask)",
-  fund: "Fund escrow (MetaMask)",
-  verify: "Patela verifies funding and invites the supplier",
+  approve: "Approve the token for the escrow (your wallet)",
+  fund: "Fund escrow (your wallet)",
+  verify: "Patela verifies the funding",
 };
 
 export type OrderForm = {
   supplierEmail: string;
-  supplierWallet: Address;
   totalZarp: string;
   refundAfterHours: number;
   agreementText: string;
@@ -38,6 +39,8 @@ export type FlowProgress = {
   refundDeadline?: bigint;
   /** DEMO_MODE: the supplier's accept link returned by the backend. */
   acceptUrl?: string;
+  /** The wallet the supplier linked when accepting the invitation (the on-chain supplier). */
+  supplierWallet?: Address;
   chainOrderId?: bigint;
   createTxHash?: Hex;
   chainRecorded?: boolean;
@@ -54,6 +57,8 @@ export type FlowDeps = {
     body: { chainOrderId: bigint; createTxHash: string },
   ) => Promise<unknown>;
   verifyFunding: (orderId: string, txHash: string) => Promise<unknown>;
+  /** Resolves with the supplier's linked wallet once they have accepted the invitation. */
+  waitForSupplier: (orderId: string) => Promise<Address>;
   createAndFund: (
     params: OrderParams,
     onStep: (s: FundStep) => Promise<void>,
@@ -78,7 +83,7 @@ function parseTotal(totalZarp: string): bigint {
   return wei;
 }
 
-const KEYS: StepKey[] = ["save", "create", "record", "approve", "fund", "verify"];
+const KEYS: StepKey[] = ["save", "supplier", "create", "record", "approve", "fund", "verify"];
 
 export async function runOrderFlow(
   deps: FlowDeps,
@@ -108,6 +113,7 @@ export async function runOrderFlow(
   };
 
   if (progress.orderId) done("save");
+  if (progress.supplierWallet || progress.chainOrderId !== undefined) done("supplier");
   if (progress.chainOrderId !== undefined) done("create");
   if (progress.chainRecorded) done("record");
   if (progress.fundTxHash) {
@@ -135,6 +141,12 @@ export async function runOrderFlow(
     }
     const orderId = progress.orderId!;
 
+    if (progress.chainOrderId === undefined && !progress.supplierWallet) {
+      start("supplier");
+      progress.supplierWallet = await deps.waitForSupplier(orderId);
+      done("supplier");
+    }
+
     // The backend must know the on-chain id before funding is verified.
     const record = async () => {
       start("record");
@@ -151,7 +163,7 @@ export async function runOrderFlow(
       start(progress.chainOrderId === undefined ? "create" : "approve");
       await deps.createAndFund(
         {
-          supplier: form.supplierWallet,
+          supplier: progress.supplierWallet ?? ("0x" as Address), // unused when existingOrderId is set
           total,
           ...split,
           refundDeadline: progress.refundDeadline!,

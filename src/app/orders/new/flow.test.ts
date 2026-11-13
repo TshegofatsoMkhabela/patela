@@ -3,9 +3,9 @@ import { parseUnits, type Hex } from "viem";
 import { refundDeadlineSeconds, runOrderFlow, type FlowDeps, type FlowState } from "./flow";
 
 const HASH = ("0x" + "22".repeat(32)) as Hex;
+const SUPPLIER = "0x5050000000000000000000000000000000000004" as const;
 const form = {
   supplierEmail: "s@example.com",
-  supplierWallet: "0x5050000000000000000000000000000000000004" as const,
   totalZarp: "100",
   refundAfterHours: 72,
   agreementText: "100 bags of maize",
@@ -26,10 +26,15 @@ function deps(overrides: Partial<FlowDeps> = {}) {
       log.push(`POST /orders/${id}/funding/verify ${tx}`);
       return { id };
     }),
+    waitForSupplier: vi.fn(async (id) => {
+      log.push(`wait supplier ${id}`);
+      return SUPPLIER;
+    }),
     createAndFund: vi.fn(async (params, onStep) => {
       log.push(
         `chain total=${params.total} deadline=${params.refundDeadline} existing=${params.existingOrderId ?? "-"}`,
       );
+      if (params.existingOrderId === undefined) log.push(`supplier=${params.supplier}`);
       if (params.existingOrderId === undefined)
         await onStep({ step: "created", orderId: 9n, txHash: "0xc" });
       await onStep({ step: "approved", txHash: "0xa" });
@@ -47,12 +52,14 @@ function deps(overrides: Partial<FlowDeps> = {}) {
 }
 
 describe("runOrderFlow", () => {
-  it("Given a filled form, When run, Then POST /orders → chain → /chain → /funding/verify in that order with 10/40/50 splits", async () => {
+  it("Given a filled form, When run, Then POST /orders → supplier accepts → chain → /chain → /funding/verify with 10/40/50 splits", async () => {
     const { d, log } = deps();
     const result = await runOrderFlow(d, form, {}, () => {});
     expect(log).toEqual([
       `POST /orders ${JSON.stringify({ supplierEmail: "s@example.com", totalZarp: "100", driverAtPickupZarp: "10", supplierAtPickupZarp: "40", supplierAtDeliveryZarp: "50", refundAfterHours: 72, agreementText: "100 bags of maize" })}`,
+      "wait supplier o-1",
       `chain total=${parseUnits("100", 18)} deadline=1900000000 existing=-`,
+      `supplier=${SUPPLIER}`,
       "POST /orders/o-1/chain 9 0xc",
       "POST /orders/o-1/funding/verify 0xf",
     ]);
@@ -158,5 +165,21 @@ describe("runOrderFlow retries", () => {
     log.length = 0;
     await runOrderFlow(d, form, progress, () => {});
     expect(log).toEqual(["POST /orders/o-1/funding/verify 0xf"]);
+  });
+});
+
+describe("runOrderFlow supplier wait", () => {
+  it("Given createOrder was cancelled after the supplier accepted, When retried, Then it doesn't wait for the supplier again", async () => {
+    const { d, log } = deps();
+    (d.createAndFund as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("cancelled"));
+    let progress = {};
+    await runOrderFlow(d, form, {}, (s) => {
+      progress = s.progress;
+    }).catch(() => {});
+    expect(progress).toMatchObject({ supplierWallet: SUPPLIER });
+    log.length = 0;
+    await runOrderFlow(d, form, progress, () => {});
+    expect(log[0]).toMatch(/^chain /);
+    expect(d.waitForSupplier).toHaveBeenCalledTimes(1);
   });
 });

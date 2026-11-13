@@ -21,7 +21,8 @@ import {
   type ChainClients,
 } from "@/lib/chain";
 import { ESCROW_ADDRESS } from "@/lib/contracts";
-import { DEMO_EMAILS, demoAccount, demoChainClients } from "@/lib/demo-signer";
+import { DEMO_EMAILS, demoChainClients } from "@/lib/demo-signer";
+import { partyAddresses } from "../[id]/order-data";
 import { STEP_LABELS, runOrderFlow, type FlowProgress, type FlowState, type StepKey } from "./flow";
 
 const STATUS_ICON = { idle: "○", pending: "…", done: "✓", error: "✕" } as const;
@@ -42,11 +43,8 @@ export function NewOrderView() {
   const [walletMsg, setWalletMsg] = useState<{ text: string; error?: boolean } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
-  // Local chain: prefill the demo supplier persona (Hardhat dev account #2).
+  // Local chain: prefill the demo supplier persona's email.
   const [supplierEmail, setSupplierEmail] = useState(NETWORK.local ? DEMO_EMAILS.supplier : "");
-  const [supplierWallet, setSupplierWallet] = useState<string>(
-    NETWORK.local ? demoAccount("supplier").address : "",
-  );
   const [totalZarp, setTotalZarp] = useState("100");
   const [refundAfterHours, setRefundAfterHours] = useState(72);
   const [agreementText, setAgreementText] = useState("");
@@ -146,8 +144,6 @@ export function NewOrderView() {
     e.preventDefault();
     if (!clients) return;
     setFormError(null);
-    if (!isAddress(supplierWallet.trim()))
-      return setFormError("Enter the supplier's wallet address (0x…).");
     if (!agreementText.trim()) return setFormError("Describe what is being delivered.");
     setBusy("order");
     try {
@@ -156,11 +152,18 @@ export function NewOrderView() {
           createOrder: api.createOrder,
           recordChainOrder: api.recordChainOrder,
           verifyFunding: api.verifyFunding,
+          waitForSupplier: async (orderId) => {
+            // The supplier accepts from the emailed link; their linked wallet is the on-chain supplier.
+            for (;;) {
+              const wallet = partyAddresses(await api.getOrder(orderId), ESCROW_ADDRESS).supplier;
+              if (wallet && isAddress(wallet)) return wallet as Address;
+              await new Promise((r) => setTimeout(r, 2500));
+            }
+          },
           createAndFund: (params, onStep) => createAndFundOrder(clients, params, onStep),
         },
         {
           supplierEmail,
-          supplierWallet: supplierWallet.trim() as Address,
           totalZarp,
           refundAfterHours,
           agreementText,
@@ -206,7 +209,7 @@ export function NewOrderView() {
             <BalancePanel
               addresses={{
                 buyer: clients?.account ?? null,
-                supplier: isAddress(supplierWallet.trim()) ? supplierWallet.trim() : null,
+                supplier: progress.supplierWallet ?? null,
                 driver: null,
                 escrow: ESCROW_ADDRESS,
               }}
@@ -316,19 +319,6 @@ export function NewOrderView() {
               required
             />
           </div>
-          <div className="pt-field">
-            <label htmlFor="o-wallet">Supplier wallet address</label>
-            <input
-              id="o-wallet"
-              className="pt-in"
-              placeholder="0x…"
-              value={supplierWallet}
-              disabled={locked}
-              onChange={(e) => setSupplierWallet(e.target.value)}
-              required
-              style={{ fontFamily: "monospace" }}
-            />
-          </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <div className="pt-field">
               <label htmlFor="o-total">Total ({NETWORK.tokenSymbol})</label>
@@ -394,6 +384,12 @@ export function NewOrderView() {
                       {s.message ? (
                         <span style={{ display: "block", color: STATUS_COLOR.error }}>
                           {s.message}
+                        </span>
+                      ) : null}
+                      {k === "supplier" && s.status === "pending" && progress.acceptUrl ? (
+                        <span style={{ display: "block", fontSize: "0.85rem", wordBreak: "break-all" }}>
+                          Demo inbox: open this link as the supplier (another browser profile or
+                          private window): <a href={progress.acceptUrl}>{progress.acceptUrl}</a>
                         </span>
                       ) : null}
                     </span>

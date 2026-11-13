@@ -59,6 +59,7 @@ describe("isPaid", () => {
   it("Given a completed status, Then the order is paid", () => {
     expect(isPaid({ id: "o", status: "completed" })).toBe(true);
     expect(isPaid({ id: "o", status: "PAID" })).toBe(true);
+    expect(isPaid({ id: "o", status: "delivered" })).toBe(true);
     expect(isPaid({ id: "o", status: "funded" })).toBe(false);
   });
 });

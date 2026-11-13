@@ -26,4 +26,6 @@ export function timelineItems(order: OrderDetail): TimelineItem[] {
   }));
 }
 
-export const isPaid = (order: OrderDetail) => /^(completed|paid)$/i.test(order.status ?? "");
+/** The backend ends a fully paid order at "delivered" (orders.ts); older shapes used completed/paid. */
+export const isPaid = (order: OrderDetail) =>
+  /^(completed|paid|delivered)$/i.test(order.status ?? "");

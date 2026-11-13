@@ -15,7 +15,7 @@ import { readChainOrderId, readWallet } from "../../handoff/handoff-flow";
 // Supplier / driver onboarding from the emailed link (INTERFACES §1 steps 5–6, §4 web handoff rows).
 
 type Invitation = { orderId: string; role: "supplier" | "driver"; email: string; agreementText: string; agreementHash: Hex };
-type Step = "loading" | "sign-in" | "code" | "wallet" | "accept" | "invite-driver" | "await-driver" | "assign" | "done";
+type Step = "loading" | "sign-in" | "code" | "wallet" | "await-funding" | "accept" | "invite-driver" | "await-driver" | "assign" | "done";
 
 export default function AcceptPage() {
   const { token } = useParams<{ token: string }>();
@@ -44,6 +44,18 @@ export default function AcceptPage() {
       }
     })();
   }, [token]);
+
+  // Supplier: acceptOrder needs a funded escrow, and the buyer funds only after this acceptance.
+  useEffect(() => {
+    if (step !== "await-funding" || !invite) return;
+    const t = setInterval(async () => {
+      const order = (await browserApi.request("GET", `/orders/${encodeURIComponent(invite.orderId)}`).catch(() => null)) as {
+        status?: string;
+      } | null;
+      if (order?.status === "funded") setStep("accept");
+    }, 3000);
+    return () => clearInterval(t);
+  }, [step, invite]);
 
   // Supplier: wait for the invited driver to link a wallet.
   useEffect(() => {
@@ -103,7 +115,7 @@ export default function AcceptPage() {
       await browserApi.request("POST", "/wallet/link", { challengeId: challenge.challengeId, signature });
       await browserApi.request("POST", `/invitations/${encodeURIComponent(token)}/accept`, { walletAddress: s.address });
       setSigner(s);
-      setStep(invite!.role === "supplier" ? "accept" : "done");
+      setStep(invite!.role === "supplier" ? "await-funding" : "done");
     });
 
   const acceptOrder = () =>
@@ -172,6 +184,7 @@ export default function AcceptPage() {
           </p>
         </div>
       )}
+      {step === "await-funding" && <p aria-live="polite">Waiting for the buyer to create and fund the escrow…</p>}
       {step === "accept" && <Button onClick={acceptOrder} disabled={!!busy}>Accept the order</Button>}
       {step === "invite-driver" && (
         <div className="flex gap-2">

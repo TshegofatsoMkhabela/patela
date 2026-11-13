@@ -4,7 +4,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { escrowAbi } from "@/lib/contracts";
 import { computeEvidenceHash, decodeQrPayload, encodeQrPayload, type Evidence } from "@/lib/handoff";
 import type { WalletSigner } from "@/lib/embedded-wallet";
-import { readOrderParties, runGiver, runReceiver, type FlowDeps, type FlowState } from "./handoff-flow";
+import { readOrderParties, readWallet, runGiver, runReceiver, type FlowDeps, type FlowState } from "./handoff-flow";
 
 const ESCROW = "0x00000000000000000000000000000000000000e5" as Address;
 const API = "https://api.example.test";
@@ -197,5 +197,13 @@ describe("receiver scan errors", () => {
     const d = deps({ signer: signer(supplierKey), locate: async () => { throw new Error("User denied Geolocation"); } });
     await runGiver(d, { orderId: "ord-1", stage: 1 });
     expect(d.states.at(-1)).toMatchObject({ kind: "error", message: expect.stringMatching(/location/i) });
+  });
+});
+
+describe("readWallet", () => {
+  it("Given the backend's GET /orders/:id shape (parties.<role>.wallet), Then it reads the wallet", () => {
+    const order = { parties: { driver: { userId: "u", email: "d@x", wallet: "0x90f79bf6eb2c4f870365e785982e1f101e93b906" } } };
+    expect(readWallet(order, "driver")).toBe("0x90F79bf6EB2c4f870365E785982E1f101E93b906");
+    expect(readWallet({ parties: { driver: null } }, "driver")).toBeNull();
   });
 });

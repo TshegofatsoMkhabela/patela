@@ -60,7 +60,11 @@ export function readWallet(order: unknown, role: PartyRole): Address | null {
   const o = (order ?? {}) as Record<string, unknown>;
   const parties = (o.parties ?? {}) as Record<string, Record<string, unknown> | undefined>;
   const value =
-    parties[role]?.walletAddress ?? parties[role]?.wallet_address ?? o[`${role}WalletAddress`] ?? o[`${role}_wallet_address`];
+    parties[role]?.wallet ??
+    parties[role]?.walletAddress ??
+    parties[role]?.wallet_address ??
+    o[`${role}WalletAddress`] ??
+    o[`${role}_wallet_address`];
   return typeof value === "string" && isAddress(value) ? getAddress(value) : null;
 }
 
