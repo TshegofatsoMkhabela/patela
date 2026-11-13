@@ -1,6 +1,5 @@
 import { useEffect, useSyncExternalStore } from "react";
-import type { Eth } from "@/lib/wallet-link";
-import { BASE_SEPOLIA_HEX } from "@/lib/zarp";
+import { BASE_SEPOLIA_HEX, type Eth } from "@/lib/chain";
 
 export const STABLECOINS = ["ZARP", "USDC", "USDT", "DAI", "PYUSD", "EURC"] as const;
 export type Coin = (typeof STABLECOINS)[number];
@@ -465,7 +464,6 @@ export const actions = {
 };
 
 /* ---------- Testnet wallet (Base Sepolia: Chain ID 84532 / 0x14a34) ---------- */
-const BASE_SEPOLIA = BASE_SEPOLIA_HEX;
 
 export const browserEthereum = () =>
   typeof window === "undefined" ? undefined : (window as { ethereum?: Eth }).ethereum;
@@ -497,13 +495,13 @@ export async function connectWallet(): Promise<{
     try {
       await eth.request({
         method: "wallet_switchEthereumChain",
-        params: [{ chainId: BASE_SEPOLIA }],
+        params: [{ chainId: BASE_SEPOLIA_HEX }],
       });
     } catch {
       /* user may decline; still connected */
     }
     const chainId = (await eth.request({ method: "eth_chainId" })) as string;
-    const onBaseSepolia = chainId.toLowerCase() === BASE_SEPOLIA;
+    const onBaseSepolia = chainId.toLowerCase() === BASE_SEPOLIA_HEX;
     const wallet = {
       address: accounts[0] ?? "",
       chain: onBaseSepolia ? "Base Sepolia" : `Chain ${parseInt(chainId, 16)}`,

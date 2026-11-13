@@ -85,11 +85,11 @@ export function createPatelaApi({
       call<WalletChallenge>("/wallet/challenge", "POST", { wallet }),
     walletLink: (challengeId: string, signature: string) =>
       call<Profile>("/wallet/link", "POST", { challengeId, signature }),
-    logout: () => call<{ signedOut: boolean }>("/auth/logout", "POST", {}),
   };
 }
 
-export type PatelaApi = ReturnType<typeof createPatelaApi>;
+export const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+export const isOtpCode = (value: string) => /^\d{6}$/.test(value);
 
 export const patelaApi = createPatelaApi({
   baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000",

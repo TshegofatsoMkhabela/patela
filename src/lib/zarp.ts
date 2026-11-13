@@ -1,47 +1,62 @@
 // Testnet-only helpers for MockZARP (contracts/contracts/MockZARP.sol), whose
 // mint(to, amount) is open to anyone. The buyer's own wallet sends the mint,
 // so no Patela key is involved. Never point this at real ZARP.
+// Load this module lazily: it brings in viem.
 
 import {
   decodeFunctionResult,
   encodeFunctionData,
   formatUnits,
-  isAddress,
-  parseAbi,
   parseUnits,
-  zeroAddress,
   type Address,
+  type Hex,
 } from "viem";
-import type { Eth } from "@/lib/wallet-link";
+import { BASE_SEPOLIA_HEX, type Eth } from "@/lib/chain";
 
-export const BASE_SEPOLIA_HEX = "0x14a34";
-
-const abi = parseAbi([
-  "function mint(address to, uint256 amount)",
-  "function decimals() view returns (uint8)",
-  "function balanceOf(address owner) view returns (uint256)",
-]);
-
-/** The configured MockZARP address, or null when minting is unavailable. */
-export function testZarpAddress(value: string | undefined): Address | null {
-  if (!value || !isAddress(value) || value.toLowerCase() === zeroAddress) return null;
-  return value as Address;
-}
+const abi = [
+  {
+    type: "function",
+    name: "mint",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "decimals",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint8" }],
+  },
+  {
+    type: "function",
+    name: "balanceOf",
+    stateMutability: "view",
+    inputs: [{ name: "owner", type: "address" }],
+    outputs: [{ type: "uint256" }],
+  },
+] as const;
 
 type TokenArgs = { eth: Eth; account: string; token: string };
 
-async function read<F extends "decimals" | "balanceOf">(
-  eth: Eth,
-  token: string,
-  functionName: F,
-  args: readonly unknown[] = [],
-) {
-  const data = encodeFunctionData({ abi, functionName, args } as never);
-  const result = (await eth.request({
-    method: "eth_call",
-    params: [{ to: token, data }, "latest"],
-  })) as `0x${string}`;
-  return decodeFunctionResult({ abi, functionName, data: result } as never) as unknown as bigint;
+const call = (eth: Eth, token: string, data: Hex) =>
+  eth.request({ method: "eth_call", params: [{ to: token, data }, "latest"] }) as Promise<Hex>;
+
+async function decimals(eth: Eth, token: string) {
+  const data = await call(eth, token, encodeFunctionData({ abi, functionName: "decimals" }));
+  return decodeFunctionResult({ abi, functionName: "decimals", data });
+}
+
+async function balanceOf(eth: Eth, token: string, account: string) {
+  const data = await call(
+    eth,
+    token,
+    encodeFunctionData({ abi, functionName: "balanceOf", args: [account as Address] }),
+  );
+  return decodeFunctionResult({ abi, functionName: "balanceOf", data });
 }
 
 export async function mintTestZarp({
@@ -57,11 +72,10 @@ export async function mintTestZarp({
   if (chainId.toLowerCase() !== BASE_SEPOLIA_HEX) {
     throw new Error("Switch MetaMask to Base Sepolia to get test ZARP.");
   }
-  const decimals = Number(await read(eth, token, "decimals"));
   const data = encodeFunctionData({
     abi,
     functionName: "mint",
-    args: [account as Address, parseUnits(amount, decimals)],
+    args: [account as Address, parseUnits(amount, await decimals(eth, token))],
   });
   return (await eth.request({
     method: "eth_sendTransaction",
@@ -70,11 +84,11 @@ export async function mintTestZarp({
 }
 
 export async function zarpBalance({ eth, account, token }: TokenArgs) {
-  const [decimals, balance] = await Promise.all([
-    read(eth, token, "decimals"),
-    read(eth, token, "balanceOf", [account]),
+  const [places, balance] = await Promise.all([
+    decimals(eth, token),
+    balanceOf(eth, token, account),
   ]);
-  return formatUnits(balance, Number(decimals));
+  return formatUnits(balance, places);
 }
 
 /** Polls for the transaction receipt: true once mined, false if it never shows up. */

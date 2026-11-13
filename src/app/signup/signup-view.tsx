@@ -7,7 +7,15 @@ import { toast } from "sonner";
 import { SiteNav } from "@/components/SiteNav";
 import { Reveal } from "@/components/Reveal";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
-import { ApiError, patelaApi, saveAuthUser, toAuthUser, type Profile } from "@/lib/patela-api";
+import { useBackendTask } from "@/hooks/use-backend-task";
+import {
+  isEmail,
+  isOtpCode,
+  patelaApi,
+  saveAuthUser,
+  toAuthUser,
+  type Profile,
+} from "@/lib/patela-api";
 
 export type RoleType = "buyer" | "carrier" | "supplier" | "driver" | "auditor";
 
@@ -507,7 +515,7 @@ export function SignUpView() {
   const [phone, setPhone] = useState("+27 ");
   const [codeSent, setCodeSent] = useState(false);
   const [code, setCode] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [busy, runBackend] = useBackendTask("Sign-up failed. Try again.");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<RoleType>("buyer");
 
@@ -527,7 +535,7 @@ export function SignUpView() {
       toast.error("Please enter your full legal name (at least 3 characters).");
       return false;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    if (!isEmail(email.trim())) {
       toast.error("Please enter a valid business email address.");
       return false;
     }
@@ -536,17 +544,6 @@ export function SignUpView() {
       return false;
     }
     return true;
-  }
-
-  async function withBackend(task: () => Promise<void>) {
-    setBusy(true);
-    try {
-      await task();
-    } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Sign-up failed. Try again.");
-    } finally {
-      setBusy(false);
-    }
   }
 
   // The account exists once the email is verified (the session cookie is set);
@@ -567,18 +564,18 @@ export function SignUpView() {
     if (!detailsAreValid()) return;
     const address = email.trim();
     if (!codeSent) {
-      void withBackend(async () => {
+      runBackend(async () => {
         await patelaApi.requestOtp(address);
         setCodeSent(true);
         toast.info("Code requested. Enter the 6-digit code to create your account.");
       });
       return;
     }
-    if (!/^\d{6}$/.test(code)) {
+    if (!isOtpCode(code)) {
       toast.error("Enter the 6-digit code.");
       return;
     }
-    void withBackend(async () => {
+    runBackend(async () => {
       await patelaApi.verifyOtp(address, code);
       await accountCreated();
     });
@@ -586,7 +583,7 @@ export function SignUpView() {
 
   function handleGoogle(credential: string) {
     if (!detailsAreValid()) return;
-    void withBackend(async () => {
+    runBackend(async () => {
       await patelaApi.googleSignIn(credential);
       await accountCreated();
     });
@@ -640,11 +637,11 @@ export function SignUpView() {
         registeredAt: new Date().toISOString(),
         verified: true,
       };
+      saveAuthUser(userProfile);
       try {
-        localStorage.setItem("patela_auth_user", JSON.stringify(userProfile));
         localStorage.setItem("patela_current_role", appRole);
       } catch {
-        /* storage safe */
+        /* storage unavailable: the role stays in memory only */
       }
       setStage("completed");
       toast.success("All profile details verified!");

@@ -1,9 +1,8 @@
 // Proves to the backend that the signed-in user controls a MetaMask wallet:
 // /wallet/challenge -> eth_signTypedData_v4 -> /wallet/link.
 
+import { isUserRejection, type Eth } from "@/lib/chain";
 import { ApiError, type WalletChallenge } from "@/lib/patela-api";
-
-export type Eth = { request: (a: { method: string; params?: unknown[] }) => Promise<unknown> };
 
 export type LinkApi = {
   walletChallenge(wallet: string): Promise<WalletChallenge>;
@@ -55,7 +54,7 @@ export async function linkConnectedWallet(
     return { status: "linked" };
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) return { status: "signed-out" };
-    if ((error as { code?: number }).code === 4001) return { status: "declined" };
+    if (isUserRejection(error)) return { status: "declined" };
     return { status: "failed", message: (error as Error).message || "Wallet link failed." };
   }
 }

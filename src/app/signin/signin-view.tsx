@@ -7,7 +7,8 @@ import { useState, type FormEvent } from "react";
 import { KeyRound, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
-import { ApiError, patelaApi, saveAuthUser, toAuthUser } from "@/lib/patela-api";
+import { useBackendTask } from "@/hooks/use-backend-task";
+import { isEmail, isOtpCode, patelaApi, saveAuthUser, toAuthUser } from "@/lib/patela-api";
 import "@/styles/journey-auth.css";
 
 type Method = "code" | "password";
@@ -55,7 +56,12 @@ export function SignInView() {
   const [password, setPassword] = useState("");
   const [codeSent, setCodeSent] = useState(false);
   const [code, setCode] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [busy, runBackend] = useBackendTask("Sign-in failed. Try again.");
+
+  function resetCode() {
+    setCodeSent(false);
+    setCode("");
+  }
 
   function enter(user: Record<string, unknown>, message: string) {
     if (!saveAuthUser(user)) {
@@ -82,19 +88,8 @@ export function SignInView() {
     );
   }
 
-  async function withBackend(task: () => Promise<void>) {
-    setBusy(true);
-    try {
-      await task();
-    } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Sign-in failed. Try again.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   function handleGoogle(credential: string) {
-    void withBackend(async () => {
+    runBackend(async () => {
       const profile = await patelaApi.googleSignIn(credential);
       enter(toAuthUser(profile), "Signed in with Google.");
     });
@@ -103,7 +98,7 @@ export function SignInView() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const address = email.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)) {
+    if (!isEmail(address)) {
       toast.error("Enter a valid email address.");
       return;
     }
@@ -116,22 +111,30 @@ export function SignInView() {
       return;
     }
     if (!codeSent) {
-      void withBackend(async () => {
+      runBackend(async () => {
         await patelaApi.requestOtp(address);
         setCodeSent(true);
         toast.info("Code requested. Enter the 6-digit code to continue.");
       });
       return;
     }
-    if (!/^\d{6}$/.test(code)) {
+    if (!isOtpCode(code)) {
       toast.error("Enter the 6-digit code.");
       return;
     }
-    void withBackend(async () => {
+    runBackend(async () => {
       const profile = await patelaApi.verifyOtp(address, code);
       enter(toAuthUser(profile), "Signed in to Patela.");
     });
   }
+
+  const submitLabel = busy
+    ? "Please wait…"
+    : method === "password"
+      ? "Sign in (demo)"
+      : codeSent
+        ? "Verify code"
+        : "Send code";
 
   return (
     <main className="pa-page">
@@ -149,8 +152,7 @@ export function SignInView() {
                 className={method === "code" ? "active" : ""}
                 onClick={() => {
                   setMethod("code");
-                  setCodeSent(false);
-                  setCode("");
+                  resetCode();
                 }}
               >
                 <Mail size={17} /> Email code
@@ -173,8 +175,7 @@ export function SignInView() {
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
-                setCodeSent(false);
-                setCode("");
+                resetCode();
               }}
               required
             />
@@ -214,14 +215,7 @@ export function SignInView() {
                 />
                 <p className="pa-help">
                   The code is valid for 10 minutes.{" "}
-                  <button
-                    type="button"
-                    className="pa-link"
-                    onClick={() => {
-                      setCodeSent(false);
-                      setCode("");
-                    }}
-                  >
+                  <button type="button" className="pa-link" onClick={resetCode}>
                     Use a different email
                   </button>
                 </p>
@@ -233,13 +227,7 @@ export function SignInView() {
               </p>
             )}
             <button className="pa-submit" type="submit" disabled={busy}>
-              {busy
-                ? "Please wait…"
-                : method === "password"
-                  ? "Sign in (demo)"
-                  : codeSent
-                    ? "Verify code"
-                    : "Send code"}
+              {submitLabel}
             </button>
           </form>
           <div className="pa-divider">

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { mintTestZarp, testZarpAddress, waitForReceipt, zarpBalance } from "@/lib/zarp";
+import { testZarpAddress } from "@/lib/chain";
+import { mintTestZarp, waitForReceipt, zarpBalance } from "@/lib/zarp";
 
 function receiptEth(receipts: Array<{ status: string } | null>) {
   let polls = 0;

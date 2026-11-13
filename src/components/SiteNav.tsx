@@ -5,8 +5,8 @@ import { toast } from "sonner";
 import { HeroBar, VIDEO, POSTER } from "@/components/HeroBar";
 import { patelaApi } from "@/lib/patela-api";
 import { actions, browserEthereum, connectWallet, shortAddr, usePatela } from "@/lib/patela-store";
+import { isUserRejection, testZarpAddress, type Eth } from "@/lib/chain";
 import { linkConnectedWallet, type LinkOutcome } from "@/lib/wallet-link";
-import { mintTestZarp, testZarpAddress, waitForReceipt, zarpBalance } from "@/lib/zarp";
 
 const TEST_ZARP = testZarpAddress(process.env.NEXT_PUBLIC_ZARP_TOKEN_ADDRESS);
 const MINT_AMOUNT = "1000";
@@ -33,13 +33,12 @@ export function TestZarpButton({ className = "pt-btn ghost" }: { className?: str
   const [busy, setBusy] = useState(false);
   const eth = browserEthereum();
   if (!TEST_ZARP || !eth || !wallet || wallet.demo || wallet.chain !== "Base Sepolia") return null;
-  const token = TEST_ZARP;
-  const address = wallet.address;
 
-  async function mint() {
-    if (!eth) return;
+  async function mint(eth: Eth, token: string, address: string) {
     setBusy(true);
     try {
+      // viem is only needed here, so it loads on click instead of on every page.
+      const { mintTestZarp, waitForReceipt, zarpBalance } = await import("@/lib/zarp");
       const hash = await mintTestZarp({ eth, account: address, token, amount: MINT_AMOUNT });
       toast.info(`Mint sent (${shortAddr(hash)}). Waiting for Base Sepolia to confirm…`);
       if (await waitForReceipt(eth, hash)) {
@@ -49,8 +48,7 @@ export function TestZarpButton({ className = "pt-btn ghost" }: { className?: str
         toast.info("Mint not confirmed yet. Check MetaMask for its status.");
       }
     } catch (error) {
-      const code = (error as { code?: number }).code;
-      toast.error(code === 4001 ? "Mint cancelled." : (error as Error).message);
+      toast.error(isUserRejection(error) ? "Mint cancelled." : (error as Error).message);
     } finally {
       setBusy(false);
     }
@@ -59,7 +57,7 @@ export function TestZarpButton({ className = "pt-btn ghost" }: { className?: str
   return (
     <button
       className={className}
-      onClick={mint}
+      onClick={() => mint(eth, TEST_ZARP, wallet.address)}
       disabled={busy}
       title="Testnet only: MockZARP has no value"
     >
