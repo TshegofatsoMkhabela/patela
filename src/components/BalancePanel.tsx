@@ -67,13 +67,28 @@ export function BalancePanelView({
 }) {
   return (
     <section aria-label="Wallet balances" style={{ width: "100%" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14, gap: 12, flexWrap: "wrap" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+          marginBottom: 14,
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
         <h2 style={{ margin: 0, fontSize: "1.6rem", fontWeight: 700 }}>Live balances</h2>
         <span className="badge badge-gold" style={{ fontSize: "0.85rem" }}>
           Testnet demo · MockZARP on Base Sepolia
         </span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: 16,
+        }}
+      >
         {ROLES.map(({ key, label, accent }) => {
           const address = addresses[key];
           return (
@@ -82,15 +97,33 @@ export function BalancePanelView({
               className="pt-card"
               style={{ padding: "22px 24px", borderTop: `4px solid ${accent}`, marginTop: 0 }}
             >
-              <div style={{ fontSize: "1.1rem", textTransform: "uppercase", letterSpacing: "0.08em", color: accent, fontWeight: 700 }}>
+              <div
+                style={{
+                  fontSize: "1.1rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  color: accent,
+                  fontWeight: 700,
+                }}
+              >
                 {label}
               </div>
               <div
                 aria-live="polite"
-                style={{ fontSize: "clamp(2rem, 4vw, 3.2rem)", fontWeight: 800, margin: "10px 0 4px", fontVariantNumeric: "tabular-nums", color: "#fff" }}
+                style={{
+                  fontSize: "clamp(2rem, 4vw, 3.2rem)",
+                  fontWeight: 800,
+                  margin: "10px 0 4px",
+                  fontVariantNumeric: "tabular-nums",
+                  color: "#fff",
+                }}
               >
                 {formatZarp(address ? balances?.[key] : null)}
-                <span style={{ fontSize: "1rem", fontWeight: 600, marginLeft: 8, color: "#a2a9b8" }}>ZARP</span>
+                <span
+                  style={{ fontSize: "1rem", fontWeight: 600, marginLeft: 8, color: "#a2a9b8" }}
+                >
+                  ZARP
+                </span>
               </div>
               <div style={{ fontFamily: "monospace", fontSize: "0.95rem", color: "#a2a9b8" }}>
                 {address ? short(address) : "Not assigned yet"}
@@ -109,17 +142,31 @@ export function BalancePanelView({
 }
 
 /** Four-wallet panel that reads MockZARP balances from the chain every ~2 seconds. */
-export function BalancePanel({ addresses, intervalMs = 2000 }: { addresses: PartyAddresses; intervalMs?: number }) {
+export function BalancePanel({
+  addresses,
+  intervalMs = 2000,
+}: {
+  addresses: PartyAddresses;
+  intervalMs?: number;
+}) {
   const [balances, setBalances] = useState<Balances | null>(null);
   const [error, setError] = useState<string | null>(null);
   const key = ROLES.map((r) => addresses[r.key] ?? "").join(",");
   const client = useMemo(() => createReadClient(), []);
 
   useEffect(() => {
-    const current = { buyer: addresses.buyer, supplier: addresses.supplier, driver: addresses.driver, escrow: addresses.escrow };
+    const current = {
+      buyer: addresses.buyer,
+      supplier: addresses.supplier,
+      driver: addresses.driver,
+      escrow: addresses.escrow,
+    };
     return startBalancePolling(
       () => readBalances(client, current),
-      (b) => { setBalances(b); setError(null); },
+      (b) => {
+        setBalances(b);
+        setError(null);
+      },
       setError,
       intervalMs,
     );

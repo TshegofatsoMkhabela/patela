@@ -19,7 +19,11 @@ const toJson = (body: unknown) =>
   JSON.stringify(body, (_key, value) => (typeof value === "bigint" ? value.toString() : value));
 
 async function request<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
-  const init: RequestInit = { method, credentials: "include", headers: { Accept: "application/json" } };
+  const init: RequestInit = {
+    method,
+    credentials: "include",
+    headers: { Accept: "application/json" },
+  };
   if (body !== undefined) {
     init.headers = { ...init.headers, "Content-Type": "application/json" };
     init.body = toJson(body);
@@ -89,8 +93,18 @@ export type CreatedOrder = {
  * GET /orders/:id returns "order + parties + timeline + balances"; §4 does not freeze field
  * names, so everything beyond `id` is optional and read defensively by the order page.
  */
-export type TimelineEntry = { at?: string; label?: string; event?: string; status?: string; txHash?: string };
-export type PartyInfo = { email?: string | null; wallet?: string | null; walletAddress?: string | null };
+export type TimelineEntry = {
+  at?: string;
+  label?: string;
+  event?: string;
+  status?: string;
+  txHash?: string;
+};
+export type PartyInfo = {
+  email?: string | null;
+  wallet?: string | null;
+  walletAddress?: string | null;
+};
 export type OrderDetail = {
   id: string;
   status?: string;
@@ -106,12 +120,15 @@ export type OrderDetail = {
 };
 
 export const api = {
-  requestOtp: (email: string) => request<{ queued: boolean }>("POST", "/auth/otp/request", { email }),
-  verifyOtp: (email: string, code: string) => request<unknown>("POST", "/auth/otp/verify", { email, code }),
+  requestOtp: (email: string) =>
+    request<{ queued: boolean }>("POST", "/auth/otp/request", { email }),
+  verifyOtp: (email: string, code: string) =>
+    request<unknown>("POST", "/auth/otp/verify", { email, code }),
   logout: () => request<{ signedOut: boolean }>("POST", "/auth/logout", {}),
   me: () => request<Profile>("GET", "/me"),
 
-  walletChallenge: (wallet: string) => request<WalletChallenge>("POST", "/wallet/challenge", { wallet }),
+  walletChallenge: (wallet: string) =>
+    request<WalletChallenge>("POST", "/wallet/challenge", { wallet }),
   walletLink: (challengeId: string, signature: string) =>
     request<Profile>("POST", "/wallet/link", { challengeId, signature }),
 

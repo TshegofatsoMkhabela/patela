@@ -17,7 +17,14 @@ import {
   type WalletClient,
 } from "viem";
 import { baseSepolia, hardhat } from "viem/chains";
-import { CHAIN_ID, ESCROW_ADDRESS, ZARP_ADDRESS, ZARP_DECIMALS, escrowAbi, zarpAbi } from "./contracts";
+import {
+  CHAIN_ID,
+  ESCROW_ADDRESS,
+  ZARP_ADDRESS,
+  ZARP_DECIMALS,
+  escrowAbi,
+  zarpAbi,
+} from "./contracts";
 
 export type ChainClients = {
   publicClient: PublicClient;
@@ -27,7 +34,9 @@ export type ChainClients = {
   zarp: Address;
 };
 
-export type Eip1193 = { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> };
+export type Eip1193 = {
+  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+};
 
 export const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || "https://sepolia.base.org";
 export const TEST_ZARP_AMOUNT = parseUnits("1000", ZARP_DECIMALS);
@@ -60,13 +69,16 @@ export const CONTRACT_ERROR_MESSAGES: Record<string, string> = {
 
 export function contractErrorMessage(err: unknown): string {
   if (err instanceof BaseError) {
-    if (err.walk((e) => e instanceof UserRejectedRequestError)) return "Transaction cancelled in MetaMask.";
+    if (err.walk((e) => e instanceof UserRejectedRequestError))
+      return "Transaction cancelled in MetaMask.";
     const reverted = err.walk((e) => e instanceof ContractFunctionRevertedError);
     if (reverted instanceof ContractFunctionRevertedError) {
       const name = reverted.data?.errorName;
       if (name && CONTRACT_ERROR_MESSAGES[name]) return CONTRACT_ERROR_MESSAGES[name];
       if (name) return `${name}: the contract rejected this transaction.`;
-      return reverted.reason ? `Reverted: ${reverted.reason}` : "The contract rejected this transaction.";
+      return reverted.reason
+        ? `Reverted: ${reverted.reason}`
+        : "The contract rejected this transaction.";
     }
     return err.shortMessage;
   }
@@ -84,20 +96,25 @@ const BASE_SEPOLIA_HEX = "0x14a34"; // 84532
 
 export async function ensureBaseSepolia(eth: Eip1193): Promise<void> {
   try {
-    await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: BASE_SEPOLIA_HEX }] });
+    await eth.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: BASE_SEPOLIA_HEX }],
+    });
   } catch (err) {
     const e = err as { code?: number; data?: { originalError?: { code?: number } } };
     const unknownChain = e.code === 4902 || e.data?.originalError?.code === 4902;
     if (!unknownChain) throw err;
     await eth.request({
       method: "wallet_addEthereumChain",
-      params: [{
-        chainId: BASE_SEPOLIA_HEX,
-        chainName: "Base Sepolia",
-        nativeCurrency: { name: "Sepolia Ether", symbol: "ETH", decimals: 18 },
-        rpcUrls: [RPC_URL],
-        blockExplorerUrls: ["https://sepolia.basescan.org"],
-      }],
+      params: [
+        {
+          chainId: BASE_SEPOLIA_HEX,
+          chainName: "Base Sepolia",
+          nativeCurrency: { name: "Sepolia Ether", symbol: "ETH", decimals: 18 },
+          rpcUrls: [RPC_URL],
+          blockExplorerUrls: ["https://sepolia.basescan.org"],
+        },
+      ],
     });
   }
 }
@@ -114,12 +131,17 @@ export function createReadClient(): PublicClient {
 /** Ask MetaMask for an account, move it to the demo chain, and build the clients. Browser only. */
 export async function connectMetaMask(): Promise<ChainClients> {
   const eth = injectedProvider();
-  if (!eth) throw new Error("MetaMask not found. Install the MetaMask extension in Chrome and reload.");
+  if (!eth)
+    throw new Error("MetaMask not found. Install the MetaMask extension in Chrome and reload.");
   const accounts = (await eth.request({ method: "eth_requestAccounts" })) as Address[];
   const account = accounts[0];
   if (!account) throw new Error("MetaMask returned no account.");
   if (CHAIN_ID === baseSepolia.id) await ensureBaseSepolia(eth);
-  const walletClient = createWalletClient({ account, chain: activeChain(), transport: custom(eth) });
+  const walletClient = createWalletClient({
+    account,
+    chain: activeChain(),
+    transport: custom(eth),
+  });
   return {
     publicClient: createReadClient(),
     walletClient,
@@ -143,7 +165,8 @@ export async function signWalletLink(
   const fields = typedData.types[typedData.primaryType] ?? [];
   const message: Record<string, unknown> = { ...typedData.message };
   for (const { name, type } of fields) {
-    if (/^u?int\d*$/.test(type) && typeof message[name] === "string") message[name] = BigInt(message[name] as string);
+    if (/^u?int\d*$/.test(type) && typeof message[name] === "string")
+      message[name] = BigInt(message[name] as string);
   }
   return walletClient.signTypedData({
     account,
@@ -157,18 +180,35 @@ export async function signWalletLink(
 // ---------------------------------------------------------------------------------------------
 // Writes
 
-type WriteArgs = { address: Address; abi: readonly unknown[]; functionName: string; args: readonly unknown[] };
+type WriteArgs = {
+  address: Address;
+  abi: readonly unknown[];
+  functionName: string;
+  args: readonly unknown[];
+};
 
 async function send(c: ChainClients, call: WriteArgs) {
-  const { request } = await c.publicClient.simulateContract({ ...call, account: c.account } as never);
+  const { request } = await c.publicClient.simulateContract({
+    ...call,
+    account: c.account,
+  } as never);
   const hash = await c.walletClient.writeContract(request as never);
   const receipt = await c.publicClient.waitForTransactionReceipt({ hash });
-  if (receipt.status === "reverted") throw new Error(`Transaction reverted: ${call.functionName} (${hash})`);
+  if (receipt.status === "reverted")
+    throw new Error(`Transaction reverted: ${call.functionName} (${hash})`);
   return { hash, receipt };
 }
 
-export async function getTestZarp(c: ChainClients, amount: bigint = TEST_ZARP_AMOUNT): Promise<Hex> {
-  const { hash } = await send(c, { address: c.zarp, abi: zarpAbi, functionName: "mint", args: [c.account, amount] });
+export async function getTestZarp(
+  c: ChainClients,
+  amount: bigint = TEST_ZARP_AMOUNT,
+): Promise<Hex> {
+  const { hash } = await send(c, {
+    address: c.zarp,
+    abi: zarpAbi,
+    functionName: "mint",
+    args: [c.account, amount],
+  });
   return hash;
 }
 
@@ -176,7 +216,11 @@ export async function getTestZarp(c: ChainClients, amount: bigint = TEST_ZARP_AM
 export function splitTotal(total: bigint) {
   const driverAtPickup = (total * 10n) / 100n;
   const supplierAtPickup = (total * 40n) / 100n;
-  return { driverAtPickup, supplierAtPickup, supplierAtDelivery: total - driverAtPickup - supplierAtPickup };
+  return {
+    driverAtPickup,
+    supplierAtPickup,
+    supplierAtDelivery: total - driverAtPickup - supplierAtPickup,
+  };
 }
 
 export type OrderParams = {
@@ -196,7 +240,12 @@ export type FundStep =
   | { step: "approved"; txHash: Hex }
   | { step: "funded"; txHash: Hex };
 
-export type FundResult = { orderId: bigint; createTxHash?: Hex; approveTxHash: Hex; fundTxHash: Hex };
+export type FundResult = {
+  orderId: bigint;
+  createTxHash?: Hex;
+  approveTxHash: Hex;
+  fundTxHash: Hex;
+};
 
 export async function createAndFundOrder(
   c: ChainClients,
@@ -210,9 +259,19 @@ export async function createAndFundOrder(
       address: c.escrow,
       abi: escrowAbi,
       functionName: "createOrder",
-      args: [p.supplier, p.total, p.driverAtPickup, p.supplierAtPickup, p.supplierAtDelivery, p.refundDeadline, p.agreementHash],
+      args: [
+        p.supplier,
+        p.total,
+        p.driverAtPickup,
+        p.supplierAtPickup,
+        p.supplierAtDelivery,
+        p.refundDeadline,
+        p.agreementHash,
+      ],
     });
-    const escrowLogs = created.receipt.logs.filter((l) => l.address.toLowerCase() === c.escrow.toLowerCase());
+    const escrowLogs = created.receipt.logs.filter(
+      (l) => l.address.toLowerCase() === c.escrow.toLowerCase(),
+    );
     const [event] = parseEventLogs({ abi: escrowAbi, eventName: "OrderCreated", logs: escrowLogs });
     if (!event) throw new Error(`No OrderCreated event in ${created.hash}`);
     orderId = event.args.orderId;
@@ -220,11 +279,26 @@ export async function createAndFundOrder(
     await onStep({ step: "created", orderId, txHash: created.hash });
   }
   // Wait for the approve receipt before simulating fundEscrow, or the simulation sees no allowance.
-  const approved = await send(c, { address: c.zarp, abi: zarpAbi, functionName: "approve", args: [c.escrow, p.total] });
+  const approved = await send(c, {
+    address: c.zarp,
+    abi: zarpAbi,
+    functionName: "approve",
+    args: [c.escrow, p.total],
+  });
   await onStep({ step: "approved", txHash: approved.hash });
-  const funded = await send(c, { address: c.escrow, abi: escrowAbi, functionName: "fundEscrow", args: [orderId] });
+  const funded = await send(c, {
+    address: c.escrow,
+    abi: escrowAbi,
+    functionName: "fundEscrow",
+    args: [orderId],
+  });
   await onStep({ step: "funded", txHash: funded.hash });
-  return { orderId, ...(createTxHash ? { createTxHash } : {}), approveTxHash: approved.hash, fundTxHash: funded.hash } as FundResult;
+  return {
+    orderId,
+    ...(createTxHash ? { createTxHash } : {}),
+    approveTxHash: approved.hash,
+    fundTxHash: funded.hash,
+  } as FundResult;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -240,7 +314,12 @@ export async function readBalances<K extends string>(
     keys.map((k) => {
       const a = addresses[k];
       if (!a) return Promise.resolve(null);
-      return publicClient.readContract({ address: zarp, abi: zarpAbi, functionName: "balanceOf", args: [a as Address] }) as Promise<bigint>;
+      return publicClient.readContract({
+        address: zarp,
+        abi: zarpAbi,
+        functionName: "balanceOf",
+        args: [a as Address],
+      }) as Promise<bigint>;
     }),
   );
   return Object.fromEntries(keys.map((k, i) => [k, values[i]])) as Record<K, bigint | null>;

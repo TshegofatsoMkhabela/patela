@@ -57,7 +57,11 @@ describe("api client", () => {
   });
 
   it("Given an order form, When creating, Then it POSTs the §4 body to /orders", async () => {
-    nextResponse.body = { id: "o-1", agreementHash: "0x" + "ab".repeat(32), refundDeadline: 1_900_000_000 };
+    nextResponse.body = {
+      id: "o-1",
+      agreementHash: "0x" + "ab".repeat(32),
+      refundDeadline: 1_900_000_000,
+    };
     const input = {
       supplierEmail: "s@example.com",
       totalZarp: "100",
@@ -74,7 +78,10 @@ describe("api client", () => {
   });
 
   it("Given a bigint chain order id, When recording it, Then it is sent as a decimal string", async () => {
-    await api.recordChainOrder("o-1", { chainOrderId: 12345678901234567890n, createTxHash: "0xaa" });
+    await api.recordChainOrder("o-1", {
+      chainOrderId: 12345678901234567890n,
+      createTxHash: "0xaa",
+    });
     expect(last().url).toBe(`${apiOrigin()}/orders/o-1/chain`);
     expect(bodyOf(last())).toEqual({ chainOrderId: "12345678901234567890", createTxHash: "0xaa" });
   });
@@ -100,7 +107,10 @@ describe("api client", () => {
   });
 
   it("Given a 5xx without a JSON body, When called, Then it throws ApiError with a generic message", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("oops", { status: 502 })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("oops", { status: 502 })),
+    );
     const err = await api.me().catch((e: unknown) => e);
     expect(err).toBeInstanceOf(ApiError);
     expect((err as ApiError).status).toBe(502);
@@ -108,7 +118,12 @@ describe("api client", () => {
   });
 
   it("Given the network is down, When called, Then it throws ApiError with status 0", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => { throw new TypeError("Failed to fetch"); }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new TypeError("Failed to fetch");
+      }),
+    );
     const err = await api.me().catch((e: unknown) => e);
     expect(err).toBeInstanceOf(ApiError);
     expect((err as ApiError).status).toBe(0);

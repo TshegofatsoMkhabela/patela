@@ -27,7 +27,12 @@ describe("BalancePanelView", () => {
   const html = renderToStaticMarkup(
     <BalancePanelView
       addresses={addresses}
-      balances={{ buyer: parseUnits("900", 18), supplier: 0n, driver: null, escrow: parseUnits("100", 18) }}
+      balances={{
+        buyer: parseUnits("900", 18),
+        supplier: 0n,
+        driver: null,
+        escrow: parseUnits("100", 18),
+      }}
     />,
   );
 
@@ -81,7 +86,10 @@ describe("startBalancePolling", () => {
 
   it("Given a read fails, Then onError is called and polling continues", async () => {
     vi.useFakeTimers();
-    const read = vi.fn().mockRejectedValueOnce(new Error("rpc down")).mockResolvedValue({ buyer: 2n });
+    const read = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("rpc down"))
+      .mockResolvedValue({ buyer: 2n });
     const onUpdate = vi.fn();
     const onError = vi.fn();
     const stop = startBalancePolling(read, onUpdate, onError, 2000);
