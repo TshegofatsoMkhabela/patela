@@ -27,6 +27,10 @@ export function renderEmail(template: string, payload: Payload): { subject: stri
           "Patela demo on Base Sepolia test tokens — no real money moves."].join("\n"),
       };
     }
+    case "login_otp":
+      return { subject: "Your Patela sign-in code",
+        text: `Your Patela sign-in code is ${str(payload.code)}. It expires in 10 minutes.\n\n`
+          + "If you didn't ask for it, ignore this email." };
     case "member_invited":
       return { subject: `Patela: join ${str(payload.legalName)}`,
         text: `You've been invited to join ${str(payload.legalName)} on Patela.\n\n${link}` };

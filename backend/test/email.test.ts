@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { OutboxMailer, renderEmail } from "../src/email.js";
-import { TestDatabase } from "./helpers.js";
+import { zeroAddress } from "viem";
+import { buildApp } from "../src/app.js";
+import { TestAuth, TestDatabase } from "./helpers.js";
 import { TestMail } from "./demo-helpers.js";
 
 test("order invite emails name the role and carry the accept link", () => {
@@ -49,4 +51,32 @@ test("without a transport the mailer leaves every row queued", async () => {
     await new OutboxMailer(db, undefined).flush();
     assert.equal((await db.query("select status from email_outbox")).rows[0].status, "pending");
   } finally { await db.close(); }
+});
+
+test("a sign-in code email shows the six-digit code", () => {
+  const email = renderEmail("login_otp", { code: "042137" });
+  assert.match(email.subject, /sign-in code/i);
+  assert.ok(email.text.includes("042137"));
+});
+
+test("requesting a sign-in code sends the email before the response", async () => {
+  const db = new TestDatabase();
+  const mail = new TestMail();
+  // Queues like PostgresAuth does, so the route's flush is what delivers it.
+  class QueueingAuth extends TestAuth {
+    override async requestEmailOtp(email: string) {
+      await db.query(`insert into email_outbox (id,to_email,template,payload)
+        values (gen_random_uuid(),$1,'login_otp','{"code":"123456"}')`, [email]);
+    }
+  }
+  const app = buildApp({ db, auth: new QueueingAuth(), escrowAddress: zeroAddress,
+    publicOrigin: "http://localhost:3000", mailTransport: mail });
+  try {
+    await db.migrate();
+    const response = await app.inject({ method: "POST", url: "/auth/otp/request",
+      payload: { email: "supplier@example.test" } });
+    assert.equal(response.statusCode, 200);
+    assert.deepEqual(mail.sent.map(m => m.to), ["supplier@example.test"]);
+    assert.ok(mail.sent[0].text.includes("123456"));
+  } finally { await app.close(); await db.close(); }
 });

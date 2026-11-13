@@ -124,6 +124,7 @@ export function buildApp({ db, auth, chain, escrowAddress, publicOrigin, apiOrig
   app.post("/auth/otp/request", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (request, reply) => {
     const body = objectBody(request.body);
     await auth.requestEmailOtp(email(body.email));
+    await mailer.flush().catch(() => { /* The code stays queued; the next flush retries it. */ });
     return { queued: true };
   });
   app.post("/auth/otp/verify", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (request, reply) => {
