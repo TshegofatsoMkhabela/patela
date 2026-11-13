@@ -13,7 +13,29 @@ Requirements: Node 22+, PostgreSQL, and a Google Cloud OAuth Web application cli
 3. In Google Cloud, create an OAuth client of type **Web application** and add the frontend's origin to Authorized JavaScript origins for Google Identity Services. For authorization-code sign-in, also add `${API_ORIGIN}/auth/google/callback` as an authorized redirect URI and configure its client secret. Configure the consent screen for the accounts that should sign in. No Supabase project is used.
 4. Run `npm run migrate` against the application database, then `npm run dev`. The migrator applies each `migrations/*.sql` file once, in name order, and records it in `schema_migrations`. `002_organizations.sql` resets old per-person trading roles (buyer, supplier, etc.) to `member`; trading rights now come from approved businesses.
 5. Create the first admin by signing in once, then changing that specific profile's `role` to `admin` directly in PostgreSQL. There is deliberately no public admin-registration endpoint.
-6. For rehearsals use Celo Sepolia (`CHAIN_ID=11142220`) with `RPC_URL` and the deployed escrow. For mainnet use `CHAIN_ID=42220`. The runtime selects canonical Mento ZARm unless `TOKEN_ADDRESS` explicitly overrides it.
+6. For rehearsals use Celo Sepolia (`CHAIN_ID=11142220`) with `RPC_URL` and the deployed escrow. For mainnet use `CHAIN_ID=42220`. The runtime selects canonical Mento ZARm unless `TOKEN_ADDRESS` explicitly overrides it. Set `RPC_URL` and `ESCROW_ADDRESS` together: startup refuses one without the other, and with both blank the API serves sign-in and onboarding only.
+
+## Connect to Celo Sepolia
+
+1. Deploy the escrow from `contracts/` with your own funded deployer key, kept in the Hardhat keystore rather than a file:
+   ```bash
+   npx hardhat keystore set DEPLOYER_PRIVATE_KEY
+   npx hardhat keystore set CELO_SEPOLIA_RPC_URL   # https://forno.celo-sepolia.celo-testnet.org
+   MAX_ORDER_ZARM=10000 npx hardhat run scripts/deploy.ts --network celoSepolia
+   ```
+   The script refuses a token that isn't 18-decimal ZARm and writes the addresses to `contracts/deployments/celoSepolia.json`.
+2. Set `RPC_URL`, `CHAIN_ID=11142220` and `ESCROW_ADDRESS` (the printed `PatellaEscrowAndLogistics` address), then run `npm run chain:check`. It reads the chain only and prints PASS/FAIL for:
+   - **chain:** the RPC is on `CHAIN_ID`.
+   - **token:** the token is ZARm with 18 decimals.
+   - **escrow:** a contract exists at `ESCROW_ADDRESS` and its `paymentToken()` is that token.
+
+   It exits 1 on any failure.
+3. To rehearse for free against the real ZARm contract, fork Celo Sepolia locally:
+   ```bash
+   npx hardhat --config hardhat.fork.config.ts node --fork https://forno.celo-sepolia.celo-testnet.org --chain-id 11142220 --chain-type op
+   MAX_ORDER_ZARM=10000 npx hardhat --config hardhat.fork.config.ts run scripts/deploy.ts --network localhost
+   ```
+   Then point `RPC_URL` at `http://127.0.0.1:8545`.
 
 The backend binds to localhost by default. Deploy behind HTTPS with request limits and a trusted Postgres connection. Browser/PostgREST roles have no RLS policies for these tables; all application data access goes through this API.
 For Amazon RDS, set `DATABASE_SSL=true` and load the RDS CA certificate into Node's trust store. The Lambda stack sets `NODE_EXTRA_CA_CERTS=/var/runtime/ca-cert.pem`; local RDS connections need an appropriate CA bundle. The PostgreSQL client verifies the server certificate and hostname.
@@ -63,6 +85,7 @@ The backend does not check handoff signatures. Embedded wallets may be ERC-1271 
 ```powershell
 npm run typecheck
 npm test
+npm run chain:check   # needs RPC_URL; read-only
 ```
 
 The tests use PGlite, Fastify injection, test wallets, and a fake chain verifier. They do not prove a live Celo deployment, production ZARm liquidity, Gmail, OAuth, Google APIs, or Lambda configuration.

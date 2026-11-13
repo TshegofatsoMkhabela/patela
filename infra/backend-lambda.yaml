@@ -44,7 +44,7 @@ Parameters:
   RpcUrl:
     Type: String
     Default: ''
-    Description: HTTPS RPC for the chain above. Blank disables on-chain verification (orders stop at awaiting_chain).
+    Description: HTTPS RPC for the chain above (Celo Sepolia https://forno.celo-sepolia.celo-testnet.org). Set together with EscrowAddress; the API refuses to start with only one. Both blank disables on-chain verification (orders stop at awaiting_chain).
   EscrowAddress:
     Type: String
     Default: ''
