@@ -82,12 +82,25 @@ Build a deployment ZIP with `pwsh -NoProfile -File infra/package-backend.ps1`. T
 Deployment order:
 
 1. Upload the built ZIP to the private S3 artifact bucket.
-2. Deploy `infra/backend-lambda.yaml` with `CodeBucket`, `CodeKey`, and `GoogleClientId` parameters. Leave `GoogleClientSecretArn` empty for ID-token-only sign-in. Set `EnableAuthSmokePage=true` for the API-only live test and turn it off afterward. `PublicOrigin` may be blank for the API-only test; set it to the real HTTPS web origin when the frontend is deployed.
+2. Deploy `infra/backend-lambda.yaml` with `CodeBucket`, `CodeKey`, and `GoogleClientId` parameters. Leave `GoogleClientSecretArn` empty for ID-token-only sign-in. Set `EnableAuthSmokePage=true` for the API-only live test and turn it off afterward. `PublicOrigin` may be blank for the API-only test; set it to the real HTTPS web origin when the frontend is deployed. Order and driver accept links are built from `PublicOrigin`, so the demo needs it set.
+
+   For the two-handoff demo (Base Sepolia), also set:
+
+   | Parameter | Value |
+   |---|---|
+   | `ChainId` | `84532` (the default `8453` is Base mainnet) |
+   | `BaseRpcUrl` | a Base Sepolia HTTPS RPC |
+   | `EscrowAddress`, `TokenAddress` | `PatellaEscrowAndLogistics` and `MockZARP` from `contracts/deployments/baseSepolia.json`. The stack refuses `84532` without `TokenAddress` |
+   | `ChainConfirmations` | blocks to wait before trusting an event (default `3`) |
+   | `SmtpSecretArn` | ARN of a Secrets Manager secret you create, holding `{"user":"<gmail address>","appPassword":"<app password>"}`. The Gmail account needs 2-step verification. The stack grants the API function read access to that secret only. Blank keeps emails queued and unsent |
+   | `DemoMode` | `true` only for the demo: API responses also carry the one-time accept links, in case an email is slow |
+
+   The API function reaches Gmail (`smtp.gmail.com:465`), Secrets Manager and the RPC through the NAT gateway.
 3. Read the stack's `ApiOrigin` output and add that origin to the Google client's Authorized JavaScript origins. The Lambda derives this origin from API Gateway's request domain at cold start. The authorization-code flow additionally needs `${ApiOrigin}/auth/google/callback` in Authorized redirect URIs.
-4. Invoke the stack's `MigrationFunctionName` once. It applies `001_core.sql`, `002_organizations.sql`, and `003_auth.sql` inside the private VPC.
+4. Invoke the stack's `MigrationFunctionName` once. It applies any of `001_core.sql` to `004_two_handoff_orders.sql` not yet applied, inside the private VPC. `004` adds the two-handoff order tables. It also marks emails queued before delivery existed as failed, so enabling Gmail doesn't send that backlog.
 5. Check `${ApiOrigin}/health`, then complete a real Google browser login at `${ApiOrigin}/auth/google/test`. The page exchanges Google's signed ID token for a Patela session and navigates to `${ApiOrigin}/auth/success`. Check `${ApiOrigin}/me` with the session cookies and logout. The smoke page is for development only.
 
-The template uses a development-sized RDS instance and a single NAT gateway. Before production use, add high availability, database connection management, request observability, backup restore exercises, and an email sender. OTP and business invitation messages currently remain in `email_outbox` and are not delivered.
+The template uses a development-sized RDS instance and a single NAT gateway. Before production use, add high availability, database connection management, request observability, backup restore exercises, and a domain email sender such as Amazon SES. Gmail SMTP (`SmtpSecretArn`) is a demo choice: it may rate-limit or spam-folder automated mail. Without `SmtpSecretArn`, sign-in codes and invitations stay in `email_outbox` and are not delivered.
 
 The Google client is at [Google Auth Platform → Patela Backend](https://console.cloud.google.com/auth/clients/934939871903-vejm2a9gg95ugo9nu2fu054ktsttnvqm.apps.googleusercontent.com?project=patela-oauth-20261113). Two enabled client secrets currently exist: the original ending `Fjdw` and an extra unused one ending `RoRM` that an automation added by mistake. Deletion of `RoRM` was authorized but the automation could not access its row action. Remove only `RoRM` manually. Neither secret is used by ID-token sign-in.
 
