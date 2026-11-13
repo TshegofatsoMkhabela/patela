@@ -128,3 +128,35 @@ describe("refundDeadlineSeconds", () => {
     expect(() => refundDeadlineSeconds("soon")).toThrow();
   });
 });
+
+describe("runOrderFlow retries", () => {
+  it("Given POST /chain failed once, When retried, Then it records first, then funds the existing order, then verifies", async () => {
+    const { d, log } = deps();
+    (d.recordChainOrder as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("API down"));
+    let progress = {};
+    await runOrderFlow(d, form, {}, (s) => {
+      progress = s.progress;
+    }).catch(() => {});
+    log.length = 0;
+    await runOrderFlow(d, form, progress, () => {});
+    expect(log).toEqual([
+      "POST /orders/o-1/chain 9 0xc",
+      "chain total=100000000000000000000 deadline=1900000000 existing=9",
+      "POST /orders/o-1/funding/verify 0xf",
+    ]);
+  });
+
+  it("Given /funding/verify failed after funding, When retried, Then it only verifies (no second fundEscrow)", async () => {
+    const { d, log } = deps();
+    (d.verifyFunding as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error("not confirmed yet"),
+    );
+    let progress = {};
+    await runOrderFlow(d, form, {}, (s) => {
+      progress = s.progress;
+    }).catch(() => {});
+    log.length = 0;
+    await runOrderFlow(d, form, progress, () => {});
+    expect(log).toEqual(["POST /orders/o-1/funding/verify 0xf"]);
+  });
+});

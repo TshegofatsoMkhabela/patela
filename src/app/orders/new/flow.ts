@@ -37,7 +37,10 @@ export type FlowProgress = {
   agreementHash?: Hex;
   refundDeadline?: bigint;
   chainOrderId?: bigint;
+  createTxHash?: Hex;
   chainRecorded?: boolean;
+  /** Set once fundEscrow is mined: a retry then only re-runs the backend verification. */
+  fundTxHash?: Hex;
 };
 
 export type FlowState = { steps: Record<StepKey, StepStatus>; progress: FlowProgress };
@@ -105,6 +108,10 @@ export async function runOrderFlow(
   if (progress.orderId) done("save");
   if (progress.chainOrderId !== undefined) done("create");
   if (progress.chainRecorded) done("record");
+  if (progress.fundTxHash) {
+    done("approve");
+    done("fund");
+  }
 
   try {
     if (!progress.orderId) {
@@ -125,46 +132,49 @@ export async function runOrderFlow(
     }
     const orderId = progress.orderId!;
 
-    const record = async (chainOrderId: bigint, createTxHash: string) => {
+    // The backend must know the on-chain id before funding is verified.
+    const record = async () => {
       start("record");
-      await deps.recordChainOrder(orderId, { chainOrderId, createTxHash });
+      await deps.recordChainOrder(orderId, {
+        chainOrderId: progress.chainOrderId!,
+        createTxHash: progress.createTxHash ?? "",
+      });
       progress.chainRecorded = true;
       done("record");
     };
+    if (progress.chainOrderId !== undefined && !progress.chainRecorded) await record();
 
-    start(
-      progress.chainOrderId === undefined
-        ? "create"
-        : progress.chainRecorded
-          ? "approve"
-          : "record",
-    );
-    const result = await deps.createAndFund(
-      {
-        supplier: form.supplierWallet,
-        total,
-        ...split,
-        refundDeadline: progress.refundDeadline!,
-        agreementHash: progress.agreementHash!,
-        existingOrderId: progress.chainOrderId,
-      },
-      async (s) => {
-        if (s.step === "created") {
-          progress.chainOrderId = s.orderId;
-          done("create");
-          await record(s.orderId, s.txHash);
-          start("approve");
-        } else if (s.step === "approved") {
-          done("approve");
-          start("fund");
-        } else {
-          done("fund");
-        }
-      },
-    );
+    if (!progress.fundTxHash) {
+      start(progress.chainOrderId === undefined ? "create" : "approve");
+      await deps.createAndFund(
+        {
+          supplier: form.supplierWallet,
+          total,
+          ...split,
+          refundDeadline: progress.refundDeadline!,
+          agreementHash: progress.agreementHash!,
+          existingOrderId: progress.chainOrderId,
+        },
+        async (s) => {
+          if (s.step === "created") {
+            progress.chainOrderId = s.orderId;
+            progress.createTxHash = s.txHash;
+            done("create");
+            await record();
+            start("approve");
+          } else if (s.step === "approved") {
+            done("approve");
+            start("fund");
+          } else {
+            progress.fundTxHash = s.txHash;
+            done("fund");
+          }
+        },
+      );
+    }
 
     start("verify");
-    await deps.verifyFunding(orderId, result.fundTxHash);
+    await deps.verifyFunding(orderId, progress.fundTxHash!);
     done("verify");
     return {
       orderId,
