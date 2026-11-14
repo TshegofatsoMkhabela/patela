@@ -9,7 +9,6 @@ import {
   initialMapMode,
   progressAt,
   progressUpdates,
-  type MapMode,
   type Shipment,
 } from "@/lib/buyer-shipments";
 import { StatusBadge } from "./StatusBadge";
@@ -18,8 +17,6 @@ import { Icon } from "./Icon";
 
 // deck.gl + Google Maps load after the details card, in the browser only.
 const ShipmentMap = dynamic(() => import("./ShipmentMap"), { ssr: false });
-
-const MODE_LABEL: Record<MapMode, string> = { "3d": "3D view", flat: "Flat map", none: "" };
 
 function ProgressUpdates({
   shipment,
@@ -90,7 +87,6 @@ export function FocusedShipment({
                 <span className="bd-live-dot" aria-hidden="true" />
                 Live
               </span>
-              <span className="bd-chip">{MODE_LABEL[mode]}</span>
             </div>
             <div className="bd-map-near">
               <span className="bd-small bd-muted">Now near</span>

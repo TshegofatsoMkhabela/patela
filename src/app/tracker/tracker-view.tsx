@@ -1,23 +1,30 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { QrScanner } from "@/components/QrScanner";
+import { LivenessCheck } from "@/components/tracker/LivenessCheck";
 import { isApprovedTrackerQr } from "@/lib/tracker-handoff";
 import "@/styles/tracker-handoff.css";
 
-type ScanState = "scanning" | "blocked" | "approved";
+type ScanState = "loading" | "scanning" | "blocked" | "liveness" | "approved";
 
-export function TrackerView() {
-  const frame = useRef<HTMLIFrameElement>(null);
+export function TrackerView({ styles, markup }: { styles: string; markup: string }) {
   const [open, setOpen] = useState(false);
-  const [scanState, setScanState] = useState<ScanState>("scanning");
+  const [scanState, setScanState] = useState<ScanState>("loading");
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
+    if (!document.querySelector("script[data-tracker-module]")) {
+      const script = document.createElement("script");
+      script.type = "module";
+      script.src = "/tracker-demo/assets/index-OKFMGh2V.js";
+      script.dataset.trackerModule = "true";
+      document.body.appendChild(script);
+    }
     const onMessage = (event: MessageEvent) => {
-      if (event.source !== frame.current?.contentWindow) return;
+      if (event.source !== window || event.origin !== window.location.origin) return;
       if (event.data?.type !== "patela:verify-handoff") return;
-      setScanState("scanning");
+      setScanState("loading");
       setAttempt((value) => value + 1);
       setOpen(true);
     };
@@ -25,38 +32,39 @@ export function TrackerView() {
     return () => window.removeEventListener("message", onMessage);
   }, []);
 
+  useEffect(() => {
+    if (!open || scanState !== "loading") return;
+    const timer = window.setTimeout(() => setScanState("scanning"), 500);
+    return () => window.clearTimeout(timer);
+  }, [open, scanState]);
+
   function scan(text: string) {
     if (!isApprovedTrackerQr(text, window.location.origin)) {
       setScanState("blocked");
       return;
     }
+    setScanState("liveness");
+  }
+
+  function completeLiveness() {
     setScanState("approved");
-    frame.current?.contentWindow?.postMessage(
-      { type: "patela:handoff-result", accepted: true },
-      window.location.origin,
-    );
+    window.postMessage({ type: "patela:handoff-result", accepted: true }, window.location.origin);
   }
 
   function retry() {
-    setScanState("scanning");
+    setScanState("loading");
     setAttempt((value) => value + 1);
   }
 
   function close() {
-    frame.current?.contentWindow?.postMessage(
-      { type: "patela:handoff-result", accepted: false },
-      window.location.origin,
-    );
+    window.postMessage({ type: "patela:handoff-result", accepted: false }, window.location.origin);
     setOpen(false);
   }
 
   return (
     <main className="tracker-page">
-      <iframe
-        ref={frame}
-        title="Simulated Cape Town to Beaufort West route tracker"
-        src="/tracker-demo/index.html"
-      />
+      <style dangerouslySetInnerHTML={{ __html: styles }} />
+      <div dangerouslySetInnerHTML={{ __html: markup }} />
       {open ? (
         <div className="tracker-scan-backdrop" role="presentation">
           <section
@@ -75,6 +83,7 @@ export function TrackerView() {
               </button>
             </div>
 
+            {scanState === "loading" ? <p role="status">Opening QR camera…</p> : null}
             {scanState === "scanning" ? (
               <>
                 <p>Point this phone&apos;s camera at the Patella QR shown at the checkpoint.</p>
@@ -84,6 +93,8 @@ export function TrackerView() {
                 </div>
               </>
             ) : null}
+
+            {scanState === "liveness" ? <LivenessCheck onComplete={completeLiveness} /> : null}
 
             {scanState === "blocked" ? (
               <div className="tracker-scan-result tracker-scan-result--blocked" role="alert">

@@ -74,6 +74,9 @@ export function HeroBar() {
           <Link href="/buyer" className={pathname === "/buyer" ? "on" : ""}>
             <span>Orders &amp; Custody</span>
           </Link>
+          <Link href="/tracker" className={pathname === "/tracker" ? "on" : ""}>
+            <span>Track order</span>
+          </Link>
           <SolutionsMenu />
         </nav>
         <Link className={`login ${pathname === "/signin" ? "on" : ""}`} href="/signin">

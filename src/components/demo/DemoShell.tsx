@@ -1,5 +1,8 @@
+"use client";
+
 import type { ReactNode } from "react";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { Icon } from "@/components/buyer/Icon";
 import "@/styles/buyer-dashboard.css";
 import "@/styles/patela-demo.css";
@@ -23,28 +26,24 @@ export const BUYER_NAV: NavItem[] = [
   { href: "/buyer", label: "Overview", icon: NAV_ICONS.overview },
   { href: "/orders/new", label: "Orders", icon: NAV_ICONS.order },
   {
-    href: "/html/shipment-overview.html",
+    href: "/buyer/shipments",
     label: "Shipments",
     icon: "M3 6h11v10H3zM14 9h4l3 3v4h-7M5.2 17.5a1.8 1.8 0 1 0 3.6 0 1.8 1.8 0 1 0-3.6 0M15.2 17.5a1.8 1.8 0 1 0 3.6 0 1.8 1.8 0 1 0-3.6 0",
-    preview: true,
   },
   {
-    href: "/html/payments.html",
+    href: "/buyer/payments",
     label: "Payments",
     icon: "M5 6h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zM16 12.5h2M3 10h18",
-    preview: true,
   },
   {
-    href: "/html/documents-evidence.html",
+    href: "/buyer/documents",
     label: "Documents",
     icon: "M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6",
-    preview: true,
   },
   {
-    href: "/html/dispute-centre.html",
+    href: "/buyer/disputes",
     label: "Disputes",
     icon: "M5 21V4M5 4h11l-2 4 2 4H5",
-    preview: true,
   },
 ];
 
@@ -63,6 +62,7 @@ export function DemoShell({
   account?: ReactNode;
   children: ReactNode;
 }) {
+  const pathname = usePathname();
   return (
     <div className="bd-page">
       <nav className="bd-nav" aria-label={`${workspace} navigation`}>
@@ -73,7 +73,7 @@ export function DemoShell({
         <ul className="bd-nav-list">
           {nav.map((n) => (
             <li key={n.href}>
-              <a href={n.href} aria-current={n.href === current ? "page" : undefined}>
+              <a href={n.href} aria-current={n.href === (pathname || current) ? "page" : undefined}>
                 <Icon d={n.icon} />
                 <span>{n.label}</span>
                 {n.preview ? <span className="dm-preview">Preview</span> : null}
