@@ -7,9 +7,11 @@ $artifact = Join-Path $artifactDir 'patela-backend.zip'
 
 Push-Location $backend
 try {
-  npm run build
+  & npm.cmd run build
   if ($LASTEXITCODE -ne 0) { throw 'TypeScript build failed' }
 } finally { Pop-Location }
+
+Write-Output 'Backend build complete; staging Lambda package.'
 
 New-Item -ItemType Directory -Path $packageDir -ErrorAction Stop | Out-Null
 New-Item -ItemType Directory -Path $artifactDir -Force | Out-Null
@@ -21,7 +23,7 @@ Copy-Item -LiteralPath (Join-Path $backend 'package-lock.json') -Destination $pa
 
 Push-Location $packageDir
 try {
-  npm prune --omit=dev --offline --ignore-scripts
+  & npm.cmd prune --omit=dev --offline --ignore-scripts
   if ($LASTEXITCODE -ne 0) { throw 'Production dependency pruning failed' }
   if (Test-Path -LiteralPath $artifact) { Remove-Item -LiteralPath $artifact }
   & tar -a -cf $artifact -C $packageDir .
