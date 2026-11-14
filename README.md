@@ -1,101 +1,69 @@
-# Patela — Crypto Escrow for Work, Verified by AI
+# Patela
 
-Patela is a trustless crypto-escrow marketplace where clients post jobs, lock payments in smart contracts, and freelancers get paid instantly once AI verifies the deliverables.
+**Get paid at the handoff, not 90 days later.**
 
-## Tech Stack
+## The problem
 
-- **Framework**: Next.js (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS & custom design system
-- **State Management**: Client demo store with persistence
-- **Icons**: Lucide React
-- **Notifications**: Sonner
+Picture a truck driver like Sipho. *(Sipho is an example.)* He loads 30 tonnes of maize at a
+farm in the Free State and drives it to a mill in Gauteng. He hands it over at the gate and drives
+home. His company won't see that money for two or three months, so for now it is paying for the
+fuel, the tolls and Sipho's salary itself.
 
-## Getting Started
+Across South African freight, 60- to 90-day payment terms are normal. *[VERIFY: industry source]*
 
-First, install dependencies:
+## Why is it still like this?
 
-```bash
-npm install
-```
+There are two reasons.
 
-Run the development server:
+1. **Nobody can prove who had the goods.** Cargo passes from the supplier to a driver to a
+   warehouse to the buyer. Each handoff is a signature on paper, so every invoice can be disputed.
+2. **Paying up front is a risk for the buyer.** If the goods never arrive, the money is gone.
+   So the buyer waits, and the carrier ends up funding the trip.
 
-```bash
-npm run dev
-```
+## The insight
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to view the application.
+Payment isn't slow because it's hard to send money. It's slow because the proof turns up last.
+**If the proof is created at the handoff, the money can move at the handoff too.**
 
-## Run the demo
+## What Patela does
 
-One command runs the whole order flow locally (buyer → supplier → driver, escrow on a local chain)
-with no external accounts. Everything it shows is labelled **Demo**.
+- **The buyer locks the money first.** It goes into escrow in ZARm, a stablecoin worth one rand.
+  The supplier can see it's there, and the buyer isn't exposed.
+- **Both sides sign every handoff.** The person handing over shows a QR code and the person
+  receiving scans it. Each signs with a wallet created from their email address, so there's no
+  app to install, no seed phrase and no gas to pay.
+- **That handoff's share is paid out straight away.** At pickup the driver gets 10% and the
+  supplier 40%. At delivery the supplier gets the remaining 50%. The split is fixed when the order
+  is made, and the smart contract won't accept one that doesn't add up to the total.
 
-```bash
-npm run demo:install   # once: installs root, backend and contracts dependencies
-npm run demo           # starts everything, prints the URLs, returns to the prompt
-npm run demo:smoke     # optional: runs the full flow headless and checks the payouts
-npm run demo:stop      # stops everything it started
-```
+**What it proves:** that two named parties confirmed a handover at a given time and place.
+**What it doesn't prove:** the condition of the goods. Patela says so in the app.
 
-`npm run demo` starts, in order:
+## How it scales
 
-1. **Postgres**: a fresh `postgres:16-alpine` container (port 54329) when Docker is running,
-   otherwise an in-process PGlite database in `.demo/pgdata`.
-2. **Hardhat node** on `http://127.0.0.1:8545` (chain 31337), then deploys MockZARP, the
-   registry, the tender trail and the escrow, writing `contracts/deployments/localhost.json`
-   and minting 100,000 MockZARP to the demo buyer.
-3. **Backend** on `http://localhost:4000` with `DEMO_MODE=true` (migrations applied first).
-4. **Web app** on `http://localhost:3001`, with the API URL and contract addresses taken from the
-   deployment file.
+Each new route is just more handoffs. There's no new integration and no new hardware: a driver
+needs only a phone browser and an email address. Suppliers invite their drivers, so every order
+brings the next users with it.
 
-Logs are in `.demo/logs`. If a port is taken, stop what is on it or set `DEMO_WEB_PORT` /
-`DEMO_API_PORT`.
+## Status
 
-### Demo personas
+This is a working **demo**. Escrow runs on Celo, or on a local Hardhat chain for development. The
+Lambda backend sends branded email invites with ZARm invoices. Everything simulated is labelled
+*Demo* in the app.
 
-| Persona  | Sign-in email                 | Wallet (Hardhat dev account) |
-|----------|-------------------------------|------------------------------|
-| Buyer    | `buyer@demo.patela.local`    | #1 `0x7099…79C8`             |
-| Supplier | `supplier@demo.patela.local` | #2 `0x3C44…93BC`             |
-| Driver   | `driver@demo.patela.local`   | #3 `0x90F7…b906`             |
-
-- Sign-in codes and accept links are not emailed: the sign-in form fills the code in, and
-  `/demo-inbox` lists every code and link. This only happens with `DEMO_MODE` plus `DEMO_LOCAL`
-  (set only by `npm run demo`), no mail configured and an API on localhost.
-- Businesses are approved automatically, so each persona can trade straight after signing in.
-- The demo wallets sign only on chain 31337. Their keys are Hardhat's public dev keys: never send
-  real funds to them.
-- Each persona needs its own session, so use a separate browser profile or private window per
-  persona. The handoff page has a "copy QR text" / "paste QR" fallback when both windows are on one
-  laptop, and uses a fixed demo location if the browser won't share one.
-
-### Walkthrough
-
-1. Buyer: `/signin?next=/orders/new` → **Use demo buyer wallet** → **Link wallet** (first time) →
-   **Create and fund order**. The page shows the supplier's accept link and waits.
-2. Supplier (second window): open the accept link → sign in → **Use my demo wallet**. The buyer's
-   page then creates and funds the escrow; the supplier clicks **Accept the order**, invites
-   `driver@demo.patela.local` and waits.
-3. Driver (a third profile or private window): open the driver link from
-   `/demo-inbox` → sign in → **Use my demo wallet**. The supplier then clicks **Assign driver**.
-4. Pickup: supplier and driver open `/handoff/<orderId>/pickup`, pick their persona; the driver
-   scans (or pastes) the supplier's QR, the supplier signs to release: driver +10%, supplier +40%.
-5. Delivery: `/handoff/<orderId>/delivery` with the driver giving and the buyer receiving:
-   supplier +50%. The order page shows the balances and timeline.
-
-### Plug in real services
-
-Copy `.env.demo.example` to `.env.demo` and fill in only what you want. Each key switches one thing
-on: Google Maps (3D buyer map, routes), Google Speech (`/voice/*` API; no voice UI yet), Google sign-in, Gmail through
-AWS Secrets Manager (turns the demo inbox off), or Base Sepolia contracts instead of the local chain.
-Restart with `npm run demo:stop && npm run demo`.
-
-## Build
-
-To create a production build:
+## Run it
 
 ```bash
-npm run build
+npm run demo:install   # once
+npm run demo           # buyer → supplier → driver flow on a local chain
 ```
+
+For the personas, the step-by-step walkthrough and how to switch on real services, see
+[docs/demo-guide.md](docs/demo-guide.md).
+
+**Stack:** Next.js · Fastify on AWS Lambda · Solidity on Celo · Postgres
+
+---
+
+Sipho shouldn't have to wait three months for work he finished today. With Patela, the moment he
+hands over the load is the moment he's paid.
