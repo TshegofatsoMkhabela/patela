@@ -1,0 +1,112 @@
+/* Order and handoff screens (src/app/orders, src/app/accept). Builds on patela-app.css. */
+.pt-orders {
+  max-width: 760px;
+}
+.pt-testnet {
+  display: inline-block;
+  margin: 4px 0 20px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 210, 120, 0.45);
+  background: rgba(255, 196, 90, 0.1);
+  color: #ffdca0;
+  font-size: 13px;
+}
+.pt-order-panel {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding: 22px;
+  border-radius: 20px;
+  border: 1px solid rgba(196, 214, 232, 0.16);
+  background: rgba(10, 18, 30, 0.55);
+}
+/* Panels hold buttons and inputs; the marketing cards' hover lift gets in the way here. */
+.pt-order-panel:hover {
+  transform: none;
+}
+.pt-order-panel p {
+  margin: 0;
+  line-height: 1.55;
+}
+.pt-order-panel .pt-btn {
+  justify-self: start;
+}
+.pt-order-error {
+  color: #ffb4a8;
+}
+.pt-order-status {
+  color: #bfe0ff;
+  font-size: 14px;
+}
+.pt-order-balances {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.pt-order-balances > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.pt-order-balances strong {
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+.pt-order-agreement {
+  margin: 0;
+  padding: 12px 16px;
+  border-left: 3px solid rgba(255, 228, 182, 0.5);
+  background: rgba(255, 255, 255, 0.03);
+  white-space: pre-wrap;
+}
+.pt-order-timeline,
+.pt-order-list {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+}
+.pt-order-list {
+  list-style: none;
+  padding: 0;
+}
+.pt-order-list li {
+  padding: 14px 18px;
+  border-radius: 14px;
+}
+.pt-order-split {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.pt-order-split legend {
+  margin-bottom: 8px;
+}
+.pt-order-qr {
+  width: min(320px, 100%);
+  height: auto;
+  border-radius: 12px;
+  background: #fff;
+  justify-self: center;
+}
+.pt-order-scanner video {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 12px;
+  background: #000;
+}
+.pt-order-paid strong {
+  font-size: 32px;
+  letter-spacing: 0.08em;
+  color: #9ff0bf;
+}
+@media (max-width: 640px) {
+  .pt-order-balances,
+  .pt-order-split {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

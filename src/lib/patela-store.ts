@@ -468,6 +468,18 @@ export const actions = {
 export const browserEthereum = () =>
   typeof window === "undefined" ? undefined : (window as { ethereum?: Eth }).ethereum;
 
+/**
+ * The wallet as it is at the moment of each call. Extensions can inject window.ethereum after the
+ * page renders, so callers that keep an Eth around should hold this rather than a captured provider.
+ */
+export const liveEthereum: Eth = {
+  request(args) {
+    const provider = browserEthereum();
+    if (!provider) return Promise.reject(new Error("Install MetaMask to sign this step."));
+    return provider.request(args);
+  },
+};
+
 type Wallet = NonNullable<State["wallet"]>;
 
 export async function connectWallet(): Promise<{

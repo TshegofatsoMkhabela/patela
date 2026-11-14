@@ -8,7 +8,14 @@ import { KeyRound, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { useBackendTask } from "@/hooks/use-backend-task";
-import { isEmail, isOtpCode, patelaApi, saveAuthUser, toAuthUser } from "@/lib/patela-api";
+import {
+  isEmail,
+  isOtpCode,
+  patelaApi,
+  safeNextPath,
+  saveAuthUser,
+  toAuthUser,
+} from "@/lib/patela-api";
 import "@/styles/journey-auth.css";
 
 type Method = "code" | "password";
@@ -69,7 +76,8 @@ export function SignInView() {
       return;
     }
     toast.success(message);
-    router.push("/html/client-dashboard.html");
+    // An email invitation sends people here with ?next=/accept?token=… to come back after sign-in.
+    router.push(safeNextPath(new URLSearchParams(window.location.search).get("next")));
   }
 
   // Demo only: the backend has no password sign-in.

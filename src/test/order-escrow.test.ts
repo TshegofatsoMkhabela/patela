@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { encodeFunctionData, type Address } from "viem";
+import { encodeAbiParameters, encodeEventTopics, encodeFunctionData, type Address } from "viem";
 import { TARGET_CHAIN_HEX } from "@/lib/chain";
 import { escrowAbi } from "@/lib/contracts";
-import { fundOrderTransaction } from "@/lib/order-escrow";
+import { buildHandoffTypedData } from "@/lib/handoff";
+import {
+  createdOrderId,
+  fundOrderTransaction,
+  releaseHandoffTransaction,
+  signTypedDataV4,
+} from "@/lib/order-escrow";
 
 const BUYER = "0x1111111111111111111111111111111111111111" as Address;
 const TOKEN = "0x2222222222222222222222222222222222222222" as Address;
@@ -77,5 +83,122 @@ describe("fundOrderTransaction", () => {
       fundOrderTransaction({ eth, account: BUYER, escrow: ESCROW }, 7n, 100n, TOKEN),
     ).rejects.toThrow(/Insufficient ZARm/);
     expect(sent).toHaveLength(0);
+  });
+});
+
+describe("releaseHandoffTransaction", () => {
+  it("sends releaseHandoff with both signatures to the escrow", async () => {
+    const { eth, sent } = wallet(0n, 0n);
+    const fields = {
+      chainOrderId: 7n,
+      stage: 1 as const,
+      nonce: `0x${"01".repeat(32)}` as const,
+      expiresAt: 1_800_000_000,
+      evidenceHash: `0x${"02".repeat(32)}` as const,
+      giverSig: "0xaaaa" as const,
+      receiverSig: "0xbbbb" as const,
+    };
+    await releaseHandoffTransaction({ eth, account: BUYER, escrow: ESCROW }, fields);
+    expect(sent).toHaveLength(1);
+    expect(sent[0].to).toBe(ESCROW);
+    expect(sent[0].data).toBe(
+      encodeFunctionData({
+        abi: escrowAbi,
+        functionName: "releaseHandoff",
+        args: [7n, 1, fields.nonce, 1_800_000_000n, fields.evidenceHash, "0xaaaa", "0xbbbb"],
+      }),
+    );
+  });
+});
+
+describe("signTypedDataV4", () => {
+  it("asks the wallet to sign with bigints sent as decimal strings", async () => {
+    const requests: Array<{ method: string; params?: unknown[] }> = [];
+    const eth = {
+      async request(args: { method: string; params?: unknown[] }) {
+        requests.push(args);
+        if (args.method === "eth_chainId") return TARGET_CHAIN_HEX;
+        return "0xsig";
+      },
+    };
+    const typed = buildHandoffTypedData({
+      chainOrderId: 7n,
+      stage: 2,
+      giver: BUYER,
+      receiver: ESCROW,
+      nonce: `0x${"01".repeat(32)}`,
+      expiresAt: 1_800_000_000,
+      evidenceHash: `0x${"02".repeat(32)}`,
+      verifyingContract: ESCROW,
+    });
+    expect(await signTypedDataV4(eth, BUYER, typed)).toBe("0xsig");
+    const sign = requests.find((r) => r.method === "eth_signTypedData_v4")!;
+    expect(sign.params?.[0]).toBe(BUYER);
+    const json = JSON.parse(String(sign.params?.[1]));
+    expect(json.primaryType).toBe("Handoff");
+    expect(json.message.orderId).toBe("7");
+    expect(json.message.expiresAt).toBe("1800000000");
+    expect(json.domain.verifyingContract).toBe(ESCROW);
+    expect(json.types.EIP712Domain.map((f: { name: string }) => f.name)).toEqual([
+      "name",
+      "version",
+      "chainId",
+      "verifyingContract",
+    ]);
+  });
+
+  it("refuses to sign on the wrong chain", async () => {
+    const eth = { request: async () => "0x1" };
+    const typed = buildHandoffTypedData({
+      chainOrderId: 1n,
+      stage: 1,
+      giver: BUYER,
+      receiver: ESCROW,
+      nonce: `0x${"01".repeat(32)}`,
+      expiresAt: 1,
+      evidenceHash: `0x${"02".repeat(32)}`,
+    });
+    await expect(signTypedDataV4(eth, BUYER, typed)).rejects.toThrow(/Switch your wallet/);
+  });
+});
+
+describe("createdOrderId", () => {
+  const created = encodeEventTopics({
+    abi: escrowAbi,
+    eventName: "OrderCreated",
+    args: { orderId: 42n, buyer: BUYER, supplier: TOKEN },
+  });
+  const data = encodeAbiParameters(
+    [{ type: "uint256" }, { type: "bytes32" }],
+    [1000n, `0x${"ab".repeat(32)}`],
+  );
+  const receiptEth = (receipts: unknown[]) => ({
+    async request(args: { method: string }) {
+      if (args.method !== "eth_getTransactionReceipt") throw new Error(args.method);
+      return receipts.shift() ?? null;
+    },
+  });
+
+  it("reads the new order's ID from the escrow's OrderCreated event once the receipt exists", async () => {
+    const eth = receiptEth([
+      null,
+      { status: "0x1", logs: [{ address: ESCROW.toUpperCase(), topics: created, data }] },
+    ]);
+    expect(await createdOrderId(eth, "0xhash", ESCROW, { intervalMs: 0 })).toBe(42n);
+  });
+
+  it("ignores the same event from another contract", async () => {
+    const other = "0x9999999999999999999999999999999999999999";
+    const eth = receiptEth([{ status: "0x1", logs: [{ address: other, topics: created, data }] }]);
+    await expect(createdOrderId(eth, "0xhash", ESCROW, { intervalMs: 0 })).rejects.toThrow(
+      /No OrderCreated/,
+    );
+  });
+
+  it("reports a reverted transaction", async () => {
+    const eth = receiptEth([{ status: "0x0", logs: [] }]);
+    await expect(createdOrderId(eth, "0xhash", ESCROW, { intervalMs: 0 })).rejects.toThrow(
+      /failed on-chain/,
+    );
   });
 });

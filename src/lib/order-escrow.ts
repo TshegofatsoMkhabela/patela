@@ -1,7 +1,19 @@
-import { encodeFunctionData, isAddress, type Address, type Hex } from "viem";
+import { decodeEventLog, encodeFunctionData, isAddress, type Address, type Hex } from "viem";
 import { ESCROW_ADDRESS, ZARM_ADDRESS, escrowAbi } from "@/lib/contracts";
-import { TARGET_CHAIN_HEX, TARGET_CHAIN_NAME, type Eth } from "@/lib/chain";
-import { approveZarm, waitForReceipt, zarmAllowance, zarmBalanceWei } from "@/lib/zarp";
+import {
+  signTypedData,
+  TARGET_CHAIN_HEX,
+  TARGET_CHAIN_NAME,
+  type Eth,
+  type TypedData,
+} from "@/lib/chain";
+import {
+  approveZarm,
+  pollReceipt,
+  waitForReceipt,
+  zarmAllowance,
+  zarmBalanceWei,
+} from "@/lib/zarp";
 
 type SendArgs = { eth: Eth; account: Address; escrow?: Address };
 
@@ -69,9 +81,11 @@ export async function fundOrderTransaction(
   token: Address = ZARM_ADDRESS,
 ) {
   if (totalWei <= 0n) throw new Error("Funding amount must be positive.");
-  const balance = await zarmBalanceWei({ eth, account, token });
+  const [balance, allowance] = await Promise.all([
+    zarmBalanceWei({ eth, account, token }),
+    zarmAllowance({ eth, account, token, spender: escrow }),
+  ]);
   if (balance < totalWei) throw new Error("Insufficient ZARm balance.");
-  const allowance = await zarmAllowance({ eth, account, token, spender: escrow });
   let approvalHash: Hex | undefined;
   if (allowance < totalWei) {
     approvalHash = (await approveZarm({
@@ -121,4 +135,71 @@ export function assignDriverTransaction(
     escrow,
     encodeFunctionData({ abi: escrowAbi, functionName: "assignDriver", args: [orderId, driver] }),
   );
+}
+
+export type ReleaseFields = {
+  chainOrderId: bigint;
+  stage: 1 | 2;
+  nonce: Hex;
+  expiresAt: number;
+  evidenceHash: Hex;
+  giverSig: Hex;
+  receiverSig: Hex;
+};
+
+/** Pays out a handoff stage. Anyone may submit; the giver does, since they sign last. */
+export function releaseHandoffTransaction(
+  { eth, account, escrow = ESCROW_ADDRESS }: SendArgs,
+  f: ReleaseFields,
+) {
+  return send(
+    eth,
+    account,
+    escrow,
+    encodeFunctionData({
+      abi: escrowAbi,
+      functionName: "releaseHandoff",
+      args: [
+        f.chainOrderId,
+        f.stage,
+        f.nonce,
+        BigInt(f.expiresAt),
+        f.evidenceHash,
+        f.giverSig,
+        f.receiverSig,
+      ],
+    }),
+  );
+}
+
+/** Signs a handoff (or any EIP-712 message) after checking the wallet is on the target chain. */
+export async function signTypedDataV4(eth: Eth, account: Address, typed: TypedData) {
+  await requireChain(eth);
+  return signTypedData(eth, account, typed);
+}
+
+/** Waits for the createOrder transaction and returns the order ID from the escrow's OrderCreated event. */
+export async function createdOrderId(
+  eth: Eth,
+  hash: string,
+  escrow: Address = ESCROW_ADDRESS,
+  options?: { intervalMs?: number; attempts?: number },
+): Promise<bigint> {
+  const receipt = await pollReceipt(eth, hash, options);
+  if (!receipt) throw new Error("The order transaction is still pending. Try again shortly.");
+  for (const log of receipt.logs ?? []) {
+    if (log.address.toLowerCase() !== escrow.toLowerCase()) continue;
+    try {
+      const event = decodeEventLog({
+        abi: escrowAbi,
+        eventName: "OrderCreated",
+        data: log.data as Hex,
+        topics: log.topics as [Hex, ...Hex[]],
+      });
+      return event.args.orderId;
+    } catch {
+      // another escrow event in the same transaction
+    }
+  }
+  throw new Error("No OrderCreated event in that transaction.");
 }

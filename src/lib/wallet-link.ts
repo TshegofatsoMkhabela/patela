@@ -1,7 +1,7 @@
 // Proves to the backend that the signed-in user controls a MetaMask wallet:
 // /wallet/challenge -> eth_signTypedData_v4 -> /wallet/link.
 
-import { isUserRejection, type Eth } from "@/lib/chain";
+import { isUserRejection, signTypedData, type Eth } from "@/lib/chain";
 import { ApiError, type WalletChallenge } from "@/lib/patela-api";
 
 export type LinkApi = {
@@ -9,28 +9,9 @@ export type LinkApi = {
   walletLink(challengeId: string, signature: string): Promise<{ wallet_address: string | null }>;
 };
 
-// MetaMask's v4 signer needs the domain's own type listed; the backend
-// (viem) derives it implicitly, so it is added here from the domain's fields.
-const DOMAIN_FIELDS = [
-  { name: "name", type: "string" },
-  { name: "version", type: "string" },
-  { name: "chainId", type: "uint256" },
-  { name: "verifyingContract", type: "address" },
-] as const;
-
 export async function linkWallet(api: LinkApi, eth: Eth, address: string) {
   const { challengeId, typedData } = await api.walletChallenge(address);
-  const typed = {
-    ...typedData,
-    types: {
-      EIP712Domain: DOMAIN_FIELDS.filter((f) => f.name in typedData.domain),
-      ...typedData.types,
-    },
-  };
-  const signature = (await eth.request({
-    method: "eth_signTypedData_v4",
-    params: [address, JSON.stringify(typed)],
-  })) as string;
+  const signature = await signTypedData(eth, address, typedData);
   return api.walletLink(challengeId, signature);
 }
 

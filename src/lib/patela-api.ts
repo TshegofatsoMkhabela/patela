@@ -1,6 +1,8 @@
 // Client for the Patela Fastify backend (backend/src/app.ts).
 // Sessions live in HTTP-only cookies set by the backend, so every request
 // sends credentials and nothing here stores or exposes tokens.
+import type { Evidence, Stage } from "@/lib/handoff";
+import type { OrderView } from "@/lib/order-flow";
 
 export type Profile = {
   id: string;
@@ -85,14 +87,92 @@ export function createPatelaApi({
       call<WalletChallenge>("/wallet/challenge", "POST", { wallet }),
     walletLink: (challengeId: string, signature: string) =>
       call<Profile>("/wallet/link", "POST", { challengeId, signature }),
+
+    // Orders (two-handoff escrow). Routes: backend/src/app.ts; shapes: specs/INTERFACES.md §4.
+    listOrders: () => call<{ orders: OrderSummary[] }>("/orders"),
+    order: (id: string) => call<OrderView>(`/orders/${seg(id)}`),
+    createOrder: (body: Record<string, unknown>) =>
+      call<{ id: string; acceptUrl?: string }>("/orders", "POST", body),
+    invitation: (token: string) => call<Invitation>(`/invitations/${seg(token)}`),
+    acceptInvitation: (token: string, walletAddress: string) =>
+      call<OrderView>(`/invitations/${seg(token)}/accept`, "POST", { walletAddress }),
+    linkChain: (id: string, chainOrderId: string, createTxHash: string) =>
+      call<OrderView>(`/orders/${seg(id)}/chain`, "POST", { chainOrderId, createTxHash }),
+    verifyTx: (id: string, step: "funding" | "acceptance" | "driver" | "refund", txHash: string) =>
+      call<OrderView>(`/orders/${seg(id)}/${step}/verify`, "POST", { txHash }),
+    inviteDriver: (id: string, email: string) =>
+      call<{ invited: boolean; acceptUrl?: string }>(`/orders/${seg(id)}/driver-invite`, "POST", {
+        email,
+      }),
+    openHandoff: (
+      id: string,
+      stage: Stage,
+      body: { nonce: string; expiresAt: number; giverEvidence: Evidence },
+    ) => call<{ sessionId: string }>(`/orders/${seg(id)}/handoffs/${stage}/session`, "POST", body),
+    handoffState: (id: string, stage: Stage, sessionId: string) =>
+      call<HandoffState>(`/orders/${seg(id)}/handoffs/${stage}/session/${seg(sessionId)}`),
+    submitReceiver: (
+      id: string,
+      stage: Stage,
+      sessionId: string,
+      body: { receiverEvidence: Evidence; evidenceHash: string; receiverSig: string },
+    ) =>
+      call<{ ok: true }>(
+        `/orders/${seg(id)}/handoffs/${stage}/session/${seg(sessionId)}/receiver`,
+        "POST",
+        body,
+      ),
+    verifyHandoff: (id: string, stage: Stage, txHash: string) =>
+      call<OrderView>(`/orders/${seg(id)}/handoffs/${stage}/verify`, "POST", { txHash }),
   };
+}
+
+const seg = (value: string) => encodeURIComponent(value);
+
+export type OrderSummary = {
+  id: string;
+  chainOrderId: string | null;
+  totalWei: string;
+  status: OrderView["status"];
+  refundDeadline: string;
+  createdAt: string;
+};
+
+export type Invitation = {
+  orderId: string;
+  role: "supplier" | "driver";
+  email: string;
+  agreementText: string | null;
+  agreementHash: string;
+};
+
+/** Empty until the receiver has scanned the QR and countersigned. */
+export type HandoffState = {
+  receiverEvidence?: Evidence;
+  evidenceHash?: string;
+  receiverSig?: string;
+};
+
+const AFTER_SIGN_IN = "/html/client-dashboard.html";
+
+/**
+ * Where to go after sign-in. Only a same-site path is allowed ("/…", but not "//host" or
+ * "/\host", which browsers treat as another site), so a crafted link cannot redirect elsewhere.
+ */
+export function safeNextPath(value: string | null | undefined): string {
+  if (!value || !value.startsWith("/") || value.startsWith("//") || value.startsWith("/\\")) {
+    return AFTER_SIGN_IN;
+  }
+  return value;
 }
 
 export const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 export const isOtpCode = (value: string) => /^\d{6}$/.test(value);
 
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
+
 export const patelaApi = createPatelaApi({
-  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000",
+  baseUrl: API_BASE_URL,
   fetch: (...args) => globalThis.fetch(...args),
 });
 

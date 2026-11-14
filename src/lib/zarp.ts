@@ -140,22 +140,36 @@ export async function zarmBalance({ eth, account, token }: TokenArgs) {
   return formatUnits(balance, places);
 }
 
-/** Polls for the transaction receipt: true once mined, false if it never shows up. */
-export async function waitForReceipt(
+export type RpcReceipt = {
+  status?: string;
+  logs?: Array<{ address: string; topics: string[]; data: string }>;
+};
+
+/** Polls for the mined receipt; throws if it reverted, null if it never shows up. */
+export async function pollReceipt(
   eth: Eth,
   hash: string,
   { intervalMs = 2000, attempts = 30 } = {},
-): Promise<boolean> {
+): Promise<RpcReceipt | null> {
   for (let i = 0; i < attempts; i += 1) {
     const receipt = (await eth.request({
       method: "eth_getTransactionReceipt",
       params: [hash],
-    })) as { status?: string } | null;
+    })) as RpcReceipt | null;
     if (receipt) {
-      if (receipt.status === "0x1") return true;
+      if (receipt.status === "0x1") return receipt;
       throw new Error("The transaction failed on-chain.");
     }
     if (i < attempts - 1) await new Promise((r) => setTimeout(r, intervalMs));
   }
-  return false;
+  return null;
+}
+
+/** Polls for the transaction receipt: true once mined, false if it never shows up. */
+export async function waitForReceipt(
+  eth: Eth,
+  hash: string,
+  options?: { intervalMs?: number; attempts?: number },
+) {
+  return (await pollReceipt(eth, hash, options)) !== null;
 }

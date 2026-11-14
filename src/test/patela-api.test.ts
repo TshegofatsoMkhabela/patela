@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { ApiError, createPatelaApi, toAuthUser, type Profile } from "@/lib/patela-api";
+import {
+  ApiError,
+  createPatelaApi,
+  safeNextPath,
+  toAuthUser,
+  type Profile,
+} from "@/lib/patela-api";
 
 type Call = { url: string; init: RequestInit };
 
@@ -146,5 +152,95 @@ describe("toAuthUser", () => {
 
   it("given a profile without a name, when it is stored, then the name falls back to the email's local part", () => {
     expect(toAuthUser({ ...profile, full_name: null }).fullName).toBe("alex");
+  });
+});
+
+describe("order api calls", () => {
+  const sent = (call: Call) => ({
+    url: call.url.replace("http://api.test", ""),
+    method: call.init.method ?? "GET",
+    body: call.init.body === undefined ? undefined : JSON.parse(String(call.init.body)),
+  });
+
+  it("given each order step, it calls the matching backend route with the right body", async () => {
+    const { fetch, calls } = stubFetch(Array.from({ length: 13 }, () => ({ body: {} })));
+    const api = createPatelaApi({ baseUrl: "http://api.test", fetch });
+    const evidence = {
+      lat: 1,
+      lng: 2,
+      accuracyM: 3,
+      capturedAt: 1_800_000_000,
+      role: "giver" as const,
+    };
+
+    await api.listOrders();
+    await api.order("o1");
+    await api.createOrder({ supplierEmail: "s@x.test", totalZar: "1000" });
+    await api.invitation("tok");
+    await api.acceptInvitation("tok", "0xabc");
+    await api.linkChain("o1", "7", "0xcreate");
+    await api.verifyTx("o1", "funding", "0xfund");
+    await api.inviteDriver("o1", "d@x.test");
+    await api.openHandoff("o1", 1, { nonce: "0xn", expiresAt: 5, giverEvidence: evidence });
+    await api.handoffState("o1", 1, "s1");
+    await api.submitReceiver("o1", 2, "s1", {
+      receiverEvidence: { ...evidence, role: "receiver" },
+      evidenceHash: "0xe",
+      receiverSig: "0xr",
+    });
+    await api.verifyHandoff("o1", 2, "0xrel");
+    await api.verifyTx("o1", "driver", "0xdrv");
+
+    expect(calls.map(sent)).toEqual([
+      { url: "/orders", method: "GET", body: undefined },
+      { url: "/orders/o1", method: "GET", body: undefined },
+      { url: "/orders", method: "POST", body: { supplierEmail: "s@x.test", totalZar: "1000" } },
+      { url: "/invitations/tok", method: "GET", body: undefined },
+      { url: "/invitations/tok/accept", method: "POST", body: { walletAddress: "0xabc" } },
+      {
+        url: "/orders/o1/chain",
+        method: "POST",
+        body: { chainOrderId: "7", createTxHash: "0xcreate" },
+      },
+      { url: "/orders/o1/funding/verify", method: "POST", body: { txHash: "0xfund" } },
+      { url: "/orders/o1/driver-invite", method: "POST", body: { email: "d@x.test" } },
+      {
+        url: "/orders/o1/handoffs/1/session",
+        method: "POST",
+        body: { nonce: "0xn", expiresAt: 5, giverEvidence: evidence },
+      },
+      { url: "/orders/o1/handoffs/1/session/s1", method: "GET", body: undefined },
+      {
+        url: "/orders/o1/handoffs/2/session/s1/receiver",
+        method: "POST",
+        body: {
+          receiverEvidence: { ...evidence, role: "receiver" },
+          evidenceHash: "0xe",
+          receiverSig: "0xr",
+        },
+      },
+      { url: "/orders/o1/handoffs/2/verify", method: "POST", body: { txHash: "0xrel" } },
+      { url: "/orders/o1/driver/verify", method: "POST", body: { txHash: "0xdrv" } },
+    ]);
+  });
+
+  it("escapes ids and tokens placed in the URL", async () => {
+    const { fetch, calls } = stubFetch([{ body: {} }]);
+    const api = createPatelaApi({ baseUrl: "http://api.test", fetch });
+    await api.invitation("a/b?c");
+    expect(calls[0].url).toBe("http://api.test/invitations/a%2Fb%3Fc");
+  });
+});
+
+describe("safeNextPath", () => {
+  it("keeps a same-site path such as the invitation page", () => {
+    expect(safeNextPath("/accept?token=abc")).toBe("/accept?token=abc");
+  });
+
+  it("falls back for anything that could leave the site", () => {
+    const fallback = "/html/client-dashboard.html";
+    for (const value of [null, "", "https://evil.test", "//evil.test", "/\\evil.test", "accept"]) {
+      expect(safeNextPath(value)).toBe(fallback);
+    }
   });
 });
