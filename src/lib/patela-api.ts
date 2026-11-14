@@ -155,7 +155,7 @@ export type HandoffState = {
   receiverSig?: string;
 };
 
-const AFTER_SIGN_IN = "/html/client-dashboard.html";
+const AFTER_SIGN_IN = "/orders";
 
 /**
  * Where to go after sign-in. Only a same-site path is allowed ("/…", but not "//host" or

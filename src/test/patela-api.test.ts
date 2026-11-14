@@ -249,7 +249,7 @@ describe("safeNextPath", () => {
   });
 
   it("falls back for anything that could leave the site", () => {
-    const fallback = "/html/client-dashboard.html";
+    const fallback = "/orders";
     for (const value of [null, "", "https://evil.test", "//evil.test", "/\\evil.test", "accept"]) {
       expect(safeNextPath(value)).toBe(fallback);
     }
