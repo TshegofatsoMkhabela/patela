@@ -68,6 +68,10 @@ test("demo flow: order, email invites, on-chain steps, QR handoffs and refund", 
     // (The buyer's earlier "business approved" email goes out in the same flush; only order emails are checked.)
     const invites = mail.sent.filter(m => m.subject.includes("invited"));
     assert.equal(invites.length, 1);
+    const inviteHtml = invites[0].html ?? "";
+    assert.ok(inviteHtml.includes("1,000.00 ZARm"), "the HTML invite carries the invoice total");
+    assert.match(inviteHtml, /Your payout[\s\S]*900\.00 ZARm/, "supplier payout is pickup + delivery");
+    assert.ok(inviteHtml.includes(`href="${order.acceptUrl}"`), "the button links to the accept URL");
     assert.equal(invites[0].to, "supplier@example.test");
     assert.ok(invites[0].text.includes(order.acceptUrl), "the email carries the accept link");
     assert.match(order.acceptUrl, /^http:\/\/localhost:3000\/accept\?token=/);
@@ -139,6 +143,7 @@ test("demo flow: order, email invites, on-chain steps, QR handoffs and refund", 
     assert.equal(driverInvite.statusCode, 200, driverInvite.body);
     assert.equal(driverInvite.json().invited, true);
     assert.equal(mail.sent.at(-1)?.to, emails[2]);
+    assert.match(mail.sent.at(-1)?.html ?? "", /Your payout[\s\S]*100\.00 ZARm/, "the driver sees their pickup payment");
     const driverToken = tokenFrom(driverInvite.json().acceptUrl);
     assert.equal((await app.inject({ method: "GET", url: `/invitations/${driverToken}` })).json().role, "driver");
     const unauthorizedDriver = await post(2, `/invitations/${driverToken}/accept`, { walletAddress: driver.address });

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { GmailTransport, parseSmtpSecret } from "../src/gmail.js";
 
-type Sent = { from: string; to: string; subject: string; text: string };
+type Sent = { from: string; to: string; subject: string; text: string; html?: string };
 
 test("Gmail transport reads the secret once per container and sends from that account", async () => {
   let loads = 0;
@@ -10,7 +10,7 @@ test("Gmail transport reads the secret once per container and sends from that ac
   const configs: unknown[] = [];
   const transport = new GmailTransport(async () => { loads++; return { user: "patela.demo@gmail.com", appPassword: "app-pass" }; },
     config => { configs.push(config); return { sendMail: async (mail: Sent) => { sent.push(mail); } }; });
-  await transport.send({ to: "a@example.test", subject: "One", text: "1" });
+  await transport.send({ to: "a@example.test", subject: "One", text: "1", html: "<p>1</p>" });
   await transport.send({ to: "b@example.test", subject: "Two", text: "2" });
   assert.equal(loads, 1);
   assert.deepEqual(configs, [{ host: "smtp.gmail.com", port: 465, secure: true,

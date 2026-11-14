@@ -17,6 +17,7 @@ export function createRuntime(env: NodeJS.ProcessEnv = process.env) {
     DATABASE_URL,
     GOOGLE_OAUTH_CLIENT_ID,
     GOOGLE_OAUTH_CLIENT_SECRET,
+    RPC_URL,
     BASE_RPC_URL,
     ESCROW_ADDRESS,
     PUBLIC_ORIGIN,
@@ -103,10 +104,12 @@ export function createRuntime(env: NodeJS.ProcessEnv = process.env) {
     db,
     new GoogleOidcProvider(GOOGLE_OAUTH_CLIENT_ID ?? "", GOOGLE_OAUTH_CLIENT_SECRET),
   );
+  // The Celo stack names it RPC_URL; BASE_RPC_URL is the older name and still works.
+  const rpcUrl = RPC_URL || BASE_RPC_URL;
   const chain =
-    BASE_RPC_URL && ESCROW_ADDRESS
+    rpcUrl && ESCROW_ADDRESS
       ? new BaseChainVerifier(
-          BASE_RPC_URL,
+          rpcUrl,
           ESCROW_ADDRESS as Address,
           confirmations,
           chainId as (typeof SUPPORTED_CHAIN_IDS)[number],
@@ -146,5 +149,5 @@ export function createRuntime(env: NodeJS.ProcessEnv = process.env) {
     // HOSTED DEMO: shortcuts for the @demo.patela.local personas only (see buildApp); never with real mail.
     demoHosted: DEMO_HOSTED === "true" && DEMO_MODE === "true" && !SMTP_SECRET_ARN,
   });
-  return { app, db };
+  return { app, db, chain };
 }

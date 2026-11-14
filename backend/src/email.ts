@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type { Database, Queryable } from "./db.js";
+import { formatZarm, loginCodeHtml, networkName, orderInviteHtml, type InvoiceDetails } from "./email-html.js";
 
-export type MailMessage = { to: string; subject: string; text: string };
+export type MailMessage = { to: string; subject: string; text: string; html?: string };
 
 export interface MailTransport {
   send(message: MailMessage): Promise<void>;
@@ -23,60 +24,38 @@ export async function queueEmail(db: Queryable, to: string, template: EmailTempl
 
 const str = (value: unknown) => (typeof value === "string" ? value : "");
 
-type Invoice = {
-  number: string; issuedAt: string; buyerEmail: string; supplierEmail: string; total: string;
-  lines: { label: string; amount: string }[]; refundDeadline: string;
-};
-
-/** "48000" -> "R 48 000.00" (South African grouping). */
-const rand = (amount: string) => {
-  const [whole, frac = ""] = amount.split(".");
-  return `R ${whole.replace(/\B(?=(\d{3})+(?!\d))/g, " ")}.${(frac + "00").slice(0, 2)}`;
-};
-const day = (iso: string) => iso.slice(0, 10);
-
-/** Plain-text invoice block for the supplier invitation. */
-function renderInvoice(inv: Invoice, agreementText: string): string[] {
-  const row = (label: string, amount: string) => `${label.padEnd(28)}${rand(amount)}`;
-  return [
-    "----------------------------------------",
-    `INVOICE ${inv.number}`,
-    `Issued: ${day(inv.issuedAt)}`,
-    `Bill to: ${inv.buyerEmail}`,
-    `Supplier: ${inv.supplierEmail}`,
-    "",
-    `Goods: ${agreementText}`,
-    "",
-    "Payment schedule (released from escrow at each verified handoff):",
-    ...inv.lines.map(l => row(l.label, l.amount)),
-    row("Total held in escrow", inv.total),
-    "",
-    `Unpaid amounts can be refunded to the buyer after ${day(inv.refundDeadline)}.`,
-    "----------------------------------------",
-  ];
-}
-
-/** Plain-text bodies for every template the backend queues. */
-export function renderEmail(template: EmailTemplate, payload: Payload): { subject: string; text: string } {
+/** Plain-text bodies for every template the backend queues; sign-in codes and order invites also get HTML. */
+export function renderEmail(template: EmailTemplate, payload: Payload): { subject: string; text: string; html?: string } {
   const link = str(payload.acceptUrl);
   switch (template) {
     case "order_supplier_invited":
     case "order_driver_invited": {
       const role = template === "order_supplier_invited" ? "supplier" : "driver";
-      const invoice = payload.invoice as Invoice | undefined;
+      // Invites queued before invoices were added carry no invoice; they still render.
+      const invoice = payload.invoice as InvoiceDetails | undefined;
+      const agreementText = payload.agreementText ? str(payload.agreementText) : undefined;
+      const number = invoice ? `PAT-${invoice.orderId.slice(0, 8).toUpperCase()}` : "";
+      const zar = (wei: string) => `${formatZarm(wei)} ZARm`;
       return {
         subject: invoice
-          ? `Patela: invoice ${invoice.number} · you're invited as the ${role} on an order`
+          ? `Patela: invoice ${number} · you're invited as the ${role} on an order`
           : `Patela: you're invited as the ${role} on an order`,
+        html: orderInviteHtml({ role, acceptUrl: link, agreementText, invoice }),
         text: [`You've been invited to a Patela order as the ${role}.`, "",
-          ...(invoice ? [...renderInvoice(invoice, str(payload.agreementText)), ""] : []),
-          payload.agreementText && !invoice ? `Agreement: ${str(payload.agreementText)}` : "",
-          "", `Open this link to review and accept (it works once):`, link, "",
-          "Patela demo on Base Sepolia test tokens — no real money moves."].join("\n"),
+          agreementText ? `Agreement: ${agreementText}` : "", "",
+          ...(invoice ? [
+            `Invoice ${number} from ${invoice.buyerEmail}`,
+            `  Driver, paid at pickup:     ${zar(invoice.driverAtPickupWei)}`,
+            `  Supplier, paid at pickup:   ${zar(invoice.supplierAtPickupWei)}`,
+            `  Supplier, paid at delivery: ${zar(invoice.supplierAtDeliveryWei)}`,
+            `  Total held in escrow:       ${zar(invoice.totalWei)}`,
+            `  Network: ${networkName(invoice.chainId)}; escrow ${invoice.escrowAddress}`, ""] : []),
+          `Open this link to review and accept (it works once):`, link, "",
+          "Confirm the network, ZARm amount and escrow contract in your wallet before signing."].join("\n"),
       };
     }
     case "login_otp":
-      return { subject: "Your Patela sign-in code",
+      return { subject: "Your Patela sign-in code", html: loginCodeHtml(str(payload.code)),
         text: `Your Patela sign-in code is ${str(payload.code)}. It expires in 10 minutes.\n\n`
           + "If you didn't ask for it, ignore this email." };
     case "member_invited":

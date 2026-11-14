@@ -1,7 +1,8 @@
 import { randomBytes, randomUUID } from "node:crypto";
-import { formatUnits, isHex, keccak256, parseUnits, toBytes, zeroAddress, type Address, type Hex } from "viem";
+import { isHex, keccak256, parseUnits, toBytes, zeroAddress, type Address, type Hex } from "viem";
 import type { ChainEvent, ChainVerifier } from "./chain.js";
 import type { Database, Queryable } from "./db.js";
+import type { InvoiceDetails } from "./email-html.js";
 import { queueEmail } from "./email.js";
 import { demoApproves, ensureDemoCapability, missingCapability, requireAdmin, type DemoApproval } from "./onboarding.js";
 import {
@@ -112,7 +113,7 @@ export class OrderService {
   }
 
   private async invite(db: Queryable, orderId: string, role: "supplier" | "driver", email: string,
-    invitedBy: string, agreementText?: string, invoice?: Record<string, unknown>) {
+    invitedBy: string, agreementText?: string) {
     const token = randomBytes(32).toString("base64url");
     await db.query(
       `insert into order_invitations (id,order_id,role,email,token_hash,invited_by,expires_at)
@@ -122,9 +123,24 @@ export class OrderService {
     const acceptUrl = new URL("/accept", this.publicOrigin);
     acceptUrl.searchParams.set("token", token);
     await queueEmail(db, email, role === "supplier" ? "order_supplier_invited" : "order_driver_invited",
-      { orderId, acceptUrl: acceptUrl.toString(), ...(agreementText ? { agreementText } : {}),
-        ...(invoice ? { invoice } : {}) });
+      { orderId, acceptUrl: acceptUrl.toString(), invoice: await this.invoiceFor(db, orderId),
+        ...(agreementText ? { agreementText } : {}) });
     return acceptUrl.toString();
+  }
+
+  /** The invoice an invite email shows, read from the stored order so it always matches it. */
+  private async invoiceFor(db: Queryable, orderId: string): Promise<InvoiceDetails> {
+    const row = (await db.query<Row>(
+      `select o.amount_wei,o.driver_at_pickup_wei,o.supplier_at_pickup_wei,o.supplier_at_delivery_wei,
+        o.chain_id,o.token_address,o.agreement_hash,o.refund_deadline,p.email buyer_email
+       from orders o join profiles p on p.id=o.buyer_id where o.id=$1`, [orderId])).rows[0];
+    return {
+      orderId, buyerEmail: String(row.buyer_email), totalWei: String(row.amount_wei),
+      driverAtPickupWei: String(row.driver_at_pickup_wei), supplierAtPickupWei: String(row.supplier_at_pickup_wei),
+      supplierAtDeliveryWei: String(row.supplier_at_delivery_wei), chainId: Number(row.chain_id),
+      tokenAddress: String(row.token_address), escrowAddress: this.escrowAddress.toLowerCase(),
+      agreementHash: String(row.agreement_hash), refundDeadline: new Date(String(row.refund_deadline)).toISOString(),
+    };
   }
 
   async createOrder(userId: string, body: Record<string, unknown>) {
@@ -163,17 +179,7 @@ export class OrderService {
           supplierAtDelivery.toString(), agreementText, agreementHash],
       );
       await db.query("insert into order_participants (order_id,user_id) values ($1,$2)", [id, userId]);
-      const zar = (wei: bigint) => formatUnits(wei, this.tokenDecimals);
-      const invoice = {
-        number: `PAT-${id.slice(0, 8).toUpperCase()}`, issuedAt: new Date().toISOString(),
-        buyerEmail: String(buyer.email), supplierEmail, total: zar(total), refundDeadline,
-        lines: [
-          { label: "Driver, at pickup", amount: zar(driverAtPickup) },
-          { label: "Supplier, at pickup", amount: zar(supplierAtPickup) },
-          { label: "Supplier, at delivery", amount: zar(supplierAtDelivery) },
-        ],
-      };
-      return this.invite(db, id, "supplier", supplierEmail, userId, agreementText, invoice);
+      return this.invite(db, id, "supplier", supplierEmail, userId, agreementText);
     });
     return { id, agreementHash, refundDeadline, ...this.demoLink(acceptUrl) };
   }

@@ -113,34 +113,55 @@ test("a sign-in code older than ten minutes is never sent", async () => {
   } finally { await db.close(); }
 });
 
-test("the supplier invite carries an invoice with the total and payment schedule", () => {
-  const email = renderEmail("order_supplier_invited", {
-    acceptUrl: "https://demo.example/accept?token=abc",
-    agreementText: "40 office chairs to Durban by Friday",
-    invoice: {
-      number: "PAT-1A2B3C4D",
-      issuedAt: "2026-11-14T08:00:00.000Z",
-      buyerEmail: "buyer@demo.patela.local",
-      supplierEmail: "supplier@demo.patela.local",
-      total: "48000",
-      lines: [
-        { label: "Driver, at pickup", amount: "4800" },
-        { label: "Supplier, at pickup", amount: "19200" },
-        { label: "Supplier, at delivery", amount: "24000" },
-      ],
-      refundDeadline: "2026-11-17T08:00:00.000Z",
-    },
-  });
-  assert.match(email.subject, /invoice PAT-1A2B3C4D/i);
-  assert.match(email.text, /INVOICE PAT-1A2B3C4D/);
-  assert.match(email.text, /Bill to: buyer@demo\.patela\.local/);
-  assert.match(email.text, /40 office chairs to Durban by Friday/);
-  assert.match(email.text, /Supplier, at delivery\s+R 24 000\.00/);
-  assert.match(email.text, /Total held in escrow\s+R 48 000\.00/);
-  assert.match(email.text, /https:\/\/demo\.example\/accept\?token=abc/);
+const invoice = {
+  orderId: "7d9c1f2e-0000-4000-8000-000000000001",
+  buyerEmail: "buyer@example.test",
+  totalWei: "1000000000000000000000",
+  driverAtPickupWei: "100000000000000000000",
+  supplierAtPickupWei: "400000000000000000000",
+  supplierAtDeliveryWei: "500000000000000000000",
+  chainId: 11142220,
+  tokenAddress: "0x10CCfB235b0E1Ed394bACE4560C3ed016697687e",
+  escrowAddress: "0xb7b05da3523bb21e320d8c73feb6da2c10c81426",
+  agreementHash: "0xabc123",
+  refundDeadline: "2026-11-16T10:00:00.000Z",
+};
+
+test("the sign-in code email has a branded HTML body with the code", () => {
+  const email = renderEmail("login_otp", { code: "042137" });
+  assert.ok(email.html, "an HTML body is rendered");
+  assert.ok(email.html.includes("042137"));
+  assert.match(email.html, /PATELA/);
+  assert.match(email.html, /10 minutes/);
 });
 
-test("an invite without invoice details still renders the plain invitation", () => {
-  const email = renderEmail("order_driver_invited", { acceptUrl: "https://x/accept?token=t" });
-  assert.doesNotMatch(email.text, /INVOICE/);
+test("the supplier invite is an HTML invoice with their payout, the network and the accept button", () => {
+  const email = renderEmail("order_supplier_invited", {
+    acceptUrl: "https://demo.example/accept?token=abc&x=1",
+    agreementText: "20 crates <script>alert(1)</script>",
+    invoice,
+  });
+  const html = email.html ?? "";
+  assert.ok(html.includes('href="https://demo.example/accept?token=abc&amp;x=1"'));
+  assert.ok(html.includes("1,000.00"), "total");
+  assert.ok(html.includes("400.00") && html.includes("500.00") && html.includes("100.00"), "every line");
+  assert.match(html, /Your payout[\s\S]*900\.00/);
+  assert.match(html, /Celo Sepolia/);
+  assert.ok(html.includes("0xb7b05da3523bb21e320d8c73feb6da2c10c81426"), "escrow contract");
+  assert.ok(html.includes("0xabc123"), "agreement hash");
+  assert.ok(!html.includes("<script>"), "agreement text is escaped");
+  assert.ok(html.includes("&lt;script&gt;"));
+  assert.ok(email.text.includes("1,000.00 ZARm"), "the plain-text part carries the invoice too");
+  assert.match(email.subject, /invoice PAT-7D9C1F2E/i, "the subject names the invoice");
+});
+
+test("the driver invite shows the driver's pickup payment as their payout", () => {
+  const html = renderEmail("order_driver_invited", { acceptUrl: "https://d/a", invoice }).html ?? "";
+  assert.match(html, /Your payout[\s\S]*100\.00/);
+  assert.match(html, /driver/i);
+});
+
+test("an invite queued before invoices existed still renders", () => {
+  const email = renderEmail("order_supplier_invited", { acceptUrl: "https://d/a" });
+  assert.ok(email.html?.includes('href="https://d/a"'));
 });

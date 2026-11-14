@@ -38,13 +38,13 @@ Parameters:
     Description: Serve the API-only Google sign-in test page during development.
   ChainId:
     Type: String
-    Default: '8453'
-    AllowedValues: ['8453', '84532']
-    Description: 8453 = Base mainnet (real ZARP), 84532 = Base Sepolia (demo with MockZARP).
-  BaseRpcUrl:
+    Default: '11142220'
+    AllowedValues: ['42220', '11142220']
+    Description: 42220 = Celo mainnet, 11142220 = Celo Sepolia.
+  RpcUrl:
     Type: String
     Default: ''
-    Description: HTTPS RPC for the chain above. Blank disables on-chain verification (orders stop at awaiting_chain).
+    Description: HTTPS RPC for the chain above (Celo Sepolia https://forno.celo-sepolia.celo-testnet.org). Set together with EscrowAddress; the API refuses to start with only one. Both blank disables on-chain verification (orders stop at awaiting_chain).
   EscrowAddress:
     Type: String
     Default: ''
@@ -54,7 +54,7 @@ Parameters:
     Type: String
     Default: ''
     AllowedPattern: '^$|^0x[0-9a-fA-F]{40}$'
-    Description: Token the escrow holds. Required on Base Sepolia (MockZARP); blank on mainnet means ZARP.
+    Description: Optional ZARm override. Blank selects the canonical Mento ZARm for the configured Celo chain.
   ChainConfirmations:
     Type: Number
     Default: 3
@@ -74,16 +74,9 @@ Parameters:
     Description: DEMO only. Also return one-time accept links in API responses as a fallback for slow email.
   DemoHosted:
     Type: String
-    AllowedValues: ['true', 'false']
     Default: 'false'
-    Description: DEMO only. With DemoMode and no SMTP, the @demo.patela.local personas get their sign-in codes and mail in the app and auto-approved businesses. Real addresses are unaffected.
-
-Rules:
-  TestnetNeedsToken:
-    RuleCondition: !Equals [!Ref ChainId, '84532']
-    Assertions:
-      - Assert: !Not [!Equals [!Ref TokenAddress, '']]
-        AssertDescription: Base Sepolia (84532) needs TokenAddress (the MockZARP deployment).
+    AllowedValues: ['true', 'false']
+    Description: DEMO only. Reserved @demo.patela.local personas receive OTP codes and automatic trading approval when SMTP is disabled.
 
 Conditions:
   HasGoogleClientSecret: !Not [!Equals [!Ref GoogleClientSecretArn, '']]
@@ -254,9 +247,9 @@ Resources:
           PG_POOL_MAX: '2'
           CHAIN_ID: !Ref ChainId
           CHAIN_CONFIRMATIONS: !Ref ChainConfirmations
-          BASE_RPC_URL: !Ref BaseRpcUrl
+          RPC_URL: !Ref RpcUrl
           ESCROW_ADDRESS: !Ref EscrowAddress
-          # Omitted when blank: the API rejects an empty TOKEN_ADDRESS at startup.
+          # Omitted when blank: runtime selects the canonical ZARm address for the chain.
           TOKEN_ADDRESS: !If [HasTokenAddress, !Ref TokenAddress, !Ref AWS::NoValue]
           SMTP_SECRET_ARN: !If [HasSmtpSecret, !Ref SmtpSecretArn, !Ref AWS::NoValue]
           DEMO_MODE: !Ref DemoMode

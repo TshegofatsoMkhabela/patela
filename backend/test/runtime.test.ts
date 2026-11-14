@@ -56,3 +56,12 @@ test("Given the Celo demo, When the stack starts on Celo Sepolia with test CZAR,
 test("Given Celo Sepolia, When TOKEN_ADDRESS is missing, Then startup stops", () => {
   assert.throws(() => createRuntime({ ...base, CHAIN_ID: "11142220" }), /TOKEN_ADDRESS/);
 });
+
+test("Given the live Celo stack, When it sets RPC_URL (not BASE_RPC_URL), Then on-chain checks are on", async () => {
+  const { app, db, chain } = createRuntime({ ...base, CHAIN_ID: "11142220",
+    RPC_URL: "https://forno.celo-sepolia.celo-testnet.org",
+    ESCROW_ADDRESS: "0x1111111111111111111111111111111111111111",
+    TOKEN_ADDRESS: "0x10CCfB235b0E1Ed394bACE4560C3ed016697687e", DEMO_MODE: "true" });
+  try { assert.ok(chain, "RPC_URL enables the chain verifier"); }
+  finally { await app.close(); await db.close(); }
+});
