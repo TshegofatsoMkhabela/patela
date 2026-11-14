@@ -11,6 +11,7 @@ import {
 import type { WalletSigner } from "@/lib/embedded-wallet";
 import {
   readOrderParties,
+  roleFor,
   runGiver,
   runReceiver,
   type FlowDeps,
@@ -106,16 +107,26 @@ describe("readOrderParties", () => {
     });
   });
 
-  it("accepts snake_case backend rows and fails clearly without a driver", () => {
-    const flat = {
-      chain_order_id: "7",
-      buyer_wallet_address: buyerKey.address,
-      supplier_wallet_address: supplierKey.address,
-    };
-    expect(() => readOrderParties(flat, 1)).toThrow(/driver/i);
-    expect(
-      readOrderParties({ ...flat, driver_wallet_address: driverKey.address }, 2).receiver,
-    ).toBe(buyerKey.address);
+  // Given an order whose driver has not linked a wallet (backend sends parties.driver = null),
+  // when the pickup is read, then it fails clearly instead of signing for nobody
+  it("fails clearly without a driver wallet", () => {
+    const noDriver = { ...order, parties: { ...order.parties, driver: null } };
+    expect(() => readOrderParties(noDriver, 1)).toThrow(/driver/i);
+  });
+
+  it("fails clearly before the order is on-chain", () => {
+    expect(() => readOrderParties({ ...order, chainOrderId: null }, 1)).toThrow(/on-chain/i);
+  });
+});
+
+describe("roleFor", () => {
+  // Given a connected wallet, when the handoff page opens, then it is the stage's giver, receiver, or neither
+  it("matches the wallet to the stage's giver or receiver, ignoring case", () => {
+    expect(roleFor(order, 1, supplierKey.address)).toBe("giver");
+    expect(roleFor(order, 1, driverKey.address.toLowerCase() as Address)).toBe("receiver");
+    expect(roleFor(order, 2, driverKey.address)).toBe("giver");
+    expect(roleFor(order, 2, buyerKey.address)).toBe("receiver");
+    expect(roleFor(order, 2, supplierKey.address)).toBeNull();
   });
 });
 

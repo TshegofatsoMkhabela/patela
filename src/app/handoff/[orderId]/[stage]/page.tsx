@@ -1,6 +1,5 @@
 "use client";
 
-import QRCode from "qrcode";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -15,14 +14,9 @@ import {
 } from "@/lib/embedded-wallet";
 import { NETWORK, NETWORK_LABEL } from "@/lib/escrow-chain";
 import { contractErrorMessage, type Stage } from "@/lib/handoff";
+import { isEmail } from "@/lib/patela-api";
 import { API_ORIGIN, browserApi, browserLocate, waitForReleaseOnChain } from "../../handoff-api";
-import {
-  readOrderParties,
-  runGiver,
-  runReceiver,
-  type FlowDeps,
-  type FlowState,
-} from "../../handoff-flow";
+import { roleFor, runGiver, runReceiver, type FlowDeps, type FlowState } from "../../handoff-flow";
 
 const parseStage = (s: string): Stage | null =>
   s === "1" || s === "pickup" ? 1 : s === "2" || s === "delivery" ? 2 : null;
@@ -39,6 +33,8 @@ export default function HandoffPage() {
   const [scanned, setScanned] = useState<string | null>(null);
   const confirmRef = useRef<() => void>(() => {});
   const started = useRef(false);
+  // Bumped on retry and unmount so a superseded run stops polling and stops writing state.
+  const run = useRef(0);
 
   async function connect(kind: "extension" | "embedded") {
     try {
@@ -46,17 +42,8 @@ export default function HandoffPage() {
         kind === "extension"
           ? await connectExtensionWallet()
           : await connectEmbeddedWallet(email.trim());
-      const parties = readOrderParties(
-        await browserApi.request("GET", `/orders/${encodeURIComponent(orderId)}`),
-        stage!,
-      );
-      const me = s.address.toLowerCase();
-      const r =
-        me === parties.giver.toLowerCase()
-          ? "giver"
-          : me === parties.receiver.toLowerCase()
-            ? "receiver"
-            : null;
+      const order = await browserApi.request("GET", `/orders/${encodeURIComponent(orderId)}`);
+      const r = roleFor(order, stage!, s.address);
       if (!r) throw new Error("This wallet is not part of this handoff");
       setSigner(s);
       setRole(r);
@@ -65,17 +52,31 @@ export default function HandoffPage() {
     }
   }
 
-  const deps = (s: WalletSigner): FlowDeps => ({
-    api: browserApi,
-    apiOrigin: API_ORIGIN,
-    signer: s,
-    now: () => Date.now(),
-    sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
-    locate: browserLocate,
-    confirm: () => new Promise<void>((resolve) => (confirmRef.current = resolve)),
-    waitForRelease: waitForReleaseOnChain,
-    onState: setState,
-  });
+  const deps = (s: WalletSigner): FlowDeps => {
+    const id = ++run.current;
+    const current = () => run.current === id;
+    return {
+      api: browserApi,
+      apiOrigin: API_ORIGIN,
+      signer: s,
+      now: () => Date.now(),
+      sleep: (ms) =>
+        new Promise((resolve, reject) =>
+          setTimeout(() => (current() ? resolve() : reject(new Error("cancelled"))), ms),
+        ),
+      locate: browserLocate,
+      confirm: () => new Promise<void>((resolve) => (confirmRef.current = resolve)),
+      waitForRelease: (args) => waitForReleaseOnChain({ ...args, current }),
+      onState: (next) => current() && setState(next),
+    };
+  };
+
+  useEffect(
+    () => () => {
+      run.current++;
+    },
+    [],
+  );
 
   // Giver starts as soon as its wallet is known; receiver starts on scan.
   useEffect(() => {
@@ -90,8 +91,11 @@ export default function HandoffPage() {
   }, [signer, role, scanned, stage, orderId]);
 
   useEffect(() => {
-    if (state?.kind === "showing-qr")
-      void QRCode.toDataURL(state.qr, { width: 360, margin: 2 }).then(setQrImage);
+    if (state?.kind !== "showing-qr") return;
+    // Only the giver draws a QR, so the encoder loads on demand.
+    void import("qrcode")
+      .then((QRCode) => QRCode.toDataURL(state.qr, { width: 360, margin: 2 }))
+      .then(setQrImage);
   }, [state]);
 
   if (!stage) return <main className="p-8">Unknown handoff stage.</main>;
@@ -99,6 +103,7 @@ export default function HandoffPage() {
     return <PaidScreen seconds={state.seconds} txHash={state.txHash} stage={stage} />;
 
   const retry = () => {
+    run.current++;
     started.current = false;
     setScanned(null);
     setQrImage(null);
@@ -124,7 +129,7 @@ export default function HandoffPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-              <Button disabled={!email.includes("@")} onClick={() => connect("embedded")}>
+              <Button disabled={!isEmail(email.trim())} onClick={() => connect("embedded")}>
                 Sign in with email
               </Button>
             </div>
@@ -165,10 +170,7 @@ export default function HandoffPage() {
           </section>
         )}
 
-        {state &&
-          ["locating", "signing", "submitting", "confirming", "waiting-for-release"].includes(
-            state.kind,
-          ) && <p aria-live="polite">{STATUS[state.kind as keyof typeof STATUS]}</p>}
+        {state && STATUS[state.kind] && <p aria-live="polite">{STATUS[state.kind]}</p>}
 
         {state?.kind === "error" && (
           <section role="alert" className="space-y-2">
@@ -185,7 +187,7 @@ export default function HandoffPage() {
   );
 }
 
-const STATUS = {
+const STATUS: Partial<Record<FlowState["kind"], string>> = {
   locating: "Getting your location…",
   signing: "Confirm the signature in your wallet…",
   submitting: "Sending the release transaction…",

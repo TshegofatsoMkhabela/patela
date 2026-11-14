@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import type { Address, Hex, TypedDataDefinition } from "viem";
+import type { Address, Hex, TypedDataDefinition, WalletClient } from "viem";
 import { SiteNav } from "@/components/SiteNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ApiError, api } from "@/lib/api";
 import { connectEmbeddedWallet, type WalletSigner } from "@/lib/embedded-wallet";
-import { NETWORK_LABEL } from "@/lib/escrow-chain";
+import { NETWORK_LABEL, signWalletLink } from "@/lib/escrow-chain";
 import { contractErrorMessage } from "@/lib/handoff";
+import { isEmail, isOtpCode } from "@/lib/patela-api";
 import { browserApi } from "../handoff/handoff-api";
 import { readChainOrderId, readWallet } from "../handoff/handoff-flow";
 import { supplierStep, type SupplierStep } from "./accept-steps";
@@ -26,14 +28,7 @@ type Invitation = {
 type Step = "loading" | "sign-in" | "code" | "wallet" | "await-driver" | SupplierStep;
 
 const POLL_MS = 3000;
-// While waiting, poll until the order moves past this step.
-const WAITING: Partial<Record<Step, true>> = { "await-funding": true, "await-driver": true };
-
-const fetchOrder = (orderId: string) =>
-  browserApi.request("GET", `/orders/${encodeURIComponent(orderId)}`) as Promise<{
-    status?: string;
-    parties?: unknown;
-  }>;
+const MAX_POLL_MS = 30_000;
 
 export function AcceptView() {
   const token = useSearchParams().get("token") ?? "";
@@ -48,22 +43,28 @@ export function AcceptView() {
   const [error, setError] = useState<string | null>(null);
 
   const orderPath = (suffix = "") => `/orders/${encodeURIComponent(invite!.orderId)}${suffix}`;
-  const getOrder = () => fetchOrder(invite!.orderId);
+  const getOrder = () => api.getOrder(invite!.orderId);
 
   useEffect(() => {
     if (!token)
       return setError("This link has no invitation token. Open the link from the email again.");
     (async () => {
       try {
-        const inv = (await browserApi.request(
-          "GET",
-          `/invitations/${encodeURIComponent(token)}`,
-        )) as Invitation;
+        // Only a 401 means "signed out"; any other /me failure is shown as an error.
+        const [inv, signedIn] = await Promise.all([
+          browserApi.request(
+            "GET",
+            `/invitations/${encodeURIComponent(token)}`,
+          ) as Promise<Invitation>,
+          api.me().then(
+            () => true,
+            (err) => {
+              if (err instanceof ApiError && err.status === 401) return false;
+              throw err;
+            },
+          ),
+        ]);
         setInvite(inv);
-        const signedIn = await browserApi.request("GET", "/me").then(
-          () => true,
-          () => false,
-        );
         setStep(signedIn ? "wallet" : "sign-in");
       } catch (err) {
         setError(contractErrorMessage(err));
@@ -71,19 +72,33 @@ export function AcceptView() {
     })();
   }, [token]);
 
-  // Supplier: wait for the buyer to fund, or for the invited driver to link a wallet.
+  // Supplier: wait for the buyer to fund, or for the invited driver to link a wallet. Funding can take
+  // a while, so each poll waits for the last one, backs off, and skips while the tab is hidden.
   useEffect(() => {
-    if (!WAITING[step] || !invite) return;
-    const t = setInterval(async () => {
-      const order = await fetchOrder(invite.orderId).catch(() => null);
-      if (!order) return;
-      const next = supplierStep(order);
-      if (step === "await-driver" && next === "invite-driver") return; // driver hasn't linked yet
-      if (next === step) return;
-      setDriver(readWallet(order, "driver"));
-      setStep(next);
-    }, POLL_MS);
-    return () => clearInterval(t);
+    if ((step !== "await-funding" && step !== "await-driver") || !invite) return;
+    let delay = POLL_MS;
+    let timer: ReturnType<typeof setTimeout>;
+    let stopped = false;
+    const poll = async () => {
+      const order =
+        document.visibilityState === "hidden"
+          ? null
+          : await api.getOrder(invite.orderId).catch(() => null);
+      if (stopped) return;
+      const next = order && supplierStep(order);
+      // "invite-driver" while awaiting the driver just means the driver hasn't linked yet.
+      if (next && next !== step && !(step === "await-driver" && next === "invite-driver")) {
+        setDriver(readWallet(order, "driver"));
+        return setStep(next);
+      }
+      delay = Math.min(delay * 1.5, MAX_POLL_MS);
+      timer = setTimeout(poll, delay);
+    };
+    timer = setTimeout(poll, delay);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
   }, [step, invite]);
 
   async function run(label: string, fn: () => Promise<void>) {
@@ -100,35 +115,25 @@ export function AcceptView() {
 
   const requestCode = () =>
     run("Sending code…", async () => {
-      await browserApi.request("POST", "/auth/otp/request", { email: invite!.email });
+      await api.requestOtp(invite!.email);
       setStep("code");
     });
 
   const verifyCode = () =>
     run("Checking code…", async () => {
-      await browserApi.request("POST", "/auth/otp/verify", {
-        email: invite!.email,
-        code: code.trim(),
-      });
+      await api.verifyOtp(invite!.email, code.trim());
       setStep("wallet");
     });
 
   const createWallet = () =>
     run("Creating your wallet…", async () => {
       const s = await connectEmbeddedWallet(invite!.email);
-      const challenge = (await browserApi.request("POST", "/wallet/challenge", {
-        wallet: s.address,
-      })) as {
-        challengeId: string;
-        typedData: TypedDataDefinition & { message: Record<string, unknown> };
-      };
-      const td = challenge.typedData;
-      const message = { ...td.message, expiresAt: BigInt(td.message.expiresAt as string) };
-      const signature = await s.signTypedData({ ...td, message } as TypedDataDefinition);
-      await browserApi.request("POST", "/wallet/link", {
-        challengeId: challenge.challengeId,
-        signature,
-      });
+      const challenge = await api.walletChallenge(s.address);
+      const viaSigner = {
+        signTypedData: (td: TypedDataDefinition) => s.signTypedData(td),
+      } as Pick<WalletClient, "signTypedData">;
+      const signature = await signWalletLink(viaSigner, s.address, challenge.typedData);
+      await api.walletLink(challenge.challengeId, signature);
       await browserApi.request("POST", `/invitations/${encodeURIComponent(token)}/accept`, {
         walletAddress: s.address,
       });
@@ -211,7 +216,7 @@ export function AcceptView() {
               value={code}
               onChange={(e) => setCode(e.target.value)}
             />
-            <Button onClick={verifyCode} disabled={!!busy || code.trim().length !== 6}>
+            <Button onClick={verifyCode} disabled={!!busy || !isOtpCode(code.trim())}>
               Sign in
             </Button>
           </div>
@@ -242,7 +247,7 @@ export function AcceptView() {
               value={driverEmail}
               onChange={(e) => setDriverEmail(e.target.value)}
             />
-            <Button onClick={inviteDriver} disabled={!!busy || !driverEmail.includes("@")}>
+            <Button onClick={inviteDriver} disabled={!!busy || !isEmail(driverEmail.trim())}>
               Invite driver
             </Button>
           </div>

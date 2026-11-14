@@ -5,6 +5,7 @@ import { celoSepolia } from "viem/chains";
 import { escrowAbi } from "@/lib/contracts";
 import { buildHandoffTypedData } from "@/lib/handoff";
 import {
+  assertSigningChain,
   embeddedWalletOptions,
   signerFromProvider,
   type Eip1193Provider,
@@ -102,6 +103,18 @@ describe("embeddedWalletOptions", () => {
 
   it("refuses to start without a client ID", () => {
     expect(() => embeddedWalletOptions({}, celoSepolia)).toThrow(/NEXT_PUBLIC_WEB3AUTH_CLIENT_ID/);
+  });
+});
+
+describe("assertSigningChain", () => {
+  // Given the wallet network and the EIP-712 domain chain disagree (NEXT_PUBLIC_CHAIN_ID unset),
+  // when a wallet connects, then it stops with the fix instead of producing signatures the escrow rejects
+  it("refuses when the handoff domain's chain ID is not the wallet's network", () => {
+    expect(() => assertSigningChain(84532, celoSepolia)).toThrow(/NEXT_PUBLIC_CHAIN_ID=11142220/);
+  });
+
+  it("passes when they match", () => {
+    expect(() => assertSigningChain(celoSepolia.id, celoSepolia)).not.toThrow();
   });
 });
 

@@ -9,8 +9,8 @@ import {
   type TypedData,
   type TypedDataDefinition,
 } from "viem";
-import { ESCROW_ADDRESS, escrowAbi } from "@/lib/contracts";
-import { NETWORK, createReadClient, ensureChain } from "@/lib/escrow-chain";
+import { CHAIN_ID, ESCROW_ADDRESS, escrowAbi } from "@/lib/contracts";
+import { NETWORK, createReadClient, ensureChain, injectedProvider } from "@/lib/escrow-chain";
 
 // Wallets that sign handoffs and send escrow calls, on the app's network (NETWORK in escrow-chain.ts).
 // - Supplier and driver: MetaMask Embedded Wallets (Web3Auth v11), email passwordless login, EIP-7702
@@ -137,11 +137,26 @@ export async function signerFromProvider(
   };
 }
 
+/**
+ * The handoff EIP-712 domain (contracts.ts CHAIN_ID) must name the chain the wallet is on, or the
+ * escrow rejects every signature. They come from separate defaults, so check before connecting.
+ */
+export function assertSigningChain(domainChainId: number = CHAIN_ID, chain: Chain = NETWORK.chain) {
+  if (domainChainId !== chain.id) {
+    throw new Error(
+      `Handoff signatures would be for chain ${domainChainId} but the wallet is on ${chain.name}. ` +
+        `Set NEXT_PUBLIC_CHAIN_ID=${chain.id}.`,
+    );
+  }
+}
+
 /** Buyer's MetaMask extension. */
 export async function connectExtensionWallet(): Promise<WalletSigner> {
-  const ethereum = (globalThis as { ethereum?: Eip1193Provider }).ethereum;
-  if (!ethereum) throw new Error("MetaMask extension not found in this browser");
-  return signerFromProvider(ethereum, "extension");
+  assertSigningChain();
+  const ethereum = injectedProvider();
+  if (!ethereum)
+    throw new Error("MetaMask not found. Install the MetaMask extension in Chrome and reload.");
+  return signerFromProvider(ethereum as Eip1193Provider, "extension");
 }
 
 type Web3AuthInstance = InstanceType<typeof import("@web3auth/modal").Web3Auth>;
@@ -162,6 +177,7 @@ function loadWeb3Auth() {
  * session only when it belongs to the same email.
  */
 export async function connectEmbeddedWallet(email: string): Promise<WalletSigner> {
+  assertSigningChain();
   const { WALLET_CONNECTORS, AUTH_CONNECTION } = await import("@web3auth/modal");
   const instance = await loadWeb3Auth();
 
@@ -178,9 +194,4 @@ export async function connectEmbeddedWallet(email: string): Promise<WalletSigner
   const provider = connection?.ethereumProvider;
   if (!provider) throw new Error("Embedded wallet sign-in did not complete");
   return signerFromProvider(provider as Eip1193Provider, "embedded");
-}
-
-export async function disconnectEmbeddedWallet() {
-  const instance = await web3auth;
-  if (instance?.connected) await instance.logout();
 }

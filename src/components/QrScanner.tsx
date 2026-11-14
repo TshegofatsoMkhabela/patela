@@ -2,6 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 
+const DECODE_EVERY_MS = 100; // ~10 decodes a second is plenty for a hand-held QR
+const MAX_DECODE_WIDTH = 640;
+
 /**
  * Webcam QR reader. Desktop Chrome on Windows has no BarcodeDetector, so frames are decoded with
  * the bundled jsQR. Calls onScan once with the first decoded text.
@@ -30,13 +33,21 @@ export function QrScanner({ onScan }: { onScan: (text: string) => void }) {
         if (!video || stopped) return;
         video.srcObject = stream;
         await video.play();
-        const tick = () => {
+        let last = 0;
+        const tick = (now = 0) => {
           if (stopped) return;
-          if (ctx && video.readyState >= video.HAVE_ENOUGH_DATA) {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0);
-            const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          if (ctx && now - last >= DECODE_EVERY_MS && video.readyState >= video.HAVE_ENOUGH_DATA) {
+            last = now;
+            // Decode a downscaled frame; resizing the canvas only when the camera size changes.
+            const scale = Math.min(1, MAX_DECODE_WIDTH / video.videoWidth);
+            const w = Math.round(video.videoWidth * scale);
+            const h = Math.round(video.videoHeight * scale);
+            if (canvas.width !== w || canvas.height !== h) {
+              canvas.width = w;
+              canvas.height = h;
+            }
+            ctx.drawImage(video, 0, 0, w, h);
+            const img = ctx.getImageData(0, 0, w, h);
             const code = jsQR(img.data, img.width, img.height, { inversionAttempts: "dontInvert" });
             if (code?.data) {
               stopped = true;
