@@ -1,8 +1,8 @@
 import { formatUnits } from "viem";
 
 /**
- * Branded HTML bodies for Patela emails, styled after the landing page: deep navy, cream
- * condensed capitals, a red accent. Email clients ignore <style> blocks and web fonts unevenly,
+ * Branded HTML bodies for Patela emails, styled after the landing page: deep navy and white
+ * condensed capitals. Email clients ignore <style> blocks and web fonts unevenly,
  * so everything is inline, laid out with tables, and the display face falls back to Impact.
  */
 
@@ -22,8 +22,9 @@ export type InvoiceDetails = {
 };
 
 const NAVY = "#01172d";
-const CREAM = "#f2fcf1";
-const RED = "#f73d2d";
+const WHITE = "#ffffff";
+/** A pale navy tint for the page and boxes, so the palette stays navy and white. */
+const TINT = "#eef2f7";
 const SUB = "#5b6575";
 const LINE = "#dfe5ec";
 const DISPLAY = "'Mona Sans','Arial Narrow',Impact,sans-serif";
@@ -53,14 +54,14 @@ function shell(preheader: string, headline: string, body: string): string {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light"><title>Patela</title></head>
-<body style="margin:0;padding:0;background:${CREAM};">
+<body style="margin:0;padding:0;background:${TINT};">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(preheader)}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${CREAM};">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${TINT};">
 <tr><td align="center" style="padding:24px 12px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:18px;overflow:hidden;">
 <tr><td style="background:${NAVY};padding:28px 32px 36px;">
-  <div style="font-family:${DISPLAY};font-weight:800;font-size:22px;letter-spacing:1px;color:${CREAM};"><span style="font-style:italic;">//</span> PATELA<span style="color:${RED};">.</span></div>
-  <h1 style="margin:28px 0 0;font-family:${DISPLAY};font-weight:800;font-size:40px;line-height:1;letter-spacing:-0.5px;text-transform:uppercase;color:${CREAM};">${headline}</h1>
+  <div style="font-family:${DISPLAY};font-weight:800;font-size:22px;letter-spacing:1px;color:${WHITE};"><span style="font-style:italic;">//</span> PATELA.</div>
+  <h1 style="margin:28px 0 0;font-family:${DISPLAY};font-weight:800;font-size:40px;line-height:1;letter-spacing:-0.5px;text-transform:uppercase;color:${WHITE};">${headline}</h1>
 </td></tr>
 <tr><td style="padding:32px;font-family:${BODY};font-size:15px;line-height:1.55;color:${NAVY};">
 ${body}
@@ -80,19 +81,18 @@ export function loginCodeHtml(code: string): string {
     `Your Patela sign-in code is ${code}`,
     "Your sign-in<br>code.",
     `<p style="margin:0 0 20px;">Enter this code on Patela to finish signing in.</p>
-<div style="background:${CREAM};border-radius:14px;padding:22px;text-align:center;">
+<div style="background:${TINT};border-radius:14px;padding:22px;text-align:center;">
   <div style="font-family:${MONO};font-size:38px;font-weight:700;letter-spacing:10px;color:${NAVY};">${digits}</div>
 </div>
 <p style="margin:20px 0 0;color:${SUB};font-size:13px;">It expires in 10 minutes and works once. Patela will never ask you for this code by phone or chat.</p>`,
   );
 }
 
-function row(label: string, value: string, opts: { strong?: boolean; accent?: boolean } = {}) {
+function row(label: string, value: string, opts: { strong?: boolean } = {}) {
   const weight = opts.strong ? "700" : "400";
-  const color = opts.accent ? RED : NAVY;
   return `<tr>
-  <td style="padding:10px 0;border-bottom:1px solid ${LINE};font-weight:${weight};color:${color};">${label}</td>
-  <td align="right" style="padding:10px 0;border-bottom:1px solid ${LINE};font-weight:${weight};color:${color};white-space:nowrap;">${value}</td>
+  <td style="padding:10px 0;border-bottom:1px solid ${LINE};font-weight:${weight};color:${NAVY};">${label}</td>
+  <td align="right" style="padding:10px 0;border-bottom:1px solid ${LINE};font-weight:${weight};color:${NAVY};white-space:nowrap;">${value}</td>
 </tr>`;
 }
 
@@ -111,13 +111,13 @@ export function orderInviteHtml(options: {
   const href = escapeHtml(options.acceptUrl);
   const button = `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;"><tr>
 <td style="background:${NAVY};border-radius:999px;">
-  <a href="${href}" style="display:inline-block;padding:15px 30px;font-family:${DISPLAY};font-weight:800;font-size:16px;letter-spacing:1px;text-transform:uppercase;color:${CREAM};text-decoration:none;">Review &amp; accept</a>
+  <a href="${href}" style="display:inline-block;padding:15px 30px;font-family:${DISPLAY};font-weight:800;font-size:16px;letter-spacing:1px;text-transform:uppercase;color:${WHITE};text-decoration:none;">Review &amp; accept</a>
 </td></tr></table>
 <p style="margin:0;color:${SUB};font-size:12px;">The link works once. Accepting asks you to sign with your wallet.</p>`;
 
   const agreement = options.agreementText
     ? `<h2 style="margin:28px 0 8px;font-family:${DISPLAY};font-weight:800;font-size:18px;text-transform:uppercase;">Agreement</h2>
-<div style="background:${CREAM};border-radius:12px;padding:14px 16px;white-space:pre-wrap;">${escapeHtml(options.agreementText)}</div>`
+<div style="background:${TINT};border-radius:12px;padding:14px 16px;white-space:pre-wrap;">${escapeHtml(options.agreementText)}</div>`
     : "";
 
   let invoiceBlock = "";
@@ -138,7 +138,7 @@ ${row("Driver &middot; paid at pickup", zar(invoice.driverAtPickupWei))}
 ${row("Supplier &middot; paid at pickup", zar(invoice.supplierAtPickupWei))}
 ${row("Supplier &middot; paid at delivery", zar(invoice.supplierAtDeliveryWei))}
 ${row("Total held in escrow", zar(invoice.totalWei), { strong: true })}
-${row("Your payout", zar(payout), { strong: true, accent: true })}
+${row("Your payout", zar(payout), { strong: true })}
 </table>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px;">
 ${detail("Network", escapeHtml(networkName(invoice.chainId)))}
@@ -161,6 +161,6 @@ ${detail("Refund if undelivered", escapeHtml(deadline))}
 ${invoiceBlock}
 ${agreement}
 ${button}
-<p style="margin:24px 0 0;padding:12px 14px;border-left:3px solid ${RED};background:#fff6f5;font-size:12px;color:${NAVY};">Before signing, check your wallet shows the same network, ZARm amount and escrow contract as this email.</p>`,
+<p style="margin:24px 0 0;padding:12px 14px;border-left:3px solid ${NAVY};background:${TINT};font-size:12px;color:${NAVY};">Before signing, check your wallet shows the same network, ZARm amount and escrow contract as this email.</p>`,
   );
 }
