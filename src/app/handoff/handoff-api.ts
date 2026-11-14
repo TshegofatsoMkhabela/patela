@@ -1,12 +1,13 @@
-import { createPublicClient, http, parseAbiItem, type Hex } from "viem";
-import { baseSepolia } from "viem/chains";
+import { parseAbiItem, type Hex } from "viem";
+import { apiOrigin } from "@/lib/api";
 import { ESCROW_ADDRESS } from "@/lib/contracts";
+import { createReadClient } from "@/lib/escrow-chain";
 import type { Api, Fix } from "./handoff-flow";
 
-// Browser adapters for the handoff and accept pages. A small local fetch helper until the shared
-// src/lib/api.ts (owned by the web core branch) is merged.
+// Browser adapters for the handoff and accept pages. src/lib/api.ts covers only the buyer's routes and
+// keeps its request() private, so the handoff routes use this small fetch helper on the same origin.
 
-export const API_ORIGIN = (process.env.NEXT_PUBLIC_API_ORIGIN ?? "").replace(/\/$/, "");
+export const API_ORIGIN = apiOrigin();
 
 export const browserApi: Api = {
   async request(method, path, body) {
@@ -43,11 +44,22 @@ const handoffVerified = parseAbiItem(
 );
 
 /** Polls the escrow's HandoffVerified events for this order and stage (receiver side). */
-export async function waitForReleaseOnChain({ chainOrderId, stage }: { chainOrderId: bigint; stage: number }) {
-  const client = createPublicClient({ chain: baseSepolia, transport: http(process.env.NEXT_PUBLIC_RPC_URL || undefined) });
+export async function waitForReleaseOnChain({
+  chainOrderId,
+  stage,
+}: {
+  chainOrderId: bigint;
+  stage: number;
+}) {
+  const client = createReadClient();
   const fromBlock = (await client.getBlockNumber()) - 50n;
   for (;;) {
-    const logs = await client.getLogs({ address: ESCROW_ADDRESS, event: handoffVerified, args: { orderId: chainOrderId }, fromBlock });
+    const logs = await client.getLogs({
+      address: ESCROW_ADDRESS,
+      event: handoffVerified,
+      args: { orderId: chainOrderId },
+      fromBlock,
+    });
     const hit = logs.find((log) => Number(log.args.stage) === stage);
     if (hit?.transactionHash) return { txHash: hit.transactionHash as Hex };
     await new Promise((r) => setTimeout(r, 1500));

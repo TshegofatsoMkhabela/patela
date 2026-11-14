@@ -1,27 +1,27 @@
 import {
-  createPublicClient,
   createWalletClient,
   custom,
-  http,
   recoverTypedDataAddress,
+  toHex,
   type Address,
+  type Chain,
   type Hex,
   type TypedData,
   type TypedDataDefinition,
 } from "viem";
-import { baseSepolia } from "viem/chains";
 import { ESCROW_ADDRESS, escrowAbi } from "@/lib/contracts";
+import { NETWORK, createReadClient, ensureChain } from "@/lib/escrow-chain";
 
-// Wallets that sign handoffs and send escrow calls.
+// Wallets that sign handoffs and send escrow calls, on the app's network (NETWORK in escrow-chain.ts).
 // - Supplier and driver: MetaMask Embedded Wallets (Web3Auth v11), email passwordless login, EIP-7702
 //   MetaMask smart account. The address stays the user's EOA, typed-data signatures are plain ECDSA
 //   (so backend /wallet/link and the contract's SignatureChecker both accept them before any deploy),
 //   and transactions go through the bundler + paymaster configured for the project in the dashboard.
 // - Buyer: the MetaMask extension (window.ethereum), signing only.
 
-export const BASE_SEPOLIA_HEX = "0x14a34";
-
-export type Eip1193Provider = { request(args: { method: string; params?: unknown }): Promise<unknown> };
+export type Eip1193Provider = {
+  request(args: { method: string; params?: unknown }): Promise<unknown>;
+};
 
 export type EscrowWrite =
   | { functionName: "acceptOrder"; args: readonly [bigint, Hex] }
@@ -33,7 +33,10 @@ export type WalletKind = "embedded" | "extension";
 export type WalletSigner = {
   kind: WalletKind;
   address: Address;
-  signTypedData<const T extends TypedData | Record<string, unknown>, P extends keyof T | "EIP712Domain">(
+  signTypedData<
+    const T extends TypedData | Record<string, unknown>,
+    P extends keyof T | "EIP712Domain",
+  >(
     td: TypedDataDefinition<T, P>,
   ): Promise<Hex>;
   /** Sends an escrow call (sponsored for the embedded wallet) and returns the transaction hash. */
@@ -54,47 +57,48 @@ const publicEnv = (): Env => ({
   NEXT_PUBLIC_RPC_URL: process.env.NEXT_PUBLIC_RPC_URL,
 });
 
-export function embeddedWalletOptions(env: Env = publicEnv()) {
+export function embeddedWalletOptions(env: Env = publicEnv(), chain: Chain = NETWORK.chain) {
   const clientId = env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID;
   if (!clientId) throw new Error("NEXT_PUBLIC_WEB3AUTH_CLIENT_ID is not set");
+  const chainId = toHex(chain.id);
   return {
     clientId,
     web3AuthNetwork: "sapphire_devnet" as const,
-    defaultChainId: BASE_SEPOLIA_HEX,
-    // Base Sepolia is pre-configured in the dashboard; an explicit RPC only overrides it.
-    chains: env.NEXT_PUBLIC_RPC_URL
-      ? [
-          {
-            chainNamespace: "eip155" as const,
-            chainId: BASE_SEPOLIA_HEX,
-            rpcTarget: env.NEXT_PUBLIC_RPC_URL,
-            displayName: "Base Sepolia",
-            blockExplorerUrl: "https://sepolia.basescan.org",
-            ticker: "ETH",
-            tickerName: "Ethereum",
-            logo: "https://images.toruswallet.io/eth.svg",
-          },
-        ]
-      : undefined,
+    defaultChainId: chainId,
+    // Described in full: the dashboard pre-configures only some chains (Celo Sepolia may not be one).
+    chains: [
+      {
+        chainNamespace: "eip155" as const,
+        chainId,
+        rpcTarget: env.NEXT_PUBLIC_RPC_URL || chain.rpcUrls.default.http[0],
+        displayName: chain.name,
+        blockExplorerUrl: chain.blockExplorers?.default.url ?? "",
+        ticker: chain.nativeCurrency.symbol,
+        tickerName: chain.nativeCurrency.name,
+        logo: "https://images.toruswallet.io/eth.svg",
+      },
+    ],
     // Bundler and paymaster URLs come from the dashboard (Smart accounts > Bundler & Paymaster),
     // deep-merged with this by the SDK.
-    accountAbstractionConfig: { smartAccountType: "metamask" as const, smartAccountEipStandard: "7702" as const },
+    accountAbstractionConfig: {
+      smartAccountType: "metamask" as const,
+      smartAccountEipStandard: "7702" as const,
+    },
   };
 }
-
-const defaultPublicClient = (): ReceiptClient =>
-  createPublicClient({ chain: baseSepolia, transport: http(process.env.NEXT_PUBLIC_RPC_URL || undefined) });
 
 export async function signerFromProvider(
   provider: Eip1193Provider,
   kind: WalletKind,
-  opts: { escrow?: Address; publicClient?: ReceiptClient } = {},
+  opts: { escrow?: Address; chain?: Chain; publicClient?: ReceiptClient } = {},
 ): Promise<WalletSigner> {
   const escrow = opts.escrow ?? ESCROW_ADDRESS;
-  if (kind === "extension") await ensureBaseSepolia(provider);
+  const chain = opts.chain ?? NETWORK.chain;
+  if (kind === "extension") await ensureChain(provider as Parameters<typeof ensureChain>[0], chain);
 
-  const wallet = createWalletClient({ chain: baseSepolia, transport: custom(provider) });
-  const [address] = kind === "extension" ? await wallet.requestAddresses() : await wallet.getAddresses();
+  const wallet = createWalletClient({ chain, transport: custom(provider) });
+  const [address] =
+    kind === "extension" ? await wallet.requestAddresses() : await wallet.getAddresses();
   if (!address) throw new Error("The wallet returned no account");
   let receipts = opts.publicClient;
 
@@ -102,7 +106,10 @@ export async function signerFromProvider(
     kind,
     address,
     async signTypedData(td) {
-      const signature = await wallet.signTypedData({ account: address, ...(td as TypedDataDefinition) });
+      const signature = await wallet.signTypedData({
+        account: address,
+        ...(td as TypedDataDefinition),
+      });
       const signer = await recoverTypedDataAddress({ ...(td as TypedDataDefinition), signature });
       if (signer.toLowerCase() !== address.toLowerCase()) {
         throw new Error(
@@ -114,20 +121,20 @@ export async function signerFromProvider(
     },
     writeEscrow(call) {
       // value is explicit: the SDK's smart-account path calls BigInt(value) on it.
-      return wallet.writeContract({ account: address, address: escrow, abi: escrowAbi, value: 0n, ...call } as never);
+      return wallet.writeContract({
+        account: address,
+        address: escrow,
+        abi: escrowAbi,
+        value: 0n,
+        ...call,
+      } as never);
     },
     async waitForReceipt(hash) {
-      receipts ??= defaultPublicClient();
+      receipts ??= createReadClient();
       const receipt = await receipts.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success") throw new Error(`Transaction ${hash} reverted`);
     },
   };
-}
-
-async function ensureBaseSepolia(provider: Eip1193Provider) {
-  const current = String(await provider.request({ method: "eth_chainId" })).toLowerCase();
-  if (current === BASE_SEPOLIA_HEX) return;
-  await provider.request({ method: "wallet_switchEthereumChain", params: [{ chainId: BASE_SEPOLIA_HEX }] });
 }
 
 /** Buyer's MetaMask extension. */
