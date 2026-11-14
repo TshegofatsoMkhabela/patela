@@ -41,16 +41,20 @@ export function TrackerView({
   }, [open, scanState]);
 
   function scan(text: string) {
-    if (!isApprovedTrackerQr(text, window.location.origin)) {
-      setScanState("blocked");
+    if (isApprovedTrackerQr(text, window.location.origin)) {
+      approveHandoff();
       return;
     }
     setScanState("liveness");
   }
 
-  function completeLiveness() {
+  function approveHandoff() {
     setScanState("approved");
     window.postMessage({ type: "patela:handoff-result", accepted: true }, window.location.origin);
+  }
+
+  function completeLiveness() {
+    setScanState("blocked");
   }
 
   function retry() {
@@ -97,7 +101,15 @@ export function TrackerView({
               </>
             ) : null}
 
-            {scanState === "liveness" ? <LivenessCheck onComplete={completeLiveness} /> : null}
+            {scanState === "liveness" ? (
+              <>
+                <p>
+                  This QR code is not approved. Complete the face check before contacting your field
+                  supervisor.
+                </p>
+                <LivenessCheck onComplete={completeLiveness} />
+              </>
+            ) : null}
 
             {scanState === "blocked" ? (
               <div className="tracker-scan-result tracker-scan-result--blocked" role="alert">

@@ -493,6 +493,9 @@
 .bd-btn:hover {
   background: #eaf3f4;
 }
+.bd-page a.bd-btn {
+  color: #061d35;
+}
 .bd-btn:active {
   transform: scale(0.98);
 }
