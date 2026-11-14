@@ -1021,23 +1021,22 @@ function createUI(stops, model, routeKm) {
     const i = s.leg + 1;
     showCard({
       kind: "verify",
-      eyebrowText: `${CAM.handoffPromptMeters} m to checkpoint ${i} of ${stops.length - 2}`,
+      eyebrowText: `${CAM.handoffPromptMeters} m to stop ${i} of ${stops.length - 1}`,
       titleText: stops[i].name,
-      bodyText:
-        "Verify the handoff now. The truck continues to the checkpoint before the next leg.",
+      bodyText: "Verify the handoff now to continue to the next stop.",
       actionText: "Verify handoff",
     });
   };
 
   ui.setPhase = (phase, s) => {
     root.dataset.phase = phase;
-    const n = stops.length - 2;
+    const n = stops.length - 1;
     if (phase === "ready") {
       showCard({
         kind: "start",
         eyebrowText: `Shipment PT-0412 · N1 · ${routeKm} km`,
         titleText: "Cape Town → Beaufort West",
-        bodyText: `${n} custody checkpoint${n === 1 ? "" : "s"}. In each city the truck rolls on slowly until the handoff is verified.`,
+        bodyText: `${n} stops after Cape Town: Worcester and Beaufort West. Verify the handoff at each stop to continue.`,
         actionText: "Start journey",
       });
     } else if (phase === "city") {
@@ -1045,17 +1044,17 @@ function createUI(stops, model, routeKm) {
       const end = i === stops.length - 1;
       showCard({
         kind: "verify",
-        eyebrowText: end ? "Destination reached" : `Checkpoint ${i} of ${n}`,
+        eyebrowText: end ? `Stop ${i} of ${n} · Destination reached` : `Stop ${i} of ${n}`,
         titleText: stops[i].name,
         bodyText: end
           ? "Confirm the load arrived intact to close the shipment."
-          : "Truck is rolling through. Verify the custody handoff to release the next leg.",
+          : "Truck is rolling through. Verify the custody handoff to continue to the next stop.",
         actionText: end ? "Confirm delivery" : "Verify handoff",
       });
     } else if (phase === "done") {
       showCard({
         kind: "replay",
-        eyebrowText: "Delivered · all checkpoints verified",
+        eyebrowText: `Delivered · all ${n} stops verified`,
         titleText: "Cape Town → Beaufort West",
         bodyText: `${routeKm} km on the N1. Every handoff on this route was confirmed.`,
         actionText: "Replay",
