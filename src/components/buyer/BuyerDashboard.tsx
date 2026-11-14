@@ -16,6 +16,11 @@ export default function BuyerDashboard() {
   const { shipments, activity } = useMemo(() => buyerView(PAGE_LOADED_AT, completed), [completed]);
   const [now, setNow] = useState(() => Date.now());
   const [picked, setPicked] = useState<string | null>(null);
+  const [trackerFulfilled] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("trackerFulfilled") === "PT-0412",
+  );
 
   // Labels ("Today", "12 min ago", progress) refresh twice a minute; the map animates on its own.
   useEffect(() => {
@@ -31,6 +36,34 @@ export default function BuyerDashboard() {
     actions.completeShipmentAction(id);
     // Keep it in focus so the buyer sees the confirmation (a delivered shipment would otherwise drop out).
     setPicked(id);
+  }
+
+  if (trackerFulfilled) {
+    return (
+      <>
+        <header className="bd-header">
+          <div className="bd-stack-8">
+            <span className="bd-label">Shipment PT-0412 · Demo delivery complete</span>
+            <h1 className="bd-h1">Order fulfilled</h1>
+          </div>
+        </header>
+        <section className="bd-fulfillment" role="status" aria-live="polite">
+          <span className="bd-label">Final delivery verified</span>
+          <h2>Blockchain has released funds</h2>
+          <p>Cape Town → Worcester → Beaufort West</p>
+          <div className="bd-fulfillment-details">
+            <span>2 of 2 stops verified</span>
+            <span>Shipment PT-0412 fulfilled</span>
+          </div>
+          <p className="bd-fulfillment-note">
+            Demo confirmation. This simulated tracker does not submit an on-chain transfer.
+          </p>
+          <a className="bd-btn" href="/tracker">
+            Replay route
+          </a>
+        </section>
+      </>
+    );
   }
 
   return (

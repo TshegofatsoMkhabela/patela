@@ -499,6 +499,41 @@
 .bd-btn:active {
   transform: scale(0.98);
 }
+.bd-fulfillment {
+  margin: 0 24px 24px;
+  max-width: 760px;
+  padding: 20px 24px;
+  border: 1px solid #3b7656;
+  border-radius: 16px;
+  background: #0f3b2e;
+  color: #f2fcf1;
+}
+.bd-fulfillment h2 {
+  margin: 5px 0;
+  font-size: 24px;
+  line-height: 1.2;
+}
+.bd-fulfillment p {
+  margin: 0;
+  color: #d5e0e6;
+}
+.bd-fulfillment-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 20px 0;
+}
+.bd-fulfillment-details span {
+  padding: 7px 12px;
+  border: 1px solid #3b7656;
+  border-radius: 999px;
+  color: #c8f3d7;
+  font-weight: 600;
+}
+.bd-fulfillment .bd-fulfillment-note {
+  margin-bottom: 20px;
+  font-size: 12px;
+}
 .bd-done {
   margin-top: auto;
   display: flex;

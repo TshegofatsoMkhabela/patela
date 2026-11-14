@@ -33,6 +33,14 @@ export function TrackerView({
   }, []);
 
   useEffect(() => {
+    const onJourneyComplete = () => {
+      window.location.assign("/buyer?trackerFulfilled=PT-0412");
+    };
+    window.addEventListener("patela:journey-complete", onJourneyComplete);
+    return () => window.removeEventListener("patela:journey-complete", onJourneyComplete);
+  }, []);
+
+  useEffect(() => {
     if (!open || scanState !== "loading") return;
     const timer = window.setTimeout(() => setScanState("scanning"), 500);
     return () => window.clearTimeout(timer);

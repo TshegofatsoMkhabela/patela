@@ -695,7 +695,10 @@ export async function renderToDOM(container) {
           cam,
           outroCamera(s.from, { ...overviewCamera(container, line), heading: 0, tilt: 0 }, t),
         );
-        if (t >= 1) setPhase("done");
+        if (t >= 1) {
+          setPhase("done");
+          window.dispatchEvent(new Event("patela:journey-complete"));
+        }
         break;
       }
       default:
