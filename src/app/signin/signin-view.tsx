@@ -10,7 +10,6 @@ import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { useBackendTask } from "@/hooks/use-backend-task";
 import { isEmail, isOtpCode, patelaApi, saveAuthUser, toAuthUser } from "@/lib/patela-api";
 import "@/styles/journey-auth.css";
-import { nextPath } from "./email-code-form";
 
 type Method = "code" | "password";
 
@@ -50,6 +49,13 @@ function MetaMaskMark() {
   );
 }
 
+/** Post-sign-in destination: a same-site `?next=` path (e.g. /orders/new), else the dashboard. */
+function nextPath(): string {
+  const next =
+    typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("next");
+  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/buyer";
+}
+
 export function SignInView() {
   const router = useRouter();
   const [method, setMethod] = useState<Method>("code");
@@ -70,7 +76,7 @@ export function SignInView() {
       return;
     }
     toast.success(message);
-    router.push(nextPath("/buyer"));
+    router.push(nextPath());
   }
 
   // Demo only: the backend has no password sign-in.
@@ -113,15 +119,9 @@ export function SignInView() {
     }
     if (!codeSent) {
       runBackend(async () => {
-        const sent = await patelaApi.requestOtp(address);
+        await patelaApi.requestOtp(address);
         setCodeSent(true);
-        if (sent?.code) {
-          // Local demo: the backend returns the code instead of emailing it.
-          setCode(sent.code);
-          toast.info(`Demo inbox: your code is ${sent.code} (filled in).`);
-        } else {
-          toast.info("Code requested. Enter the 6-digit code to continue.");
-        }
+        toast.info("Code requested. Enter the 6-digit code to continue.");
       });
       return;
     }

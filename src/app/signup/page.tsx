@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { BuyerOnboardingView } from "./buyer-onboarding-view";
+import { CountryOnboardingView } from "./country-onboarding-view";
 
 export const metadata: Metadata = {
   title: "Buyer onboarding — Patella",
@@ -15,5 +15,5 @@ export const metadata: Metadata = {
 };
 
 export default function SignUpPage() {
-  return <BuyerOnboardingView />;
+  return <CountryOnboardingView />;
 }

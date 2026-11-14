@@ -19,12 +19,12 @@ describe("demo-path links", () => {
   });
 
   it("sends a signed-in user to the live buyer dashboard by default", () => {
-    expect(read("app/signin/signin-view.tsx")).toMatch(/nextPath\("\/buyer"\)/);
+    expect(read("app/signin/signin-view.tsx")).toMatch(/:\s*"\/buyer"/);
   });
 
   it("sends a new client account to the live buyer dashboard", () => {
-    expect(read("app/signup/page.tsx")).toContain("BuyerOnboardingView");
-    const onboarding = read("app/signup/buyer-onboarding-view.tsx");
+    expect(read("app/signup/page.tsx")).toContain("CountryOnboardingView");
+    const onboarding = read("app/signup/country-onboarding-view.tsx");
     expect(onboarding).not.toMatch(/\/html\/client-dashboard\.html/);
     expect(onboarding).toMatch(/router\.push\("\/buyer"\)/);
   });

@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { decodeFunctionData, type Address, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
+import { celoSepolia } from "viem/chains";
 import { escrowAbi } from "@/lib/contracts";
 import { buildHandoffTypedData } from "@/lib/handoff";
 import {
-  BASE_SEPOLIA_HEX,
+  assertSigningChain,
   embeddedWalletOptions,
   signerFromProvider,
   type Eip1193Provider,
@@ -13,6 +14,7 @@ import {
 const ESCROW = "0x00000000000000000000000000000000000000e5" as Address;
 const owner = privateKeyToAccount(`0x${"33".repeat(32)}`);
 const stranger = privateKeyToAccount(`0x${"44".repeat(32)}`);
+const CELO_SEPOLIA_HEX = "0xaa044c"; // 11142220, the app's default network on dev
 
 type Call = { method: string; params?: unknown };
 
@@ -21,7 +23,7 @@ function fakeProvider(
   opts: { signWith?: typeof owner; chainId?: string; accounts?: Address[] } = {},
 ) {
   const calls: Call[] = [];
-  let chainId = opts.chainId ?? BASE_SEPOLIA_HEX;
+  let chainId = opts.chainId ?? CELO_SEPOLIA_HEX;
   const provider: Eip1193Provider = {
     async request({ method, params }: { method: string; params?: unknown }) {
       calls.push({ method, params });
@@ -65,31 +67,54 @@ const typedData = (receiver: Address) =>
 describe("embeddedWalletOptions", () => {
   // Given the client ID env var, when options are built, then they use it, Sapphire Devnet and an EIP-7702 MetaMask account
   it("reads the client ID from the environment and asks for an EIP-7702 MetaMask smart account", () => {
-    const opts = embeddedWalletOptions({ NEXT_PUBLIC_WEB3AUTH_CLIENT_ID: "client-123" });
+    const opts = embeddedWalletOptions(
+      { NEXT_PUBLIC_WEB3AUTH_CLIENT_ID: "client-123" },
+      celoSepolia,
+    );
     expect(opts.clientId).toBe("client-123");
     expect(opts.web3AuthNetwork).toBe("sapphire_devnet");
-    expect(opts.defaultChainId).toBe("0x14a34");
     expect(opts.accountAbstractionConfig).toEqual({
       smartAccountType: "metamask",
       smartAccountEipStandard: "7702",
     });
   });
 
-  it("adds a Base Sepolia chain entry only when an RPC URL is configured", () => {
-    expect(embeddedWalletOptions({ NEXT_PUBLIC_WEB3AUTH_CLIENT_ID: "c" }).chains).toBeUndefined();
-    const chains = embeddedWalletOptions({
-      NEXT_PUBLIC_WEB3AUTH_CLIENT_ID: "c",
-      NEXT_PUBLIC_RPC_URL: "https://rpc.test",
-    }).chains;
-    expect(chains?.[0]).toMatchObject({
-      chainId: "0x14a34",
-      rpcTarget: "https://rpc.test",
+  // Given the app runs on Celo Sepolia, when options are built, then the embedded wallet starts on that
+  // chain with a full chain entry (the dashboard only pre-configures some chains)
+  it("uses the app's network as the default chain and always describes it", () => {
+    const opts = embeddedWalletOptions({ NEXT_PUBLIC_WEB3AUTH_CLIENT_ID: "c" }, celoSepolia);
+    expect(opts.defaultChainId).toBe(CELO_SEPOLIA_HEX);
+    expect(opts.chains[0]).toMatchObject({
       chainNamespace: "eip155",
+      chainId: CELO_SEPOLIA_HEX,
+      rpcTarget: celoSepolia.rpcUrls.default.http[0],
+      displayName: celoSepolia.name,
+      ticker: celoSepolia.nativeCurrency.symbol,
     });
   });
 
+  it("prefers the configured RPC URL", () => {
+    const opts = embeddedWalletOptions(
+      { NEXT_PUBLIC_WEB3AUTH_CLIENT_ID: "c", NEXT_PUBLIC_RPC_URL: "https://rpc.test" },
+      celoSepolia,
+    );
+    expect(opts.chains[0].rpcTarget).toBe("https://rpc.test");
+  });
+
   it("refuses to start without a client ID", () => {
-    expect(() => embeddedWalletOptions({})).toThrow(/NEXT_PUBLIC_WEB3AUTH_CLIENT_ID/);
+    expect(() => embeddedWalletOptions({}, celoSepolia)).toThrow(/NEXT_PUBLIC_WEB3AUTH_CLIENT_ID/);
+  });
+});
+
+describe("assertSigningChain", () => {
+  // Given the wallet network and the EIP-712 domain chain disagree (NEXT_PUBLIC_CHAIN_ID unset),
+  // when a wallet connects, then it stops with the fix instead of producing signatures the escrow rejects
+  it("refuses when the handoff domain's chain ID is not the wallet's network", () => {
+    expect(() => assertSigningChain(84532, celoSepolia)).toThrow(/NEXT_PUBLIC_CHAIN_ID=11142220/);
+  });
+
+  it("passes when they match", () => {
+    expect(() => assertSigningChain(celoSepolia.id, celoSepolia)).not.toThrow();
   });
 });
 
@@ -117,12 +142,12 @@ describe("signerFromProvider", () => {
     await expect(signer.signTypedData(typedData(owner.address))).rejects.toThrow(/EIP-7702|EOA/);
   });
 
-  // Given an extension on another network, when the signer is created, then it asks to switch to Base Sepolia
-  it("switches an extension wallet to Base Sepolia", async () => {
+  // Given an extension on another network, when the signer is created, then it asks to switch to the app's network
+  it("switches an extension wallet to the app's network", async () => {
     const { provider, calls } = fakeProvider({ chainId: "0x1" });
-    await signerFromProvider(provider, "extension", { escrow: ESCROW });
+    await signerFromProvider(provider, "extension", { escrow: ESCROW, chain: celoSepolia });
     expect(calls.find((c) => c.method === "wallet_switchEthereumChain")?.params).toEqual([
-      { chainId: BASE_SEPOLIA_HEX },
+      { chainId: CELO_SEPOLIA_HEX },
     ]);
   });
 

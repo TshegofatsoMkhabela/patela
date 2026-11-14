@@ -1,4 +1,11 @@
-import { getAddress, isAddress, recoverTypedDataAddress, type Address, type Hex } from "viem";
+import {
+  getAddress,
+  isAddress,
+  isAddressEqual,
+  recoverTypedDataAddress,
+  type Address,
+  type Hex,
+} from "viem";
 import type { WalletSigner } from "@/lib/embedded-wallet";
 import {
   buildHandoffTypedData,
@@ -61,25 +68,22 @@ const message = (err: unknown) =>
 
 type PartyRole = "buyer" | "supplier" | "driver";
 
-/** A party's wallet from `GET /orders/:id` (camelCase or row shape), or null if not linked yet. */
+/** The slice of `GET /orders/:id` (backend/src/orders.ts render()) the handoff reads. */
+export type OrderParties = {
+  chainOrderId?: string | null;
+  parties?: Partial<Record<PartyRole, { wallet?: string | null } | null>>;
+};
+
+/** A party's wallet (`parties.<role>.wallet`), or null if not linked yet. */
 export function readWallet(order: unknown, role: PartyRole): Address | null {
-  const o = (order ?? {}) as Record<string, unknown>;
-  const parties = (o.parties ?? {}) as Record<string, Record<string, unknown> | undefined>;
-  const value =
-    parties[role]?.wallet ??
-    parties[role]?.walletAddress ??
-    parties[role]?.wallet_address ??
-    o[`${role}WalletAddress`] ??
-    o[`${role}_wallet_address`];
+  const value = (order as OrderParties | null)?.parties?.[role]?.wallet;
   return typeof value === "string" && isAddress(value) ? getAddress(value) : null;
 }
 
 export function readChainOrderId(order: unknown): bigint {
-  const o = (order ?? {}) as Record<string, unknown>;
-  const rawId = o.chainOrderId ?? o.chain_order_id;
-  if (rawId === undefined || rawId === null || rawId === "")
-    throw new Error("The order is not on-chain yet");
-  return BigInt(rawId as string);
+  const rawId = (order as OrderParties | null)?.chainOrderId;
+  if (!rawId) throw new Error("The order is not on-chain yet");
+  return BigInt(rawId);
 }
 
 /** Chain order ID and the stage's giver/receiver wallets. */
@@ -97,8 +101,22 @@ export function readOrderParties(order: unknown, stage: Stage) {
   };
 }
 
-const base = (orderId: string, stage: Stage) =>
-  `/orders/${encodeURIComponent(orderId)}/handoffs/${stage}`;
+/** Whether `address` gives or receives at this stage, or null if it is neither. */
+export function roleFor(
+  order: unknown,
+  stage: Stage,
+  address: Address,
+): "giver" | "receiver" | null {
+  const { giver, receiver } = readOrderParties(order, stage);
+  return isAddressEqual(address, giver)
+    ? "giver"
+    : isAddressEqual(address, receiver)
+      ? "receiver"
+      : null;
+}
+
+const orderPath = (orderId: string) => `/orders/${encodeURIComponent(orderId)}`;
+const base = (orderId: string, stage: Stage) => `${orderPath(orderId)}/handoffs/${stage}`;
 const seconds = (ms: number) => Math.max(0, Math.round(ms / 100) / 10);
 
 async function captureEvidence(d: FlowDeps, role: Evidence["role"]): Promise<Evidence> {
@@ -113,17 +131,10 @@ async function captureEvidence(d: FlowDeps, role: Evidence["role"]): Promise<Evi
   return normalizeEvidence({ ...fix, capturedAt: Math.floor(d.now() / 1000), role }, role);
 }
 
-function sameAddress(a: string, b: string) {
-  return a.toLowerCase() === b.toLowerCase();
-}
-
 export async function runGiver(d: FlowDeps, { orderId, stage }: { orderId: string; stage: Stage }) {
   try {
-    const parties = readOrderParties(
-      await d.api.request("GET", `/orders/${encodeURIComponent(orderId)}`),
-      stage,
-    );
-    if (!sameAddress(d.signer.address, parties.giver)) {
+    const parties = readOrderParties(await d.api.request("GET", orderPath(orderId)), stage);
+    if (!isAddressEqual(d.signer.address, parties.giver)) {
       throw new Error(`This wallet is not the ${ROLE_BY_STAGE[stage].giver} for this order`);
     }
 
@@ -177,7 +188,7 @@ export async function runGiver(d: FlowDeps, { orderId, stage }: { orderId: strin
       ...td,
       signature: reply.receiverSig,
     }).catch(() => null);
-    if (!receiverSigner || !sameAddress(receiverSigner, parties.receiver)) {
+    if (!receiverSigner || !isAddressEqual(receiverSigner, parties.receiver)) {
       throw new Error(
         "The receiver's signature doesn't match this handoff (wrong wallet or edited QR)",
       );
@@ -228,11 +239,8 @@ export async function runReceiver(
     if (p.orderId !== orderId || p.stage !== stage)
       throw new Error("This QR is for another order or stage");
 
-    const parties = readOrderParties(
-      await d.api.request("GET", `/orders/${encodeURIComponent(orderId)}`),
-      stage,
-    );
-    if (!sameAddress(d.signer.address, parties.receiver)) {
+    const parties = readOrderParties(await d.api.request("GET", orderPath(orderId)), stage);
+    if (!isAddressEqual(d.signer.address, parties.receiver)) {
       throw new Error(`This wallet is not the ${ROLE_BY_STAGE[stage].receiver} for this order`);
     }
 

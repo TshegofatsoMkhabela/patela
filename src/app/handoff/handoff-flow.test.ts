@@ -11,7 +11,7 @@ import {
 import type { WalletSigner } from "@/lib/embedded-wallet";
 import {
   readOrderParties,
-  readWallet,
+  roleFor,
   runGiver,
   runReceiver,
   type FlowDeps,
@@ -25,13 +25,15 @@ const driverKey = privateKeyToAccount(`0x${"22".repeat(32)}`);
 const buyerKey = privateKeyToAccount(`0x${"33".repeat(32)}`);
 const T0 = 1_700_000_000_000; // ms
 
+// The shape backend/src/orders.ts render() returns: parties.<role>.wallet, stored lowercase.
 const order = {
   id: "ord-1",
+  status: "driver_assigned",
   chainOrderId: "7",
   parties: {
-    buyer: { walletAddress: buyerKey.address },
-    supplier: { walletAddress: supplierKey.address },
-    driver: { walletAddress: driverKey.address },
+    buyer: { userId: "u-b", email: "b@example.test", wallet: buyerKey.address.toLowerCase() },
+    supplier: { userId: "u-s", email: "s@example.test", wallet: supplierKey.address.toLowerCase() },
+    driver: { userId: "u-d", email: "d@example.test", wallet: driverKey.address.toLowerCase() },
   },
 };
 
@@ -105,16 +107,26 @@ describe("readOrderParties", () => {
     });
   });
 
-  it("accepts snake_case backend rows and fails clearly without a driver", () => {
-    const flat = {
-      chain_order_id: "7",
-      buyer_wallet_address: buyerKey.address,
-      supplier_wallet_address: supplierKey.address,
-    };
-    expect(() => readOrderParties(flat, 1)).toThrow(/driver/i);
-    expect(
-      readOrderParties({ ...flat, driver_wallet_address: driverKey.address }, 2).receiver,
-    ).toBe(buyerKey.address);
+  // Given an order whose driver has not linked a wallet (backend sends parties.driver = null),
+  // when the pickup is read, then it fails clearly instead of signing for nobody
+  it("fails clearly without a driver wallet", () => {
+    const noDriver = { ...order, parties: { ...order.parties, driver: null } };
+    expect(() => readOrderParties(noDriver, 1)).toThrow(/driver/i);
+  });
+
+  it("fails clearly before the order is on-chain", () => {
+    expect(() => readOrderParties({ ...order, chainOrderId: null }, 1)).toThrow(/on-chain/i);
+  });
+});
+
+describe("roleFor", () => {
+  // Given a connected wallet, when the handoff page opens, then it is the stage's giver, receiver, or neither
+  it("matches the wallet to the stage's giver or receiver, ignoring case", () => {
+    expect(roleFor(order, 1, supplierKey.address)).toBe("giver");
+    expect(roleFor(order, 1, driverKey.address.toLowerCase() as Address)).toBe("receiver");
+    expect(roleFor(order, 2, driverKey.address)).toBe("giver");
+    expect(roleFor(order, 2, buyerKey.address)).toBe("receiver");
+    expect(roleFor(order, 2, supplierKey.address)).toBeNull();
   });
 });
 
@@ -321,17 +333,5 @@ describe("receiver scan errors", () => {
       kind: "error",
       message: expect.stringMatching(/location/i),
     });
-  });
-});
-
-describe("readWallet", () => {
-  it("Given the backend's GET /orders/:id shape (parties.<role>.wallet), Then it reads the wallet", () => {
-    const order = {
-      parties: {
-        driver: { userId: "u", email: "d@x", wallet: "0x90f79bf6eb2c4f870365e785982e1f101e93b906" },
-      },
-    };
-    expect(readWallet(order, "driver")).toBe("0x90F79bf6EB2c4f870365E785982E1f101E93b906");
-    expect(readWallet({ parties: { driver: null } }, "driver")).toBeNull();
   });
 });
