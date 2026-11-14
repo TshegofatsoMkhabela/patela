@@ -108,11 +108,6 @@
   background: #3b1b1b;
 }
 
-.tracker-scan-result--approved {
-  border: 1px solid #3b7656;
-  background: #143526;
-}
-
 .tracker-scan-result strong {
   font-size: 22px;
 }

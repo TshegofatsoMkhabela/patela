@@ -538,8 +538,8 @@ export async function renderToDOM(container) {
   ui.onVerify = () => {
     stops[s.leg + 1].state = "verified";
     ui.refreshStops();
-    if (s.phase === "approach") s.handoffVerified = true;
-    else setPhase("verified");
+    s.handoffVerified = true;
+    setPhase("verified");
   };
   ui.onReplay = () => {
     stops.forEach((st) => (st.state = "pending"));
@@ -944,11 +944,9 @@ function createUI(stops, model, routeKm) {
   let action = null;
   let ready = false; // Start stays disabled until the first legs' tiles are pre-loaded
 
-  window.addEventListener("message", (event) => {
-    if (event.origin !== window.location.origin || event.data?.type !== "patela:handoff-result")
-      return;
+  window.addEventListener("patela:handoff-result", (event) => {
     if (action !== "verify") return;
-    if (!event.data.accepted) {
+    if (!event.detail?.accepted) {
       button.disabled = false;
       button.textContent = "Verify handoff";
       return;
@@ -964,7 +962,7 @@ function createUI(stops, model, routeKm) {
     button.disabled = true; // one click per beat; a double-click must not restart anything
     if (action === "verify") {
       button.textContent = "Opening camera…";
-      window.parent.postMessage({ type: "patela:verify-handoff" }, window.location.origin);
+      window.dispatchEvent(new Event("patela:verify-handoff"));
     } else if (action === "start") {
       hideCard(0);
       ui.onStart();

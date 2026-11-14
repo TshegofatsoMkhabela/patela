@@ -7,7 +7,7 @@ import { LivenessCheck } from "@/components/tracker/LivenessCheck";
 import { isApprovedTrackerQr } from "@/lib/tracker-handoff";
 import "@/styles/tracker-handoff.css";
 
-type ScanState = "loading" | "scanning" | "blocked" | "liveness" | "approved";
+type ScanState = "loading" | "scanning" | "blocked" | "liveness";
 
 export function TrackerView({
   styles,
@@ -23,15 +23,13 @@ export function TrackerView({
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    const onMessage = (event: MessageEvent) => {
-      if (event.source !== window || event.origin !== window.location.origin) return;
-      if (event.data?.type !== "patela:verify-handoff") return;
+    const onHandoffRequest = () => {
       setScanState("loading");
       setAttempt((value) => value + 1);
       setOpen(true);
     };
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
+    window.addEventListener("patela:verify-handoff", onHandoffRequest);
+    return () => window.removeEventListener("patela:verify-handoff", onHandoffRequest);
   }, []);
 
   useEffect(() => {
@@ -49,8 +47,8 @@ export function TrackerView({
   }
 
   function approveHandoff() {
-    setScanState("approved");
-    window.postMessage({ type: "patela:handoff-result", accepted: true }, window.location.origin);
+    window.dispatchEvent(new CustomEvent("patela:handoff-result", { detail: { accepted: true } }));
+    setOpen(false);
   }
 
   function completeLiveness() {
@@ -63,7 +61,7 @@ export function TrackerView({
   }
 
   function close() {
-    window.postMessage({ type: "patela:handoff-result", accepted: false }, window.location.origin);
+    window.dispatchEvent(new CustomEvent("patela:handoff-result", { detail: { accepted: false } }));
     setOpen(false);
   }
 
@@ -117,16 +115,6 @@ export function TrackerView({
                 <p>This is not an approved Patella handoff code. Speak to your field supervisor.</p>
                 <button type="button" onClick={retry}>
                   Scan another code
-                </button>
-              </div>
-            ) : null}
-
-            {scanState === "approved" ? (
-              <div className="tracker-scan-result tracker-scan-result--approved" role="status">
-                <strong>Handoff verified</strong>
-                <p>The checkpoint can continue.</p>
-                <button type="button" onClick={() => setOpen(false)}>
-                  Return to route
                 </button>
               </div>
             ) : null}
