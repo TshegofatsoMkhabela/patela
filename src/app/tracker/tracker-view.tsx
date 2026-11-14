@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Script from "next/script";
 import { QrScanner } from "@/components/QrScanner";
 import { LivenessCheck } from "@/components/tracker/LivenessCheck";
 import { isApprovedTrackerQr } from "@/lib/tracker-handoff";
@@ -8,19 +9,20 @@ import "@/styles/tracker-handoff.css";
 
 type ScanState = "loading" | "scanning" | "blocked" | "liveness" | "approved";
 
-export function TrackerView({ styles, markup }: { styles: string; markup: string }) {
+export function TrackerView({
+  styles,
+  markup,
+  script,
+}: {
+  styles: string;
+  markup: string;
+  script: string;
+}) {
   const [open, setOpen] = useState(false);
   const [scanState, setScanState] = useState<ScanState>("loading");
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    if (!document.querySelector("script[data-tracker-module]")) {
-      const script = document.createElement("script");
-      script.type = "module";
-      script.src = "/tracker-demo/assets/index-OKFMGh2V.js";
-      script.dataset.trackerModule = "true";
-      document.body.appendChild(script);
-    }
     const onMessage = (event: MessageEvent) => {
       if (event.source !== window || event.origin !== window.location.origin) return;
       if (event.data?.type !== "patela:verify-handoff") return;
@@ -63,6 +65,7 @@ export function TrackerView({ styles, markup }: { styles: string; markup: string
 
   return (
     <main className="tracker-page">
+      {script ? <Script src={script} type="module" strategy="afterInteractive" /> : null}
       <style dangerouslySetInnerHTML={{ __html: styles }} />
       <div dangerouslySetInnerHTML={{ __html: markup }} />
       {open ? (

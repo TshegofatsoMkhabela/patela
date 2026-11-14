@@ -358,13 +358,203 @@ function createWarmer(googlemaps, el, options) {
 
 // ---------- app ----------
 
+// The demo remains usable when a Google Maps browser key has not been configured.
+// Only tiles in the visible viewport are requested; the route itself is bundled OSRM data.
+function renderKeylessTracker(container) {
+  const destination = route.stops.findIndex((stop) => stop.name === "Beaufort West");
+  const full = new Polyline(route.path);
+  const line = new Polyline(
+    route.path.slice(0, full.indexAt(full.nearestDistance(route.stops[destination].location)) + 1),
+  );
+  const stops = route.stops.slice(0, destination + 1).map((stop, index) => ({
+    ...stop,
+    distance:
+      index === 0 ? 0 : index === destination ? line.length : line.nearestDistance(stop.location),
+    state: index === 0 ? "verified" : "pending",
+  }));
+  const map = document.createElement("div");
+  map.className = "keyless-map";
+  container.replaceChildren(map);
+  const tiles = document.createElement("div");
+  tiles.className = "keyless-tiles";
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.classList.add("keyless-route");
+  svg.setAttribute(
+    "aria-label",
+    "Simulated N1 route from Cape Town through Worcester to Beaufort West",
+  );
+  const makePath = (className) => {
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("class", className);
+    svg.appendChild(path);
+    return path;
+  };
+  const routeBase = makePath("keyless-route-base");
+  const routeDriven = makePath("keyless-route-driven");
+  const marker = document.createElement("div");
+  marker.className = "keyless-truck";
+  marker.textContent = "🚚";
+  marker.setAttribute("aria-label", "Truck position");
+  const labelLayer = document.createElement("div");
+  labelLayer.className = "keyless-labels";
+  const labels = stops.map((stop) => {
+    const label = document.createElement("div");
+    label.className = "keyless-stop";
+    label.textContent = stop.name;
+    labelLayer.appendChild(label);
+    return label;
+  });
+  map.append(tiles, svg, labelLayer, marker);
+
+  const mercator = ([lng, lat]) => [
+    (lng + 180) / 360,
+    (1 - Math.log(Math.tan(toRad(lat)) + 1 / Math.cos(toRad(lat))) / Math.PI) / 2,
+  ];
+  const projected = line.points.map(mercator);
+  const bounds = projected.reduce(
+    (b, point) => [
+      Math.min(b[0], point[0]),
+      Math.min(b[1], point[1]),
+      Math.max(b[2], point[0]),
+      Math.max(b[3], point[1]),
+    ],
+    [Infinity, Infinity, -Infinity, -Infinity],
+  );
+  const center = [(bounds[0] + bounds[2]) / 2, (bounds[1] + bounds[3]) / 2];
+  let position = 0;
+  let project = () => [0, 0];
+  let frame = 0;
+  let leg = 0;
+  const ui = createUI(stops, { credit: false }, Math.round(line.length / 1000));
+  document.querySelector("[data-model-fallback]").textContent = "Truck: simulated position ·";
+
+  function draw() {
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    if (!width || !height) return;
+    const zoom = Math.max(
+      2,
+      Math.min(
+        13,
+        Math.floor(
+          Math.log2(
+            Math.min(
+              (width * 0.78) / (256 * (bounds[2] - bounds[0])),
+              (height * 0.72) / (256 * (bounds[3] - bounds[1])),
+            ),
+          ),
+        ),
+      ),
+    );
+    const scale = 256 * 2 ** zoom;
+    project = (point) => [
+      (point[0] - center[0]) * scale + width / 2,
+      (point[1] - center[1]) * scale + height / 2,
+    ];
+    tiles.replaceChildren();
+    const left = center[0] * 2 ** zoom - width / 512;
+    const right = center[0] * 2 ** zoom + width / 512;
+    const top = center[1] * 2 ** zoom - height / 512;
+    const bottom = center[1] * 2 ** zoom + height / 512;
+    for (let x = Math.floor(left); x <= Math.floor(right); x++) {
+      for (let y = Math.floor(top); y <= Math.floor(bottom); y++) {
+        if (x < 0 || y < 0 || x >= 2 ** zoom || y >= 2 ** zoom) continue;
+        const tile = document.createElement("img");
+        tile.alt = "";
+        tile.src = `https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`;
+        tile.style.left = `${(x / 2 ** zoom - center[0]) * scale + width / 2}px`;
+        tile.style.top = `${(y / 2 ** zoom - center[1]) * scale + height / 2}px`;
+        tiles.appendChild(tile);
+      }
+    }
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    const sampled = projected.filter(
+      (_, index) => index % Math.max(1, Math.floor(projected.length / 600)) === 0,
+    );
+    sampled.push(projected[projected.length - 1]);
+    const pathData = sampled
+      .map((point, index) => {
+        const [x, y] = project(point);
+        return `${index ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(" ");
+    routeBase.setAttribute("d", pathData);
+    routeDriven.setAttribute("d", pathData);
+    labels.forEach((label, index) => {
+      const [x, y] = project(mercator(stops[index].location));
+      label.style.left = `${x}px`;
+      label.style.top = `${y}px`;
+    });
+    updatePosition();
+  }
+
+  function updatePosition() {
+    const [x, y] = project(mercator(line.pointAt(position)));
+    marker.style.left = `${x}px`;
+    marker.style.top = `${y}px`;
+    const length = routeDriven.getTotalLength();
+    routeDriven.style.strokeDasharray = `${length}`;
+    routeDriven.style.strokeDashoffset = `${length * (1 - position / line.length)}`;
+  }
+
+  function travel(to, done) {
+    cancelAnimationFrame(frame);
+    const from = position;
+    const start = performance.now();
+    const duration = 5000 * FAST;
+    const tick = (now) => {
+      position = lerp(from, to, easeInOutCubic(clamp01((now - start) / duration)));
+      updatePosition();
+      if (now - start < duration) frame = requestAnimationFrame(tick);
+      else done();
+    };
+    frame = requestAnimationFrame(tick);
+  }
+
+  ui.onStart = () =>
+    travel(stops[1].distance, () => {
+      leg = 0;
+      stops[1].state = "active";
+      ui.refreshStops();
+      ui.setPhase("city", { leg });
+    });
+  ui.onVerify = () => {
+    stops[leg + 1].state = "verified";
+    ui.refreshStops();
+    if (leg + 1 === destination) {
+      ui.setPhase("done");
+      return;
+    }
+    leg++;
+    travel(stops[leg + 1].distance, () => {
+      stops[leg + 1].state = "active";
+      ui.refreshStops();
+      ui.setPhase("city", { leg });
+    });
+  };
+  ui.onReplay = () => {
+    cancelAnimationFrame(frame);
+    position = 0;
+    leg = 0;
+    stops.forEach((stop, index) => {
+      stop.state = index === 0 ? "verified" : "pending";
+    });
+    ui.refreshStops();
+    updatePosition();
+    ui.setPhase("ready");
+  };
+  new ResizeObserver(draw).observe(container);
+  draw();
+  ui.setPhase("ready");
+  ui.setPreparing(1);
+  return ui;
+}
+
 export async function renderToDOM(container) {
   const GOOGLE_MAPS_API_KEY = window.PATELA_TRACKER_CONFIG?.apiKey;
   const GOOGLE_MAP_ID = window.PATELA_TRACKER_CONFIG?.mapId || "DEMO_MAP_ID";
   if (!GOOGLE_MAPS_API_KEY) {
-    container.innerHTML =
-      '<div style="padding:24px;font:16px sans-serif">The route tracker needs a Google Maps browser key in the deployment environment.</div>';
-    return null;
+    return renderKeylessTracker(container);
   }
 
   const destinationIndex = route.stops.findIndex((stop) => stop.name === "Beaufort West");
