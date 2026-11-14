@@ -6,7 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { SiteNav } from "@/components/SiteNav";
 import { Reveal } from "@/components/Reveal";
-import { GoogleSignInButton } from "@/components/GoogleSignInButton";
+import { GoogleSignInButton, googleSignInAvailable } from "@/components/GoogleSignInButton";
 import { useBackendTask } from "@/hooks/use-backend-task";
 import {
   isEmail,
@@ -515,6 +515,7 @@ export function SignUpView() {
   const [phone, setPhone] = useState("+27 ");
   const [codeSent, setCodeSent] = useState(false);
   const [code, setCode] = useState("");
+  const [demoCode, setDemoCode] = useState("");
   const [busy, runBackend] = useBackendTask("Sign-up failed. Try again.");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<RoleType>("buyer");
@@ -565,9 +566,15 @@ export function SignUpView() {
     const address = email.trim();
     if (!codeSent) {
       runBackend(async () => {
-        await patelaApi.requestOtp(address);
+        const result = await patelaApi.requestOtp(address);
         setCodeSent(true);
-        toast.info("Code requested. Enter the 6-digit code to create your account.");
+        if (result.demo && isOtpCode(result.code ?? "")) {
+          setCode(result.code!);
+          setDemoCode(result.code!);
+          toast.info("Demo code filled in. Select Verify code.");
+        } else {
+          toast.info("Code requested. Enter the 6-digit code to create your account.");
+        }
       });
       return;
     }
@@ -796,6 +803,7 @@ export function SignUpView() {
                       setEmail(e.target.value);
                       setCodeSent(false);
                       setCode("");
+                      setDemoCode("");
                     }}
                     required
                   />
@@ -839,22 +847,23 @@ export function SignUpView() {
                         required
                       />
                       <small>Valid for 10 minutes. Change the email above to start again.</small>
+                      {demoCode ? (
+                        <small>
+                          Demo code: <strong>{demoCode}</strong> (filled in above)
+                        </small>
+                      ) : null}
                     </>
                   ) : (
                     <small>
-                      No password needed: we&apos;ll send a 6-digit code to your email. Preview:
-                      code emails are queued in the server&apos;s outbox and not delivered yet.
+                      No password needed. When demo email delivery is off, the 6-digit code appears
+                      here instead.
                     </small>
                   )}
                 </div>
               </div>
 
               <div className="pt-field">
-                <GoogleSignInButton
-                  onCredential={handleGoogle}
-                  className="pt-btn ghost"
-                  fallback={<span>Sign up with Google</span>}
-                />
+                {googleSignInAvailable ? <GoogleSignInButton onCredential={handleGoogle} /> : null}
                 <small>
                   Your role and onboarding answers are kept in this browser only (demo) until the
                   Patela server can store them.

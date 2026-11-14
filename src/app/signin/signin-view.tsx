@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { KeyRound, Mail } from "lucide-react";
 import { toast } from "sonner";
-import { GoogleSignInButton } from "@/components/GoogleSignInButton";
+import { GoogleSignInButton, googleSignInAvailable } from "@/components/GoogleSignInButton";
 import { useBackendTask } from "@/hooks/use-backend-task";
 import { isEmail, isOtpCode, patelaApi, saveAuthUser, toAuthUser } from "@/lib/patela-api";
 import "@/styles/journey-auth.css";
@@ -63,11 +63,13 @@ export function SignInView() {
   const [password, setPassword] = useState("");
   const [codeSent, setCodeSent] = useState(false);
   const [code, setCode] = useState("");
+  const [demoCode, setDemoCode] = useState("");
   const [busy, runBackend] = useBackendTask("Sign-in failed. Try again.");
 
   function resetCode() {
     setCodeSent(false);
     setCode("");
+    setDemoCode("");
   }
 
   function enter(user: Record<string, unknown>, message: string) {
@@ -119,9 +121,15 @@ export function SignInView() {
     }
     if (!codeSent) {
       runBackend(async () => {
-        await patelaApi.requestOtp(address);
+        const result = await patelaApi.requestOtp(address);
         setCodeSent(true);
-        toast.info("Code requested. Enter the 6-digit code to continue.");
+        if (result.demo && isOtpCode(result.code ?? "")) {
+          setCode(result.code!);
+          setDemoCode(result.code!);
+          toast.info("Demo code filled in. Select Verify code.");
+        } else {
+          toast.info("Code requested. Enter the 6-digit code to continue.");
+        }
       });
       return;
     }
@@ -226,42 +234,51 @@ export function SignInView() {
                     Use a different email
                   </button>
                 </p>
+                {demoCode ? (
+                  <p className="pa-help">
+                    Demo code: <strong>{demoCode}</strong> (filled in above)
+                  </p>
+                ) : null}
               </>
             ) : (
               <p className="pa-help">
-                We&apos;ll send a 6-digit code to this email. Preview: code emails are queued in the
-                server&apos;s outbox and not delivered yet.
+                We&apos;ll request a 6-digit code. When demo email delivery is off, the code appears
+                here instead.
               </p>
             )}
             <button className="pa-submit" type="submit" disabled={busy}>
               {submitLabel}
             </button>
           </form>
-          <div className="pa-divider">
-            <span>Or continue with</span>
-          </div>
-          <div className="pa-social">
-            <GoogleSignInButton
-              onCredential={handleGoogle}
-              fallback={
-                <>
-                  <GoogleMark /> Continue with Google
-                </>
-              }
-            />
-            <button
-              type="button"
-              onClick={() => toast.info("MetaMask sign-in is not connected in this demo.")}
-            >
-              <MetaMaskMark /> Continue with MetaMask
-            </button>
-          </div>
+          {googleSignInAvailable ? (
+            <>
+              <div className="pa-divider">
+                <span>Or continue with</span>
+              </div>
+              <div className="pa-social">
+                <GoogleSignInButton
+                  onCredential={handleGoogle}
+                  fallback={
+                    <>
+                      <GoogleMark /> Continue with Google
+                    </>
+                  }
+                />
+                <button
+                  type="button"
+                  onClick={() => toast.info("MetaMask sign-in is not connected in this demo.")}
+                >
+                  <MetaMaskMark /> Continue with MetaMask
+                </button>
+              </div>
+            </>
+          ) : null}
         </div>
         <p className="pa-signup">
           Don&apos;t have an account? <Link href="/signup">Sign up</Link>
         </p>
         <p className="pa-demo">
-          Patela product preview · Email code and Google use the Patela server · Password is a demo
+          Patela product preview · Email code uses the Patela server · Password is a demo
         </p>
       </div>
     </main>

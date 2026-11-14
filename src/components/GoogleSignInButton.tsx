@@ -2,7 +2,6 @@
 
 import Script from "next/script";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { toast } from "sonner";
 
 type GoogleId = {
   initialize(options: { client_id: string; callback: (r: { credential: string }) => void }): void;
@@ -10,19 +9,17 @@ type GoogleId = {
 };
 
 const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+export const googleSignInAvailable = Boolean(clientId);
 
 /**
  * Google Identity Services only hands out an ID token through its own button,
- * so that button is rendered when a client ID is configured. Without one, the
- * styled placeholder stays and says Google is not set up.
+ * so that button is rendered only when a client ID is configured.
  */
 export function GoogleSignInButton({
   onCredential,
-  fallback,
-  className,
 }: {
   onCredential: (credential: string) => void;
-  fallback: ReactNode;
+  fallback?: ReactNode;
   className?: string;
 }) {
   const target = useRef<HTMLDivElement>(null);
@@ -46,19 +43,7 @@ export function GoogleSignInButton({
     });
   }, [ready]);
 
-  if (!clientId) {
-    return (
-      <button
-        type="button"
-        className={className}
-        onClick={() =>
-          toast.info("Google sign-in needs NEXT_PUBLIC_GOOGLE_CLIENT_ID to be configured.")
-        }
-      >
-        {fallback}
-      </button>
-    );
-  }
+  if (!clientId) return null;
   return (
     <>
       <Script
