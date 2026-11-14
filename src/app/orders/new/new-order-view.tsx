@@ -324,6 +324,10 @@ export function NewOrderView() {
           <small className="bd-muted">
             If the goods never arrive, you can take back what is unpaid after the refund time.
           </small>
+          <small className="bd-muted">
+            After the order is created on chain, open it to approve and download the buyer-signed
+            SLA PDF.
+          </small>
 
           {flow ? (
             <ol className="dm-steps" aria-label="Order progress">
