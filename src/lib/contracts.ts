@@ -56,6 +56,9 @@ export const zarmAbi = parseAbi([
   "function allowance(address owner, address spender) view returns (uint256)",
 ]);
 
+// Local-demo token only. Real Mento ZARm has no mint function.
+export const mockZarpAbi = parseAbi(["function mint(address to, uint256 amount)"]);
+
 export const handoffDomain = (verifyingContract: Address = ESCROW_ADDRESS) =>
   ({ name: "Patela Escrow", version: "1", chainId: CHAIN_ID, verifyingContract }) as const;
 
