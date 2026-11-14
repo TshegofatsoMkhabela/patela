@@ -11,7 +11,13 @@ const CLOCK_SKEW_SECONDS = 30;
 
 export type Role = "giver" | "receiver";
 export type Stage = 1 | 2;
-export type Evidence = { lat: number; lng: number; accuracyM: number; capturedAt: number; role: Role };
+export type Evidence = {
+  lat: number;
+  lng: number;
+  accuracyM: number;
+  capturedAt: number;
+  role: Role;
+};
 export type QrPayload = {
   orderId: string;
   stage: Stage;
@@ -88,7 +94,8 @@ export function encodeQrPayload(p: QrPayload): string {
 }
 
 export function decodeQrPayload(text: string, nowSeconds: number): QrPayload {
-  if (!text.startsWith(QR_PREFIX)) throw new HandoffPayloadError("wrong-prefix", "This is not a Patela handoff QR");
+  if (!text.startsWith(QR_PREFIX))
+    throw new HandoffPayloadError("wrong-prefix", "This is not a Patela handoff QR");
   let raw: unknown;
   try {
     raw = JSON.parse(base64UrlDecode(text.slice(QR_PREFIX.length)));
@@ -101,12 +108,16 @@ export function decodeQrPayload(text: string, nowSeconds: number): QrPayload {
   if (typeof r.orderId !== "string" || !r.orderId) throw tampered("missing order");
   if (r.stage !== 1 && r.stage !== 2) throw tampered("unknown stage");
   if (typeof r.sessionId !== "string" || !r.sessionId) throw tampered("missing session");
-  if (typeof r.nonce !== "string" || !/^0x[0-9a-fA-F]{64}$/.test(r.nonce)) throw tampered("bad nonce");
-  if (typeof r.expiresAt !== "number" || !Number.isInteger(r.expiresAt)) throw tampered("bad expiry");
-  if (typeof r.apiOrigin !== "string" || !/^https?:\/\/[^/]+$/.test(r.apiOrigin)) throw tampered("bad server");
+  if (typeof r.nonce !== "string" || !/^0x[0-9a-fA-F]{64}$/.test(r.nonce))
+    throw tampered("bad nonce");
+  if (typeof r.expiresAt !== "number" || !Number.isInteger(r.expiresAt))
+    throw tampered("bad expiry");
+  if (typeof r.apiOrigin !== "string" || !/^https?:\/\/[^/]+$/.test(r.apiOrigin))
+    throw tampered("bad server");
   const giverEvidence = normalizeEvidence(r.giverEvidence, "giver");
 
-  if (r.expiresAt > nowSeconds + HANDOFF_TTL_SECONDS + CLOCK_SKEW_SECONDS) throw tampered("expiry too far ahead");
+  if (r.expiresAt > nowSeconds + HANDOFF_TTL_SECONDS + CLOCK_SKEW_SECONDS)
+    throw tampered("expiry too far ahead");
   if (nowSeconds > r.expiresAt) throw new HandoffPayloadError("expired", "QR expired");
 
   return {
@@ -129,7 +140,9 @@ function base64UrlEncode(s: string) {
 function base64UrlDecode(s: string) {
   if (!/^[A-Za-z0-9_-]*$/.test(s)) throw new Error("not base64url");
   const binary = atob(s.replace(/-/g, "+").replace(/_/g, "/"));
-  return new TextDecoder("utf-8", { fatal: true }).decode(Uint8Array.from(binary, (c) => c.charCodeAt(0)));
+  return new TextDecoder("utf-8", { fatal: true }).decode(
+    Uint8Array.from(binary, (c) => c.charCodeAt(0)),
+  );
 }
 
 export type HandoffFields = {
@@ -186,7 +199,8 @@ const errorName = (name: string) => CONTRACT_ERROR_MESSAGES[name] ?? name;
 export function contractErrorMessage(err: unknown): string {
   if (!(err instanceof Error)) return "Something went wrong";
   const code = (err as { code?: unknown }).code;
-  if (code === 4001 || /user rejected|user denied/i.test(err.message)) return "Signature request was rejected";
+  if (code === 4001 || /user rejected|user denied/i.test(err.message))
+    return "Signature request was rejected";
 
   const walked = (err as { walk?: (fn?: (e: unknown) => boolean) => unknown }).walk?.(
     (e) => !!(e as { data?: { errorName?: string } })?.data?.errorName,

@@ -2,7 +2,11 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
 import { GoogleOidcProvider, PostgresAuth, type GoogleIdentityProvider } from "../src/auth.js";
+import { DomainError } from "../src/validation.js";
 import { TestDatabase } from "./helpers.js";
+
+// A wrong or reused code is the user's mistake, so it must surface as a 401, not a 500.
+const rejectedCode = (error: unknown) => error instanceof DomainError && error.status === 401;
 
 test("Google authorization URL carries state and a matching PKCE challenge", async () => {
   const db = new TestDatabase();
@@ -77,12 +81,12 @@ test("email OTP is one-time and wrong guesses consume attempts", async () => {
       "select payload from email_outbox where template='login_otp'",
     );
     const code = outbox.rows[0].payload.code;
-    await assert.rejects(auth.verifyEmailOtp("buyer@example.test", "000000"));
+    await assert.rejects(auth.verifyEmailOtp("buyer@example.test", "000000"), rejectedCode);
     const attempts = await db.query<{ attempts: number }>("select attempts from email_otp_challenges");
     assert.equal(attempts.rows[0].attempts, 1);
     const session = await auth.verifyEmailOtp("buyer@example.test", code);
     assert.equal((await auth.userFromToken(session.accessToken))?.email, "buyer@example.test");
-    await assert.rejects(auth.verifyEmailOtp("buyer@example.test", code));
+    await assert.rejects(auth.verifyEmailOtp("buyer@example.test", code), rejectedCode);
   } finally { await db.close(); }
 });
 

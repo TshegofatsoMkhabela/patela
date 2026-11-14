@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { SignInView } from "./signin-view";
 
 export const metadata: Metadata = {
-  title: "Sign In — Patella",
+  title: "Sign In — Patela",
   description:
-    "Sign in to your Patella workspace. Access orders, custody handoffs, declarative escrow tranches, and the Base Sepolia auditor trail.",
+    "Sign in to your Patela workspace to coordinate orders, custody handoffs and payments.",
   openGraph: {
-    title: "Sign In — Patella",
+    title: "Sign In — Patela",
     description:
       "Enterprise workspace login for commercial buyers, freight operators, commodity suppliers, drivers, and auditors.",
     type: "website",

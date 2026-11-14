@@ -26,6 +26,30 @@ Parameters:
       Secrets Manager secret holding a GitHub token (plain string) with repo
       access. Amplify uses it once to add the deploy webhook to the repo.
 
+  EscrowAddress:
+    Type: String
+    Default: ""
+    Description: PatellaEscrowAndLogistics address on Celo Sepolia (set after the contract is deployed there).
+  ZarpAddress:
+    Type: String
+    # Mento ZARm (South African rand, 18 decimals) on Celo Sepolia, per docs.mento.org deployment addresses.
+    # Celo mainnet ZARm is 0x4c35853A3B4e647fD266f4de678dCc8fEC410BF6 (real money; not used yet).
+    Default: "0x10CCfB235b0E1Ed394bACE4560C3ed016697687e"
+    Description: ZARm token address on the web app's chain.
+  ApiOrigin:
+    Type: String
+    # Development backend stack (infra/README.md). Its PublicOrigin must list the Amplify URL for CORS.
+    Default: https://g629knqcjc.execute-api.us-east-1.amazonaws.com
+    Description: Backend API origin the web app calls, e.g. https://api.example.com (no trailing slash).
+  Web3AuthClientId:
+    Type: String
+    Default: ""
+    Description: MetaMask Embedded Wallets (Web3Auth) client ID; public, used by the browser.
+  RpcUrl:
+    Type: String
+    Default: https://forno.celo-sepolia.celo-testnet.org
+    Description: Celo Sepolia JSON-RPC URL the browser reads balances and simulates transactions with.
+
 Resources:
   PatelaApp:
     Type: AWS::Amplify::App
@@ -75,6 +99,22 @@ Resources:
       EnvironmentVariables:
         - Name: NEXT_PUBLIC_SITE_URL
           Value: !Sub "https://${BranchName}.${PatelaApp.DefaultDomain}"
+        # Celo Sepolia chain settings (specs/INTERFACES.md §6, network changed to Celo). Public values: they ship to the browser.
+        - Name: NEXT_PUBLIC_CHAIN_ID
+          Value: "11142220"
+        - Name: NEXT_PUBLIC_ESCROW_ADDRESS
+          Value: !Ref EscrowAddress
+        - Name: NEXT_PUBLIC_ZARP_ADDRESS
+          Value: !Ref ZarpAddress
+        - Name: NEXT_PUBLIC_API_ORIGIN
+          Value: !Ref ApiOrigin
+        # Same backend for the sign-in client (src/lib/patela-api.ts), so the session cookie is shared.
+        - Name: NEXT_PUBLIC_API_BASE_URL
+          Value: !Ref ApiOrigin
+        - Name: NEXT_PUBLIC_WEB3AUTH_CLIENT_ID
+          Value: !Ref Web3AuthClientId
+        - Name: NEXT_PUBLIC_RPC_URL
+          Value: !Ref RpcUrl
       Tags:
         - Key: project
           Value: patela
@@ -91,6 +131,22 @@ Resources:
       EnvironmentVariables:
         - Name: NEXT_PUBLIC_SITE_URL
           Value: !Sub "https://${DemoBranchName}.${PatelaApp.DefaultDomain}"
+        # Celo Sepolia chain settings (specs/INTERFACES.md §6, network changed to Celo). Public values: they ship to the browser.
+        - Name: NEXT_PUBLIC_CHAIN_ID
+          Value: "11142220"
+        - Name: NEXT_PUBLIC_ESCROW_ADDRESS
+          Value: !Ref EscrowAddress
+        - Name: NEXT_PUBLIC_ZARP_ADDRESS
+          Value: !Ref ZarpAddress
+        - Name: NEXT_PUBLIC_API_ORIGIN
+          Value: !Ref ApiOrigin
+        # Same backend for the sign-in client (src/lib/patela-api.ts), so the session cookie is shared.
+        - Name: NEXT_PUBLIC_API_BASE_URL
+          Value: !Ref ApiOrigin
+        - Name: NEXT_PUBLIC_WEB3AUTH_CLIENT_ID
+          Value: !Ref Web3AuthClientId
+        - Name: NEXT_PUBLIC_RPC_URL
+          Value: !Ref RpcUrl
       Tags:
         - Key: project
           Value: patela

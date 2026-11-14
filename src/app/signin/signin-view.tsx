@@ -1,411 +1,271 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
+import { KeyRound, Mail } from "lucide-react";
 import { toast } from "sonner";
-import { SiteNav } from "@/components/SiteNav";
-import { Reveal } from "@/components/Reveal";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
+import { useBackendTask } from "@/hooks/use-backend-task";
+import { isEmail, isOtpCode, patelaApi, saveAuthUser, toAuthUser } from "@/lib/patela-api";
+import "@/styles/journey-auth.css";
 
-interface DemoAccount {
-  name: string;
-  role: string;
-  roleCategory: "client" | "worker" | "auditor";
-  company: string;
-  badgeLabel: string;
-  badgeClass: string;
-  email: string;
-  redirectUrl: string;
+type Method = "code" | "password";
+
+function GoogleMark() {
+  return (
+    <svg className="pa-social-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="#4285F4"
+        d="M21.35 12.25c0-.73-.06-1.42-.18-2.09H12v3.95h5.24a4.48 4.48 0 0 1-1.95 2.94v2.44h3.16c1.85-1.7 2.9-4.2 2.9-7.24Z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 21.5c2.64 0 4.85-.87 6.47-2.35l-3.16-2.44c-.88.59-2 .95-3.31.95-2.55 0-4.72-1.72-5.5-4.03H3.25v2.51A9.5 9.5 0 0 0 12 21.5Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M6.5 13.63a5.7 5.7 0 0 1 0-3.26V7.86H3.25a9.5 9.5 0 0 0 0 8.28l3.25-2.51Z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 6.34c1.44 0 2.72.5 3.74 1.46l2.8-2.8A9.1 9.1 0 0 0 12 2.5a9.5 9.5 0 0 0-8.75 5.36l3.25 2.51c.78-2.31 2.95-4.03 5.5-4.03Z"
+      />
+    </svg>
+  );
 }
 
-const DEMO_ACCOUNTS: DemoAccount[] = [
-  {
-    name: "Alex Morgan / Alex Vance",
-    role: "Commercial Buyer & Consignor",
-    roleCategory: "client",
-    company: "Anglo-Bavarian Mineral Trade (Pty) Ltd",
-    badgeLabel: "CLIENT",
-    badgeClass: "badge badge-gold",
-    email: "alex@resources.co.za",
-    redirectUrl: "/html/client-dashboard.html",
-  },
-  {
-    name: "Jordan Blake / Dumisani Khumalo",
-    role: "Freight Carrier & Fleet Operator",
-    roleCategory: "worker",
-    company: "Trans-Limpopo Freight Logistics Ltd",
-    badgeLabel: "WORKER",
-    badgeClass: "badge badge-blue",
-    email: "jordan@translimpopo.co.za",
-    redirectUrl: "/html/worker-dashboard.html",
-  },
-  {
-    name: "Johan van der Merwe",
-    role: "Commodity Supplier & Producer",
-    roleCategory: "worker",
-    company: "Witbank Minerals & Mining Co",
-    badgeLabel: "SUPPLIER",
-    badgeClass: "badge badge-blue",
-    email: "johan@witbankminerals.co.za",
-    redirectUrl: "/html/worker-dashboard.html",
-  },
-  {
-    name: "Sipho Ndlovu",
-    role: "Frontline Driver & Custody Clerk",
-    roleCategory: "worker",
-    company: "Cross-Dock Depot Heavy Haulage",
-    badgeLabel: "DRIVER",
-    badgeClass: "badge badge-gold",
-    email: "sipho.driver@patella.demo",
-    redirectUrl: "/html/guest-handoff.html",
-  },
-  {
-    name: "Dr. Nomsa Mthembu",
-    role: "Forensic Auditor & Block Verifier",
-    roleCategory: "auditor",
-    company: "Independent IRBA Registered Audit",
-    badgeLabel: "AUDITOR",
-    badgeClass: "badge badge-neutral",
-    email: "nomsa.audit@deloitte.demo",
-    redirectUrl: "/html/auditor-trail.html",
-  },
-];
+function MetaMaskMark() {
+  return (
+    <svg className="pa-social-icon" viewBox="0 0 32 32" aria-hidden="true">
+      <path fill="#E2761B" d="M29 3 18 11l2 5 8-3 1-10ZM3 3l11 8-2 5-8-3L3 3Z" />
+      <path fill="#F6851B" d="m28 13-8 3 2 6 6-1V13ZM4 13v8l6 1 2-6-8-3Z" />
+      <path fill="#763D16" d="m10 22 4 3 2-2-4-7-2 6Zm12 0-4 3-2-2 4-7 2 6Z" />
+      <path fill="#E4761B" d="m14 25-4-3-3 2 5 4 2-3Zm4 0 4-3 3 2-5 4-2-3Z" />
+      <path fill="#C0AD9E" d="m12 28 4 2 4-2-2-3h-4l-2 3Z" />
+      <path fill="#F6851B" d="m12 16 4 3 4-3-2-5h-4l-2 5Z" />
+    </svg>
+  );
+}
+
+/** Post-sign-in destination: a same-site `?next=` path (e.g. /orders/new), else the dashboard. */
+function nextPath(): string {
+  const next =
+    typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("next");
+  return next && next.startsWith("/") && !next.startsWith("//")
+    ? next
+    : "/html/client-dashboard.html";
+}
 
 export function SignInView() {
   const router = useRouter();
-  const [selectedRole, setSelectedRole] = useState<"client" | "worker">("client");
+  const [method, setMethod] = useState<Method>("code");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(true);
+  const [codeSent, setCodeSent] = useState(false);
+  const [code, setCode] = useState("");
+  const [busy, runBackend] = useBackendTask("Sign-in failed. Try again.");
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!email.trim() || !email.includes("@")) {
-      toast.error("Please enter a valid email address.");
+  function resetCode() {
+    setCodeSent(false);
+    setCode("");
+  }
+
+  function enter(user: Record<string, unknown>, message: string) {
+    if (!saveAuthUser(user)) {
+      toast.error("This browser could not save your session.");
       return;
     }
-    if (!password.trim()) {
-      toast.error("Please enter your password.");
-      return;
-    }
+    toast.success(message);
+    router.push(nextPath());
+  }
 
-    // Sign in demo session
-    const authUser = {
-      fullName: email.split("@")[0].toUpperCase(),
-      email,
-      role: selectedRole,
-      roleTitle:
-        selectedRole === "client" ? "Commercial Consignor / Buyer" : "Logistics Partner / Supplier",
-      verified: true,
-      signedInAt: new Date().toISOString(),
-    };
-    try {
-      localStorage.setItem("patela_auth_user", JSON.stringify(authUser));
-      localStorage.setItem("patela_current_role", selectedRole);
-    } catch {
-      /* safe */
-    }
-
-    toast.success(`Welcome back! Signed in as ${email}.`);
-    router.push(
-      selectedRole === "client" ? "/html/client-dashboard.html" : "/html/worker-dashboard.html",
+  // Demo only: the backend has no password sign-in.
+  function demoPasswordSignIn() {
+    enter(
+      {
+        fullName: email.split("@")[0],
+        email,
+        role: "buyer",
+        roleTitle: "Commercial Buyer / Consignor",
+        verified: true,
+        source: "demo",
+        signedInAt: new Date().toISOString(),
+      },
+      "Signed in to the Patela demo workspace.",
     );
   }
 
-  function handleDemoLogin(account: DemoAccount) {
-    const authUser = {
-      fullName: account.name,
-      email: account.email,
-      company: account.company,
-      role: account.roleCategory,
-      roleTitle: account.role,
-      verified: true,
-      signedInAt: new Date().toISOString(),
-    };
-    try {
-      localStorage.setItem("patela_auth_user", JSON.stringify(authUser));
-      localStorage.setItem(
-        "patela_current_role",
-        account.roleCategory === "worker" ? "worker" : "client",
-      );
-    } catch {
-      /* safe */
-    }
-
-    toast.success(`Signed in as ${account.name} (${account.role})`);
-    router.push(account.redirectUrl);
+  function handleGoogle(credential: string) {
+    runBackend(async () => {
+      const profile = await patelaApi.googleSignIn(credential);
+      enter(toAuthUser(profile), "Signed in with Google.");
+    });
   }
 
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const address = email.trim();
+    if (!isEmail(address)) {
+      toast.error("Enter a valid email address.");
+      return;
+    }
+    if (method === "password") {
+      if (!password) {
+        toast.error("Enter your password.");
+        return;
+      }
+      demoPasswordSignIn();
+      return;
+    }
+    if (!codeSent) {
+      runBackend(async () => {
+        await patelaApi.requestOtp(address);
+        setCodeSent(true);
+        toast.info("Code requested. Enter the 6-digit code to continue.");
+      });
+      return;
+    }
+    if (!isOtpCode(code)) {
+      toast.error("Enter the 6-digit code.");
+      return;
+    }
+    runBackend(async () => {
+      const profile = await patelaApi.verifyOtp(address, code);
+      enter(toAuthUser(profile), "Signed in to Patela.");
+    });
+  }
+
+  const submitLabel = busy
+    ? "Please wait…"
+    : method === "password"
+      ? "Sign in (demo)"
+      : codeSent
+        ? "Verify code"
+        : "Send code";
+
   return (
-    <div className="pt-app" style={{ minHeight: "100vh" }}>
-      <SiteNav />
-      <main className="pt-wrap" style={{ maxWidth: 940, padding: "40px 20px 100px" }}>
-        <Reveal>
-          <div style={{ textAlign: "center", marginBottom: 36 }}>
-            <span className="pt-eyebrow">Enterprise Supply Chain Portal</span>
-            <h1 className="pt-h2" style={{ margin: "10px auto 14px", maxWidth: "24ch" }}>
-              Sign in to your Patella workspace.
-            </h1>
-            <p className="pt-lead" style={{ margin: "0 auto", maxWidth: "56ch" }}>
-              Access active multi-hop orders, manage custody handoffs, review declarative escrow
-              tranches, and inspect the Base Sepolia auditor trail.
-            </p>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
-              gap: 28,
-            }}
-          >
-            {/* Standard Credentials Sign In */}
-            <form
-              className="pt-form pt-card"
-              onSubmit={handleSubmit}
-              style={{ padding: "36px 32px", marginTop: 0 }}
-            >
-              <div style={{ marginBottom: 20 }}>
-                <h2 style={{ fontSize: "1.25rem", margin: "0 0 4px", fontWeight: 600 }}>
-                  Account Credentials
-                </h2>
-                <p style={{ color: "#a2a9b8", fontSize: "0.875rem", margin: 0 }}>
-                  Enter your registered enterprise email and password.
-                </p>
-              </div>
-
-              <div style={{ marginBottom: 18 }}>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "0.8rem",
-                    color: "#d9c39a",
-                    marginBottom: 8,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                  }}
-                >
-                  Select Operating Workspace
+    <main className="pa-page">
+      <div className="pa-shell">
+        <Link href="/" className="pa-brand" aria-label="Patela home">
+          <Image src="/patela-logo.png" alt="Patela" width={252} height={41} priority />
+        </Link>
+        <h1>Sign in to your account</h1>
+        <div className="pa-card">
+          <form onSubmit={handleSubmit}>
+            <div className="pa-tabs" role="group" aria-label="Sign in method">
+              <button
+                type="button"
+                aria-pressed={method === "code"}
+                className={method === "code" ? "active" : ""}
+                onClick={() => {
+                  setMethod("code");
+                  resetCode();
+                }}
+              >
+                <Mail size={17} /> Email code
+              </button>
+              <button
+                type="button"
+                aria-pressed={method === "password"}
+                className={method === "password" ? "active" : ""}
+                onClick={() => setMethod("password")}
+              >
+                <KeyRound size={17} /> Password (demo)
+              </button>
+            </div>
+            <label htmlFor="pa-email">Email</label>
+            <input
+              id="pa-email"
+              type="email"
+              autoComplete="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                resetCode();
+              }}
+              required
+            />
+            {method === "password" ? (
+              <>
+                <label htmlFor="pa-password" className="pa-secondary-label">
+                  Password
                 </label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      padding: "10px 12px",
-                      borderRadius: 10,
-                      border:
-                        selectedRole === "client"
-                          ? "1px solid #ffe2b2"
-                          : "1px solid rgba(196,214,232,0.15)",
-                      background:
-                        selectedRole === "client" ? "rgba(255,226,178,0.08)" : "transparent",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="wsRole"
-                      value="client"
-                      checked={selectedRole === "client"}
-                      onChange={() => setSelectedRole("client")}
-                      style={{ accentColor: "#ffe2b2" }}
-                    />
-                    <div>
-                      <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#fff" }}>
-                        Client
-                      </div>
-                      <div style={{ fontSize: "0.7rem", color: "#a2a9b8" }}>Buyer / Consignor</div>
-                    </div>
-                  </label>
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      padding: "10px 12px",
-                      borderRadius: 10,
-                      border:
-                        selectedRole === "worker"
-                          ? "1px solid #7ea6e0"
-                          : "1px solid rgba(196,214,232,0.15)",
-                      background:
-                        selectedRole === "worker" ? "rgba(126,166,224,0.08)" : "transparent",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="wsRole"
-                      value="worker"
-                      checked={selectedRole === "worker"}
-                      onChange={() => setSelectedRole("worker")}
-                      style={{ accentColor: "#ffe2b2" }}
-                    />
-                    <div>
-                      <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#fff" }}>
-                        Worker
-                      </div>
-                      <div style={{ fontSize: "0.7rem", color: "#a2a9b8" }}>Carrier / Supplier</div>
-                    </div>
-                  </label>
-                </div>
-              </div>
-
-              <div className="pt-field">
-                <label htmlFor="si-email">Business Email or Phone</label>
                 <input
-                  id="si-email"
-                  type="email"
-                  className="pt-in"
-                  placeholder="name@company.co.za"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="pt-field">
-                <div
-                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-                >
-                  <label htmlFor="si-pw">Password</label>
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toast.info(
-                        "For testnet demo: use any password or click a quick persona below.",
-                      );
-                    }}
-                    style={{ fontSize: "0.8rem", color: "#ffe2b2", textDecoration: "underline" }}
-                  >
-                    Forgot password?
-                  </a>
-                </div>
-                <input
-                  id="si-pw"
+                  id="pa-password"
                   type="password"
-                  className="pt-in"
-                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "6px 0 16px" }}>
-                <input
-                  type="checkbox"
-                  id="rem"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                  style={{ accentColor: "#ffe2b2", width: 16, height: 16 }}
-                />
-                <label
-                  htmlFor="rem"
-                  style={{ fontSize: "0.85rem", color: "#a2a9b8", cursor: "pointer" }}
-                >
-                  Remember this device for 30 days
-                </label>
-              </div>
-
-              <button
-                type="submit"
-                className="pt-btn"
-                style={{ width: "100%", justifyContent: "center", padding: "13px" }}
-              >
-                <span>Sign In to Workspace</span>
-                <span aria-hidden="true">→</span>
-              </button>
-
-              <div
-                style={{
-                  textAlign: "center",
-                  marginTop: 22,
-                  fontSize: "0.85rem",
-                  color: "#a2a9b8",
-                }}
-              >
-                Don&apos;t have an account yet?{" "}
-                <Link
-                  href="/signup"
-                  style={{ color: "#ffe2b2", fontWeight: 600, textDecoration: "underline" }}
-                >
-                  Sign up with progressive onboarding
-                </Link>
-              </div>
-            </form>
-
-            {/* Quick 1-Click Persona Logins */}
-            <div className="pt-card" style={{ padding: "36px 32px" }}>
-              <div style={{ marginBottom: 18 }}>
-                <span
-                  className="badge badge-gold"
-                  style={{ fontSize: "0.75rem", marginBottom: 8, display: "inline-block" }}
-                >
-                  Instant Demo Access
-                </span>
-                <h2 style={{ fontSize: "1.25rem", margin: "0 0 4px", fontWeight: 600 }}>
-                  1-Click Role Login
-                </h2>
-                <p style={{ color: "#a2a9b8", fontSize: "0.85rem", margin: 0 }}>
-                  Switch directly into any verified supply chain role to inspect their dedicated
-                  screens and controls:
+                <p className="pa-help">
+                  Demo only: any password opens a local demo session. It does not sign you in to the
+                  Patela server.
                 </p>
-              </div>
-
-              <div style={{ display: "grid", gap: 10 }}>
-                {DEMO_ACCOUNTS.map((acc) => (
-                  <div
-                    key={acc.name}
-                    onClick={() => handleDemoLogin(acc)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "12px 14px",
-                      borderRadius: 12,
-                      border: "1px solid rgba(196, 214, 232, 0.14)",
-                      background: "rgba(255, 255, 255, 0.02)",
-                      cursor: "pointer",
-                      transition: "all 0.25s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "rgba(255, 228, 182, 0.5)";
-                      e.currentTarget.style.background = "rgba(255, 226, 178, 0.08)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "rgba(196, 214, 232, 0.14)";
-                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)";
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <span
-                        className={acc.badgeClass}
-                        style={{ fontSize: "0.7rem", padding: "4px 8px", letterSpacing: "0.04em" }}
-                      >
-                        {acc.badgeLabel}
-                      </span>
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: "0.9rem", color: "#fff" }}>
-                          {acc.name}
-                        </div>
-                        <div style={{ fontSize: "0.75rem", color: "#ffe2b2" }}>{acc.role}</div>
-                        <div style={{ fontSize: "0.7rem", color: "#7c8596" }}>{acc.company}</div>
-                      </div>
-                    </div>
-                    <span style={{ color: "#ffe2b2", fontSize: "0.85rem", fontWeight: 600 }}>
-                      Enter →
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+              </>
+            ) : codeSent ? (
+              <>
+                <label htmlFor="pa-code" className="pa-secondary-label">
+                  Sign-in code
+                </label>
+                <input
+                  id="pa-code"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  placeholder="Enter the 6-digit code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  required
+                />
+                <p className="pa-help">
+                  The code is valid for 10 minutes.{" "}
+                  <button type="button" className="pa-link" onClick={resetCode}>
+                    Use a different email
+                  </button>
+                </p>
+              </>
+            ) : (
+              <p className="pa-help">
+                We&apos;ll send a 6-digit code to this email. Preview: code emails are queued in the
+                server&apos;s outbox and not delivered yet.
+              </p>
+            )}
+            <button className="pa-submit" type="submit" disabled={busy}>
+              {submitLabel}
+            </button>
+          </form>
+          <div className="pa-divider">
+            <span>Or continue with</span>
           </div>
-        </Reveal>
-      </main>
-    </div>
+          <div className="pa-social">
+            <GoogleSignInButton
+              onCredential={handleGoogle}
+              fallback={
+                <>
+                  <GoogleMark /> Continue with Google
+                </>
+              }
+            />
+            <button
+              type="button"
+              onClick={() => toast.info("MetaMask sign-in is not connected in this demo.")}
+            >
+              <MetaMaskMark /> Continue with MetaMask
+            </button>
+          </div>
+        </div>
+        <p className="pa-signup">
+          Don&apos;t have an account? <Link href="/signup">Sign up</Link>
+        </p>
+        <p className="pa-demo">
+          Patela product preview · Email code and Google use the Patela server · Password is a demo
+        </p>
+      </div>
+    </main>
   );
 }

@@ -12,6 +12,18 @@ Parameters:
     Type: String
     Default: ''
     Description: Exact HTTPS web origin, or blank for an API-only OAuth test.
+  AllowedOrigins:
+    Type: String
+    Default: ''
+    Description: Optional comma-separated additional exact HTTPS web origins.
+  CookieDomain:
+    Type: String
+    Default: ''
+    Description: Optional shared parent domain for browser session cookies; blank keeps them host-only.
+  CookieSameSite:
+    Type: String
+    Default: Lax
+    AllowedValues: [Lax, None, Strict]
   GoogleClientId:
     Type: String
     Description: Google OAuth Web application client ID.
@@ -24,9 +36,54 @@ Parameters:
     Default: 'false'
     AllowedValues: ['true', 'false']
     Description: Serve the API-only Google sign-in test page during development.
+  ChainId:
+    Type: String
+    Default: '8453'
+    AllowedValues: ['8453', '84532']
+    Description: 8453 = Base mainnet (real ZARP), 84532 = Base Sepolia (demo with MockZARP).
+  BaseRpcUrl:
+    Type: String
+    Default: ''
+    Description: HTTPS RPC for the chain above. Blank disables on-chain verification (orders stop at awaiting_chain).
+  EscrowAddress:
+    Type: String
+    Default: ''
+    AllowedPattern: '^$|^0x[0-9a-fA-F]{40}$'
+    Description: Deployed PatellaEscrowAndLogistics address (contracts/deployments/<network>.json).
+  TokenAddress:
+    Type: String
+    Default: ''
+    AllowedPattern: '^$|^0x[0-9a-fA-F]{40}$'
+    Description: Token the escrow holds. Required on Base Sepolia (MockZARP); blank on mainnet means ZARP.
+  ChainConfirmations:
+    Type: Number
+    Default: 3
+    MinValue: 1
+    MaxValue: 64
+    Description: Blocks a transaction must have before the API trusts its events.
+  SmtpSecretArn:
+    Type: String
+    Default: ''
+    Description: >-
+      Optional ARN of a Secrets Manager secret {"user":"<gmail>","appPassword":"<app password>"}.
+      Blank keeps emails queued in email_outbox and never sends them.
+  DemoMode:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: DEMO only. Also return one-time accept links in API responses as a fallback for slow email.
+
+Rules:
+  TestnetNeedsToken:
+    RuleCondition: !Equals [!Ref ChainId, '84532']
+    Assertions:
+      - Assert: !Not [!Equals [!Ref TokenAddress, '']]
+        AssertDescription: Base Sepolia (84532) needs TokenAddress (the MockZARP deployment).
 
 Conditions:
   HasGoogleClientSecret: !Not [!Equals [!Ref GoogleClientSecretArn, '']]
+  HasTokenAddress: !Not [!Equals [!Ref TokenAddress, '']]
+  HasSmtpSecret: !Not [!Equals [!Ref SmtpSecretArn, '']]
 
 Resources:
   Network:
@@ -153,6 +210,18 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      Policies:
+        - !If
+          - HasSmtpSecret
+          - PolicyName: read-smtp-secret
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action: secretsmanager:GetSecretValue
+                  # The trailing * also matches a partial ARN given without Secrets Manager's random suffix.
+                  Resource: !Sub '${SmtpSecretArn}*'
+          - !Ref AWS::NoValue
   ApiFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -174,8 +243,18 @@ Resources:
           GOOGLE_OAUTH_CLIENT_SECRET: !If [HasGoogleClientSecret, !Sub '{{resolve:secretsmanager:${GoogleClientSecretArn}:SecretString}}', '']
           ENABLE_AUTH_SMOKE_PAGE: !Ref EnableAuthSmokePage
           PUBLIC_ORIGIN: !Ref PublicOrigin
+          ALLOWED_ORIGINS: !Ref AllowedOrigins
+          COOKIE_DOMAIN: !Ref CookieDomain
+          COOKIE_SAME_SITE: !Ref CookieSameSite
           PG_POOL_MAX: '2'
-          CHAIN_ID: '8453'
+          CHAIN_ID: !Ref ChainId
+          CHAIN_CONFIRMATIONS: !Ref ChainConfirmations
+          BASE_RPC_URL: !Ref BaseRpcUrl
+          ESCROW_ADDRESS: !Ref EscrowAddress
+          # Omitted when blank: the API rejects an empty TOKEN_ADDRESS at startup.
+          TOKEN_ADDRESS: !If [HasTokenAddress, !Ref TokenAddress, !Ref AWS::NoValue]
+          SMTP_SECRET_ARN: !If [HasSmtpSecret, !Ref SmtpSecretArn, !Ref AWS::NoValue]
+          DEMO_MODE: !Ref DemoMode
   MigrationFunction:
     Type: AWS::Lambda::Function
     Properties:

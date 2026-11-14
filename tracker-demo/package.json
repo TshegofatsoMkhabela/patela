@@ -1,0 +1,18 @@
+{
+  "name": "patela-route-tracker-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build --base=/tracker-demo/ --outDir ../public/tracker-demo --emptyOutDir"
+  },
+  "dependencies": {
+    "@deck.gl/geo-layers": "^9.4.1",
+    "@deck.gl/google-maps": "^9.4.1",
+    "@deck.gl/layers": "^9.4.1",
+    "@deck.gl/mesh-layers": "^9.4.1",
+    "@googlemaps/js-api-loader": "^1.16.0"
+  },
+  "devDependencies": {
+    "vite": "^7.3.3"
+  }
+}

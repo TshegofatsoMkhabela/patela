@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Patela Route Tracker</title>
+    <style>
+      :root {
+        --ink: #0f172a;
+        --muted: #475569;
+        --line: #e2e8f0;
+        --surface: rgba(255, 255, 255, 0.94);
+        --teal: #0d9488;
+        --amber: #f59e0b;
+        --green: #16a34a;
+        --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+        --shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 12px 32px rgba(15, 23, 42, 0.14);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #e5e3df;
+        color: var(--ink);
+        font: 14px/1.45 Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      #app { position: relative; z-index: 1; width: 100vw; height: 100vh; }
+      /* Hidden second map that flies the planned camera path ahead of time to pre-load tiles.
+         Same size as the real one so it requests the same tiles; underneath it and invisible. */
+      #warm { position: fixed; inset: 0; z-index: 0; opacity: 0; pointer-events: none; }
+      /* UI sits above the map (which now has z-index 1 to cover the hidden pre-load map). */
+      #ui { position: relative; z-index: 2; }
+
+      /* ---- shipment panel ---- */
+      .panel {
+        position: fixed; top: 16px; left: 16px; width: 248px;
+        padding: 14px 16px; border-radius: 14px;
+        background: var(--surface); box-shadow: var(--shadow);
+        backdrop-filter: blur(8px);
+      }
+      .panel h1 { margin: 0; font-size: 13px; font-weight: 650; letter-spacing: 0.01em; }
+      .panel .sub { margin: 2px 0 12px; color: var(--muted); font-size: 12px; }
+      .demo-tag {
+        display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px;
+        background: #f1f5f9; color: var(--muted); font-size: 10px; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.06em; vertical-align: 1px;
+      }
+      .panel .warning {
+        margin: 10px 0 0; padding: 8px 10px; border-radius: 8px;
+        background: #fef3c7; color: #78350f; font-size: 12px; line-height: 1.4;
+      }
+      ol.stepper { list-style: none; margin: 0; padding: 0; position: relative; }
+      ol.stepper::before {
+        content: ''; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 2px; background: var(--line);
+      }
+      ol.stepper li {
+        position: relative; display: grid; grid-template-columns: 12px 1fr auto; gap: 10px;
+        align-items: center; padding: 5px 0; color: var(--muted);
+        transition: color 240ms var(--ease-out);
+      }
+      ol.stepper .dot {
+        width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 2px solid #94a3b8;
+        transition: background-color 240ms var(--ease-out), border-color 240ms var(--ease-out), transform 240ms var(--ease-out);
+      }
+      ol.stepper .km { font-size: 12px; font-variant-numeric: tabular-nums; }
+      ol.stepper li[data-state='active'] { color: var(--ink); font-weight: 600; }
+      ol.stepper li[data-state='active'] .dot { background: var(--amber); border-color: var(--amber); transform: scale(1.15); }
+      ol.stepper li[data-state='verified'] { color: var(--ink); }
+      ol.stepper li[data-state='verified'] .dot { background: var(--green); border-color: var(--green); }
+
+      /* ---- action card ---- */
+      .card {
+        position: fixed; left: 50%; bottom: 32px; width: min(380px, calc(100vw - 32px));
+        padding: 16px 18px 18px; border-radius: 16px;
+        background: var(--surface); box-shadow: var(--shadow); backdrop-filter: blur(8px);
+        transform: translate(-50%, 18px); opacity: 0; pointer-events: none;
+        transition: transform 340ms var(--ease-out), opacity 240ms var(--ease-out);
+      }
+      .card[data-open='true'] { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
+      .card .eyebrow { margin: 0; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: 0.02em; }
+      .card h2 { margin: 2px 0 6px; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+      .card p.body { margin: 0 0 14px; color: var(--muted); }
+      .card button {
+        width: 100%; height: 44px; border: 0; border-radius: 10px; cursor: pointer;
+        background: var(--ink); color: #fff; font: inherit; font-weight: 600;
+        transition: transform 120ms var(--ease-out), background-color 200ms var(--ease-out);
+      }
+      .card button:hover { background: #1e293b; }
+      .card button:active { transform: scale(0.98); }
+      .card button:focus-visible { outline: 3px solid rgba(13, 148, 136, 0.45); outline-offset: 2px; }
+      .card button[data-state='done'] { background: var(--green); cursor: default; }
+      .card button:disabled:not([data-state]) { background: #94a3b8; cursor: progress; }
+      .card .status { margin: 8px 0 0; color: var(--muted); font-size: 12px; text-align: center; font-variant-numeric: tabular-nums; }
+      .card button[data-state='done']::before { content: '✓  '; }
+
+      /* ---- credits ---- */
+      .credits {
+        position: fixed; left: 80px; bottom: 4px; max-width: calc(100vw - 420px); margin: 0;
+        color: #334155; font-size: 10.5px; line-height: 1.3;
+        background: rgba(255, 255, 255, 0.75); padding: 2px 6px; border-radius: 4px;
+      }
+      .credits a { color: inherit; }
+
+      @media (max-width: 640px) {
+        .panel { width: auto; right: 16px; }
+        ol.stepper { display: none; }
+        .credits { left: 16px; right: 16px; bottom: auto; top: 96px; max-width: none; }
+      }
+
+      /* Reduced motion keeps the feedback, drops the travel. */
+      @media (prefers-reduced-motion: reduce) {
+        .card { transform: translate(-50%, 0); transition: opacity 160ms linear; }
+        .card button, ol.stepper li, ol.stepper .dot { transition: none; }
+        .card button:active { transform: none; }
+      }
+    </style>
+    <script type="module" crossorigin src="/tracker-demo/assets/index-h4MfHEw0.js"></script>
+  </head>
+  <body>
+    <div id="warm" aria-hidden="true"></div>
+    <div id="app"></div>
+    <div id="ui" data-phase="intro">
+      <section class="panel" aria-label="Shipment progress">
+        <h1>Shipment PT-0412 <span class="demo-tag">Demo</span></h1>
+        <p class="sub">Simulated route · Cape Town → Beaufort West</p>
+        <ol class="stepper" data-stepper></ol>
+        <p class="warning" data-raster-warning hidden>
+          Flat map fallback: Google Maps didn't get hardware WebGL2 here, so there's no 3D, tilt or
+          truck. Check graphics acceleration is on and see chrome://gpu.
+          <br /><code data-gl-diagnosis style="display:block;margin-top:6px;font-size:11px;word-break:break-word"></code>
+        </p>
+      </section>
+
+      <section class="card" data-card data-open="false" hidden aria-live="polite">
+        <p class="eyebrow" data-eyebrow></p>
+        <h2 data-title></h2>
+        <p class="body" data-body></p>
+        <button type="button" data-action></button>
+        <p class="status" data-status hidden></p>
+      </section>
+
+      <p class="credits">
+        <span data-model-credit hidden>
+          Truck: <a href="https://sketchfab.com/3d-models/low-poly-truck-98826ebd44e2492298ac925461509216" target="_blank" rel="noopener">“Low Poly Truck”</a>
+          by <a href="https://sketchfab.com/Arifido._" target="_blank" rel="noopener">Arifido._</a>,
+          <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> ·
+        </span>
+        <span data-model-fallback>Truck: deck.gl sample model ·</span>
+        Route: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors via OSRM
+      </p>
+    </div>
+  </body>
+</html>
