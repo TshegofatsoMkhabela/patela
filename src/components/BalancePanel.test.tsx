@@ -3,6 +3,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { parseUnits } from "viem";
+import { NETWORK, NETWORK_LABEL } from "@/lib/escrow-chain";
 import { BalancePanelView, formatZarp, startBalancePolling } from "./BalancePanel";
 
 void React;
@@ -40,10 +41,10 @@ describe("BalancePanelView", () => {
     for (const label of ["Buyer", "Supplier", "Driver", "Escrow"]) expect(html).toContain(label);
   });
 
-  it("Given balances, Then amounts render in the network token (MockZARP locally)", () => {
+  it("Given balances, Then amounts render in the network token", () => {
     expect(html).toContain("900.00");
     expect(html).toContain("100.00");
-    expect(html).toContain("MockZARP");
+    expect(html).toContain(NETWORK.tokenSymbol);
   });
 
   it("Given a driver not yet assigned, Then it shows a placeholder instead of an address", () => {
@@ -54,8 +55,8 @@ describe("BalancePanelView", () => {
     expect(html).toContain("0xb0b0…0003");
   });
 
-  it("Given the default local chain, Then the panel is labelled as a local demo", () => {
-    expect(html).toContain("Local demo · MockZARP on Hardhat");
+  it("Given the configured chain, Then the panel shows its network label", () => {
+    expect(html).toContain(NETWORK_LABEL);
   });
 
   it("Given a read error, Then the panel shows it", () => {

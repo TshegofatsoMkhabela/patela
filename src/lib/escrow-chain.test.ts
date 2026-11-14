@@ -282,7 +282,8 @@ describe("readBalances", () => {
 });
 
 describe("NETWORK", () => {
-  it("Given no NEXT_PUBLIC_CHAIN_ID, Then the app targets the local Hardhat demo chain with MockZARP", () => {
+  // Hosted builds set NEXT_PUBLIC_CHAIN_ID, so the unset default can only be checked locally.
+  it.skipIf(Boolean(process.env.NEXT_PUBLIC_CHAIN_ID))("Given no NEXT_PUBLIC_CHAIN_ID, Then the app targets the local Hardhat demo chain with MockZARP", () => {
     expect(NETWORK.chain.id).toBe(31337);
     expect(NETWORK.tokenSymbol).toBe("MockZARP");
     expect(NETWORK.local).toBe(true);

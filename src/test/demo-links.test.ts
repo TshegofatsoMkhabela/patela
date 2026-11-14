@@ -57,9 +57,9 @@ describe("demo-path links", () => {
 
     expect(source).toContain('{ href: "/buyer", label: "Overview"');
     expect(source).toContain('{ href: "/orders/new", label: "Orders"');
-    expect(source).toContain('href: "/html/shipment-overview.html"');
-    expect(source).toContain('href: "/html/payments.html"');
-    expect(source).toContain('href: "/html/documents-evidence.html"');
-    expect(source).toContain('href: "/html/dispute-centre.html"');
+    expect(source).toContain('href: "/buyer/shipments"');
+    expect(source).toContain('href: "/buyer/payments"');
+    expect(source).toContain('href: "/buyer/documents"');
+    expect(source).toContain('href: "/buyer/disputes"');
   });
 });
