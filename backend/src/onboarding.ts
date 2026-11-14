@@ -100,10 +100,15 @@ export async function ensureDemoCapability(db: Queryable, userId: string, capabi
     [id, userId]);
 }
 
+/** DEMO: which signed-in emails get the demo shortcuts (true = everyone, the local demo). */
+export type DemoApproval = boolean | ((email: string) => boolean);
+export const demoApproves = (rule: DemoApproval | undefined, email: unknown) =>
+  typeof rule === "function" ? rule(String(email ?? "")) : Boolean(rule);
+
 export class OnboardingService {
   constructor(private readonly db: Database, private readonly publicOrigin: string,
-    /** LOCAL DEMO: a submitted business is approved at once instead of waiting for an admin. */
-    private readonly demoAutoApprove = false) {}
+    /** DEMO: a submitted business is approved at once instead of waiting for an admin. */
+    private readonly demoAutoApprove: DemoApproval = false) {}
 
   private async profile(db: Queryable, userId: string): Promise<Row> {
     const result = await db.query<Row>("select id,email,full_name,role from profiles where id=$1", [userId]);
@@ -189,12 +194,13 @@ export class OnboardingService {
       if (!EDITABLE.has(String(org.status))) {
         throw new DomainError("Only a draft or rejected business can be submitted", 409);
       }
+      const submitter = await this.profile(db, userId);
+      const autoApprove = demoApproves(this.demoAutoApprove, submitter.email);
       await db.query(
         `update organizations set status=$2,submitted_at=now(),rejection_reason=null,
-         reviewed_by=null,reviewed_at=${this.demoAutoApprove ? "now()" : "null"},updated_at=now() where id=$1`,
-        [org.id, this.demoAutoApprove ? "approved" : "submitted"],
+         reviewed_by=null,reviewed_at=${autoApprove ? "now()" : "null"},updated_at=now() where id=$1`,
+        [org.id, autoApprove ? "approved" : "submitted"],
       );
-      const submitter = await this.profile(db, userId);
       await queueEmail(db, String(submitter.email), "organization_submitted",
         { organizationId: org.id, legalName: org.legal_name });
       return this.membership(db, userId, org.id);

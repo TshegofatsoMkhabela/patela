@@ -19,7 +19,7 @@ export function createRuntime(env: NodeJS.ProcessEnv = process.env) {
     API_ORIGIN = "http://localhost:4000", CHAIN_CONFIRMATIONS = "3",
     GOOGLE_MAPS_SERVER_KEY, CHAIN_ID = "8453", TOKEN_ADDRESS, TOKEN_DECIMALS = "18",
     PG_POOL_MAX = "2", ENABLE_AUTH_SMOKE_PAGE = "false", DATABASE_SSL = "false",
-    SMTP_SECRET_ARN, DEMO_MODE = "false", DEMO_LOCAL = "false", COOKIE_DOMAIN, COOKIE_SAME_SITE = "Lax",
+    SMTP_SECRET_ARN, DEMO_MODE = "false", DEMO_LOCAL = "false", DEMO_HOSTED = "false", COOKIE_DOMAIN, COOKIE_SAME_SITE = "Lax",
   } = env;
   if (!DATABASE_URL) throw new Error("DATABASE_URL is required");
   // Google sign-in is optional: without a client ID the email-code sign-in still works.
@@ -78,6 +78,8 @@ export function createRuntime(env: NodeJS.ProcessEnv = process.env) {
     mailTransport: SMTP_SECRET_ARN ? new GmailTransport(secretsManagerLoader(SMTP_SECRET_ARN)) : undefined,
     demoMode: DEMO_MODE === "true",
     demoLocal,
+    // HOSTED DEMO: shortcuts for the @demo.patela.local personas only (see buildApp); never with real mail.
+    demoHosted: DEMO_HOSTED === "true" && DEMO_MODE === "true" && !SMTP_SECRET_ARN,
   });
   return { app, db };
 }

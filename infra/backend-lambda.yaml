@@ -72,6 +72,11 @@ Parameters:
     Default: 'false'
     AllowedValues: ['true', 'false']
     Description: DEMO only. Also return one-time accept links in API responses as a fallback for slow email.
+  DemoHosted:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'false'
+    Description: DEMO only. With DemoMode and no SMTP, the @demo.patela.local personas get their sign-in codes and mail in the app and auto-approved businesses. Real addresses are unaffected.
 
 Rules:
   TestnetNeedsToken:
@@ -255,6 +260,7 @@ Resources:
           TOKEN_ADDRESS: !If [HasTokenAddress, !Ref TokenAddress, !Ref AWS::NoValue]
           SMTP_SECRET_ARN: !If [HasSmtpSecret, !Ref SmtpSecretArn, !Ref AWS::NoValue]
           DEMO_MODE: !Ref DemoMode
+          DEMO_HOSTED: !Ref DemoHosted
   MigrationFunction:
     Type: AWS::Lambda::Function
     Properties:
