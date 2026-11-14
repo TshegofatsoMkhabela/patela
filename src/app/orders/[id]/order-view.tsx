@@ -2,12 +2,17 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { isAddressEqual } from "viem";
 import { BalancePanel, formatZarp } from "@/components/BalancePanel";
 import { DemoShell, PageHeader } from "@/components/demo/DemoShell";
 import { ApiError, api, type OrderDetail } from "@/lib/api";
 import { ESCROW_ADDRESS } from "@/lib/contracts";
-import { NETWORK, NETWORK_LABEL, explorerTxUrl } from "@/lib/chain";
+import { NETWORK, NETWORK_LABEL, connectMetaMask, explorerTxUrl } from "@/lib/chain";
+import { demoChainClients } from "@/lib/demo-signer";
+import { buildSlaPdf } from "@/lib/sla-pdf";
+import { createSlaRecord, slaApprovalMessage, verifySlaSignature } from "@/lib/sla";
 import { isPaid, partyAddresses } from "./order-data";
+import "./sla-sign.css";
 
 const ORDER_POLL_MS = 3000;
 
@@ -69,6 +74,41 @@ const zar = (wei: unknown) => {
 export function OrderView({ id }: { id: string }) {
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [error, setError] = useState<{ message: string; status: number } | null>(null);
+  const [slaBusy, setSlaBusy] = useState(false);
+  const [slaError, setSlaError] = useState("");
+
+  async function signAndDownloadSla() {
+    if (!order || slaBusy) return;
+    setSlaBusy(true);
+    setSlaError("");
+    try {
+      const record = createSlaRecord(order);
+      const clients = NETWORK.local ? demoChainClients("buyer") : await connectMetaMask();
+      if (!isAddressEqual(clients.account, record.buyerWallet as `0x${string}`)) {
+        throw new Error("Connect the buyer wallet linked to this order to sign the SLA.");
+      }
+      const signature = await clients.walletClient.signMessage({
+        account: clients.account,
+        message: slaApprovalMessage(record),
+      });
+      if (!(await verifySlaSignature(record, signature))) {
+        throw new Error("The wallet signature could not be verified.");
+      }
+      const pdf = buildSlaPdf(record, signature);
+      const url = URL.createObjectURL(new Blob([new Uint8Array(pdf)], { type: "application/pdf" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `patela-sla-${record.orderId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (err) {
+      setSlaError(err instanceof Error ? err.message : "Could not sign the SLA.");
+    } finally {
+      setSlaBusy(false);
+    }
+  }
 
   useEffect(() => {
     let stopped = false;
@@ -278,6 +318,30 @@ export function OrderView({ id }: { id: string }) {
               <span className="dm-mono bd-muted">{order.agreementHash}</span>
             </div>
           ) : null}
+          <div className="sla-sign">
+            <span className="sla-sign__eyebrow">Buyer approval</span>
+            <h3>Sign and download the SLA</h3>
+            <p>
+              Your buyer wallet signs the order terms. The PDF includes the signature, payment
+              milestones, and a link to the deployed escrow contract when a public explorer is
+              available. Wallet control alone does not establish the signer&apos;s identity.
+            </p>
+            <button
+              type="button"
+              onClick={() => void signAndDownloadSla()}
+              disabled={!order?.chainOrderId || slaBusy}
+            >
+              {slaBusy ? "Waiting for wallet…" : "Sign with buyer wallet · Download PDF"}
+            </button>
+            {!order?.chainOrderId ? (
+              <small>Available after the order is created on chain.</small>
+            ) : null}
+            {slaError ? (
+              <small role="alert" className="sla-sign__error">
+                {slaError}
+              </small>
+            ) : null}
+          </div>
         </section>
         <section className="dm-card dm-narrow" aria-label="Live balances">
           <BalancePanel addresses={addresses} />

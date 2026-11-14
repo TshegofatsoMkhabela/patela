@@ -1,0 +1,59 @@
+.sla-sign {
+  margin-top: 24px;
+  padding: 23px;
+  border: 1px solid rgba(177, 204, 220, 0.29);
+  border-radius: 21px;
+  color: #f2fcf1;
+  background: radial-gradient(circle at 50% 40%, #12334f, #041d36 72%, #03172b);
+  box-shadow: 0 22px 65px rgba(0, 0, 0, 0.13);
+}
+.sla-sign__eyebrow {
+  color: #b3c4ce;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.sla-sign h3 {
+  margin: 8px 0;
+  font-size: 20px;
+  letter-spacing: -0.035em;
+}
+.sla-sign p {
+  max-width: 65ch;
+  margin: 0 0 17px;
+  color: #b3c4ce;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.sla-sign button {
+  min-height: 44px;
+  padding: 10px 17px;
+  border: 0;
+  border-radius: 10px;
+  color: #061d35;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.sla-sign button:hover {
+  background: #eaf3f4;
+}
+.sla-sign button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+.sla-sign button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+.sla-sign small {
+  display: block;
+  margin-top: 10px;
+  color: #b3c4ce;
+}
+.sla-sign .sla-sign__error {
+  color: #ffb4b4;
+}
