@@ -31,6 +31,7 @@ export default function HandoffPage() {
   const [state, setState] = useState<FlowState | null>(null);
   const [qrImage, setQrImage] = useState<string | null>(null);
   const [scanned, setScanned] = useState<string | null>(null);
+  const [pasted, setPasted] = useState("");
   const confirmRef = useRef<() => void>(() => {});
   const started = useRef(false);
   // Bumped on retry and unmount so a superseded run stops polling and stops writing state.
@@ -106,6 +107,7 @@ export default function HandoffPage() {
     run.current++;
     started.current = false;
     setScanned(null);
+    setPasted("");
     setQrImage(null);
     setState(null);
   };
@@ -147,9 +149,25 @@ export default function HandoffPage() {
         )}
 
         {role === "receiver" && !scanned && state?.kind !== "error" && (
-          <section className="space-y-2">
+          <section className="space-y-3">
             <p>Point the webcam at the QR on the other screen.</p>
             <QrScanner onScan={setScanned} />
+            <div className="space-y-2 border-t pt-3">
+              <p className="text-sm opacity-70">
+                Camera unavailable? Paste the handoff code shown with the QR.
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  aria-label="Paste handoff code"
+                  placeholder="patela:h1:…"
+                  value={pasted}
+                  onChange={(event) => setPasted(event.target.value)}
+                />
+                <Button disabled={!pasted.trim()} onClick={() => setScanned(pasted.trim())}>
+                  Use pasted code
+                </Button>
+              </div>
+            </div>
           </section>
         )}
 
