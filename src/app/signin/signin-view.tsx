@@ -120,9 +120,14 @@ export function SignInView() {
     }
     if (!codeSent) {
       runBackend(async () => {
-        await patelaApi.requestOtp(address);
+        const requested = await patelaApi.requestOtp(address);
         setCodeSent(true);
-        toast.info("Code requested. Enter the 6-digit code to continue.");
+        if (requested.demo && requested.code) {
+          setCode(requested.code);
+          toast.info(`Hosted demo code: ${requested.code}`);
+        } else {
+          toast.info("Code requested. Enter the 6-digit code to continue.");
+        }
       });
       return;
     }

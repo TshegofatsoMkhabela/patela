@@ -39,7 +39,11 @@ export interface AppDependencies {
   mailTransport?: MailTransport;
   /** DEMO: also return one-time accept links in API responses, in case an email is slow on stage. */
   demoMode?: boolean;
+  /** HOSTED DEMO: shortcuts apply only to reserved @demo.patela.local personas. */
+  demoHosted?: boolean;
 }
+
+export const DEMO_PERSONA_DOMAIN = "@demo.patela.local";
 
 function objectBody(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value))
@@ -83,7 +87,10 @@ export function buildApp({
   enableAuthSmokePage = false,
   mailTransport,
   demoMode = false,
+  demoHosted = false,
 }: AppDependencies) {
+  const demoFor = (address: string) =>
+    demoMode && demoHosted && address.toLowerCase().endsWith(DEMO_PERSONA_DOMAIN);
   const app = Fastify({ logger: false, bodyLimit: 128 * 1024 });
   const secureCookie = new URL(apiOrigin).protocol === "https:" ? "; Secure" : "";
   const domainCookie = cookieDomain ? `; Domain=${cookieDomain}` : "";
@@ -126,6 +133,7 @@ export function buildApp({
     tokenDecimals: tokenDecimals ?? ZARM_DECIMALS,
     publicOrigin,
     demoMode,
+    demoAutoApprove: demoFor,
   });
   // Any write may have queued email (sign-in codes, order and business invites, review decisions).
   // Send it before the reply: a Lambda freezes once it has responded. A mail outage never fails the request.
@@ -186,8 +194,16 @@ export function buildApp({
     { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } },
     async (request, reply) => {
       const body = objectBody(request.body);
-      await auth.requestEmailOtp(email(body.email));
-      return { queued: true };
+      const address = email(body.email);
+      await auth.requestEmailOtp(address);
+      if (!demoFor(address)) return { queued: true };
+      const latest = await db.query<{ payload: { code?: string } }>(
+        `select payload from email_outbox where to_email=$1 and template='login_otp'
+         order by created_at desc,id desc limit 1`,
+        [address.toLowerCase()],
+      );
+      reply.header("Cache-Control", "no-store");
+      return { queued: true, demo: true, code: latest.rows[0]?.payload?.code };
     },
   );
   app.post(

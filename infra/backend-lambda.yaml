@@ -72,6 +72,11 @@ Parameters:
     Default: 'false'
     AllowedValues: ['true', 'false']
     Description: DEMO only. Also return one-time accept links in API responses as a fallback for slow email.
+  DemoHosted:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: DEMO only. Reserved @demo.patela.local personas receive OTP codes and automatic trading approval when SMTP is disabled.
 
 Conditions:
   HasGoogleClientSecret: !Not [!Equals [!Ref GoogleClientSecretArn, '']]
@@ -248,6 +253,7 @@ Resources:
           TOKEN_ADDRESS: !If [HasTokenAddress, !Ref TokenAddress, !Ref AWS::NoValue]
           SMTP_SECRET_ARN: !If [HasSmtpSecret, !Ref SmtpSecretArn, !Ref AWS::NoValue]
           DEMO_MODE: !Ref DemoMode
+          DEMO_HOSTED: !Ref DemoHosted
   MigrationFunction:
     Type: AWS::Lambda::Function
     Properties:

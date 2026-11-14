@@ -69,7 +69,9 @@ export function createPatelaApi({
   return {
     me,
     requestOtp: (email: string) =>
-      call<{ queued: boolean }>("/auth/otp/request", "POST", { email }),
+      call<{ queued: boolean; demo?: boolean; code?: string }>("/auth/otp/request", "POST", {
+        email,
+      }),
     async verifyOtp(email: string, code: string): Promise<Profile> {
       // The verify response also carries the raw session tokens; the cookies it
       // sets are what we use, so the body is deliberately discarded.

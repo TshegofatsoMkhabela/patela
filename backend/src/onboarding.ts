@@ -106,6 +106,29 @@ export async function missingCapability(
   return required.find(([userId, capability]) => !met.has(`${userId}:${capability}`))?.[1] ?? null;
 }
 
+/** DEMO: create an approved business only when a tightly scoped demo rule allows it. */
+export async function ensureDemoCapability(db: Queryable, userId: string, capability: Capability) {
+  if (!(await missingCapability(db, [[userId, capability]]))) return;
+  const id = randomUUID();
+  const cipc = `2026/${String(randomBytes(4).readUInt32BE() % 1_000_000).padStart(6, "0")}/07`;
+  const email = (await db.query<Row>("select email from profiles where id=$1", [userId])).rows[0]
+    ?.email;
+  await db.query(
+    `insert into organizations
+     (id,legal_name,registration_number,capabilities,status,created_by,submitted_at,reviewed_at)
+     values ($1,$2,$3,$4,'approved',$5,now(),now())`,
+    [id, `Demo business (${String(email ?? "demo user")})`, cipc, [...CAPABILITIES], userId],
+  );
+  await db.query(
+    "insert into organization_members (organization_id,user_id,member_role) values ($1,$2,'owner')",
+    [id, userId],
+  );
+}
+
+export type DemoApproval = boolean | ((email: string) => boolean);
+export const demoApproves = (rule: DemoApproval | undefined, email: unknown) =>
+  typeof rule === "function" ? rule(String(email ?? "")) : Boolean(rule);
+
 export class OnboardingService {
   constructor(
     private readonly db: Database,

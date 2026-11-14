@@ -58,6 +58,7 @@ export function createRuntime(env: NodeJS.ProcessEnv = process.env) {
     DATABASE_SSL = "false",
     SMTP_SECRET_ARN,
     DEMO_MODE = "false",
+    DEMO_HOSTED = "false",
     COOKIE_DOMAIN,
     COOKIE_SAME_SITE = "Lax",
   } = env;
@@ -139,6 +140,7 @@ export function createRuntime(env: NodeJS.ProcessEnv = process.env) {
       ? new GmailTransport(secretsManagerLoader(SMTP_SECRET_ARN))
       : undefined,
     demoMode: DEMO_MODE === "true",
+    demoHosted: DEMO_MODE === "true" && DEMO_HOSTED === "true" && !SMTP_SECRET_ARN,
   });
   return { app, db };
 }

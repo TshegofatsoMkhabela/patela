@@ -47,6 +47,17 @@ describe("patela api client", () => {
     expect(new Headers(calls[0].init.headers).get("Content-Type")).toBe("application/json");
   });
 
+  it("returns a hosted demo code so the sign-in screen can display it", async () => {
+    const { fetch } = stubFetch([{ body: { queued: true, demo: true, code: "123456" } }]);
+    const api = createPatelaApi({ baseUrl: "http://api.test", fetch });
+
+    await expect(api.requestOtp("buyer@demo.patela.local")).resolves.toEqual({
+      queued: true,
+      demo: true,
+      code: "123456",
+    });
+  });
+
   it("given a correct code, when it is verified, then it returns the signed-in profile from /me, not the token body", async () => {
     const { fetch, calls } = stubFetch([
       { body: { accessToken: "secret-access", refreshToken: "secret-refresh" } },
