@@ -36,7 +36,7 @@ const MODELS = [
   // Sketchfab "Low Poly Truck" by Arifido._ (CC BY 4.0). Measured from scene.gltf: Y-up, length
   // along Z, 1.31 x 1.71 x 4.48 units -> x2 ≈ a 9 m truck. Facing confirmed in Chrome.
   {
-    url: "models/patela-truck.gltf",
+    url: "/tracker-demo/models/patela-truck.gltf",
     sizeScale: 2,
     minPixels: 22,
     orientation: (h) => [0, 180 - h, 90],

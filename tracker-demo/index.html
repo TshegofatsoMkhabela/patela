@@ -155,12 +155,35 @@
   </body>
   <script type="module">
     import {renderToDOM} from './app.js';
-    fetch('/api/tracker-config')
-      .then(response => response.ok ? response.json() : {})
-      .catch(() => ({}))
-      .then(config => {
-        window.PATELA_TRACKER_CONFIG = config;
-        renderToDOM(document.getElementById('app'));
-      });
+    let currentContainer = null;
+    let pending = null;
+    let session = null;
+    window.PATELA_TRACKER_BOOT = () => {
+      const container = document.getElementById('app');
+      if (!container) return;
+      if (container === currentContainer && pending) return pending;
+      session?.remove();
+      currentContainer = container;
+      pending = fetch('/api/tracker-config')
+        .then(response => response.ok ? response.json() : {})
+        .catch(() => ({}))
+        .then(config => {
+          window.PATELA_TRACKER_CONFIG = config;
+          return renderToDOM(container);
+        })
+        .then(result => {
+          if (currentContainer !== container) result?.remove();
+          else session = result;
+          return result;
+        })
+        .catch(() => {
+          if (currentContainer === container) {
+            container.textContent = 'Google Maps could not load. Refresh to try again.';
+            pending = null;
+          }
+        });
+      return pending;
+    };
+    if (window.location.pathname.startsWith('/tracker-demo/')) window.PATELA_TRACKER_BOOT();
   </script>
 </html>

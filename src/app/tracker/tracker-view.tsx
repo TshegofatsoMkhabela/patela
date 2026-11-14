@@ -1,13 +1,44 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import Script from "next/script";
 import { QrScanner } from "@/components/QrScanner";
 import { LivenessCheck } from "@/components/tracker/LivenessCheck";
 import { isApprovedTrackerQr } from "@/lib/tracker-handoff";
 import "@/styles/tracker-handoff.css";
 
-type ScanState = "loading" | "scanning" | "blocked" | "liveness";
+type ScanState = "loading" | "scanning" | "wrongQr" | "blocked" | "liveness";
+
+declare global {
+  interface Window {
+    PATELA_TRACKER_BOOT?: () => void;
+  }
+}
+
+const TrackerCanvas = memo(function TrackerCanvas({
+  styles,
+  markup,
+  script,
+}: {
+  styles: string;
+  markup: string;
+  script: string;
+}) {
+  return (
+    <>
+      {script ? (
+        <Script
+          src={script}
+          type="module"
+          strategy="afterInteractive"
+          onReady={() => window.PATELA_TRACKER_BOOT?.()}
+        />
+      ) : null}
+      <style dangerouslySetInnerHTML={{ __html: styles }} />
+      <div dangerouslySetInnerHTML={{ __html: markup }} />
+    </>
+  );
+});
 
 export function TrackerView({
   styles,
@@ -51,7 +82,7 @@ export function TrackerView({
       approveHandoff();
       return;
     }
-    setScanState("liveness");
+    setScanState("wrongQr");
   }
 
   function approveHandoff() {
@@ -75,9 +106,7 @@ export function TrackerView({
 
   return (
     <main className="tracker-page">
-      {script ? <Script src={script} type="module" strategy="afterInteractive" /> : null}
-      <style dangerouslySetInnerHTML={{ __html: styles }} />
-      <div dangerouslySetInnerHTML={{ __html: markup }} />
+      <TrackerCanvas styles={styles} markup={markup} script={script} />
       {open ? (
         <div className="tracker-scan-backdrop" role="presentation">
           <section
@@ -105,6 +134,19 @@ export function TrackerView({
                   <span className="tracker-scan-frame" aria-hidden="true" />
                 </div>
               </>
+            ) : null}
+
+            {scanState === "wrongQr" ? (
+              <div className="tracker-scan-result tracker-scan-result--blocked" role="alert">
+                <strong>QR not approved</strong>
+                <p>Try the Patella handoff code shown on your phone.</p>
+                <button type="button" onClick={retry}>
+                  Scan another code
+                </button>
+                <button type="button" onClick={() => setScanState("liveness")}>
+                  Face check and supervisor help
+                </button>
+              </div>
             ) : null}
 
             {scanState === "liveness" ? (
