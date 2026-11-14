@@ -4,6 +4,7 @@ import {
   buyerView,
   chooseMapMode,
   completeAction,
+  progressUpdates,
   pickFocus,
   positionAt,
   progressAt,
@@ -153,6 +154,25 @@ describe("buyer dashboard: where the truck is", () => {
       expect(p).toBeGreaterThan(0);
       expect(p).toBeLessThan(1);
     }
+  });
+});
+
+describe("buyer dashboard: journey progress updates", () => {
+  it("summarises the completed, current and upcoming parts of the route", () => {
+    const shipment = ship({
+      from: "Pretoria",
+      to: "Polokwane",
+      near: "Mokopane",
+      road: "N1",
+      departedAt: NOW - 3 * HOUR,
+      etaAt: NOW + 1 * HOUR,
+    });
+
+    expect(progressUpdates(shipment, NOW)).toEqual([
+      { label: "Left Pretoria", meta: "On the road", state: "done" },
+      { label: "Near Mokopane · N1", meta: "75% of route complete", state: "current" },
+      { label: "Arrive Polokwane", meta: "Next", state: "upcoming" },
+    ]);
   });
 });
 

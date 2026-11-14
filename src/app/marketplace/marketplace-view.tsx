@@ -31,7 +31,7 @@ export function MarketplaceView() {
               </p>
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <Link href="/html/orders.html" className="pt-btn sm">
+              <Link href="/buyer" className="pt-btn sm">
                 <span>Orders & RFQs</span>
                 <span aria-hidden="true">→</span>
               </Link>

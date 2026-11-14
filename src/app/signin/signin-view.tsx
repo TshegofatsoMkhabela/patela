@@ -70,7 +70,7 @@ export function SignInView() {
       return;
     }
     toast.success(message);
-    router.push(nextPath("/html/client-dashboard.html"));
+    router.push(nextPath("/buyer"));
   }
 
   // Demo only: the backend has no password sign-in.

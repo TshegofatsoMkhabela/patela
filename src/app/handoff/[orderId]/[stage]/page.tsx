@@ -3,8 +3,7 @@
 import QRCode from "qrcode";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PhoneShell } from "@/components/demo/DemoShell";
 import { PaidScreen } from "@/components/PaidScreen";
 import { QrScanner } from "@/components/QrScanner";
 import {
@@ -100,7 +99,12 @@ export default function HandoffPage() {
       void QRCode.toDataURL(state.qr, { width: 360, margin: 2 }).then(setQrImage);
   }, [state]);
 
-  if (!stage) return <main className="p-8">Unknown handoff stage.</main>;
+  if (!stage)
+    return (
+      <PhoneShell>
+        <h1>Unknown handoff stage</h1>
+      </PhoneShell>
+    );
   if (state?.kind === "paid")
     return <PaidScreen seconds={state.seconds} txHash={state.txHash} stage={stage} />;
 
@@ -111,115 +115,171 @@ export default function HandoffPage() {
     setState(null);
   };
 
+  const stageName = stage === 1 ? "Pickup" : "Delivery";
+  const receiverName = stage === 1 ? "the driver" : "the buyer";
+  const giverName = stage === 1 ? "the supplier" : "the driver";
+
   return (
-    <main className="mx-auto max-w-xl space-y-6 p-8">
-      <h1 className="text-2xl font-semibold">{stage === 1 ? "Pickup" : "Delivery"} handoff</h1>
-      <p className="text-sm opacity-70">
-        {localDemo
-          ? "Demo on a local Hardhat chain with test MockZARP. Sign in to Patela as your persona in this window first."
-          : "Demo on Base Sepolia with test MockZARP. Gas is sponsored by Patela."}
-      </p>
+    <PhoneShell
+      who={role === "giver" ? "Handing over" : role === "receiver" ? "Receiving" : stageName}
+    >
+      <div className="bd-stack-6">
+        <span className="bd-label">{stageName} handoff</span>
+        <h1>
+          {role === "giver"
+            ? `Show this to ${receiverName}`
+            : role === "receiver"
+              ? `Scan ${giverName}'s code`
+              : `${stageName} handoff`}
+        </h1>
+        <p className="dm-lead">
+          {localDemo
+            ? "Local demo chain with test MockZARP. Sign in to Patella as your persona in this browser first."
+            : "Base Sepolia with test MockZARP. On a phone, open this page in the MetaMask app's browser."}
+        </p>
+      </div>
 
       {!signer && localDemo && (
-        <section className="space-y-2">
-          <p>Demo wallets (Hardhat dev accounts, local chain only):</p>
-          <div className="flex flex-wrap gap-2">
-            {personas.map((p) => (
-              <Button key={p} onClick={() => connect(p)}>
-                I am the {p} (demo)
-              </Button>
-            ))}
-          </div>
+        <section className="bd-stack-8">
+          <span className="bd-small bd-muted">Who are you in this handoff?</span>
+          {personas.map((p) => (
+            <button key={p} type="button" className="bd-btn dm-block" onClick={() => connect(p)}>
+              I am the {p} (demo)
+            </button>
+          ))}
         </section>
       )}
 
       {!signer && !localDemo && (
-        <section className="space-y-3">
-          <p>Connect the wallet for your role.</p>
-          <div className="flex gap-2">
-            <Input
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <Button disabled={!email.includes("@")} onClick={() => connect("embedded")}>
-              Sign in with email
-            </Button>
-          </div>
-          <Button variant="outline" onClick={() => connect("extension")}>
-            Use MetaMask extension (buyer)
-          </Button>
+        <section className="bd-stack-8">
+          <span className="bd-small bd-muted">Connect the wallet for your role.</span>
+          <label htmlFor="ho-email" className="bd-small">
+            Email (driver and supplier wallets)
+          </label>
+          <input
+            id="ho-email"
+            className="dm-in"
+            type="email"
+            placeholder="you@company.co.za"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <button
+            type="button"
+            className="bd-btn dm-block"
+            disabled={!email.includes("@")}
+            onClick={() => connect("embedded")}
+          >
+            Sign in with email
+          </button>
+          <button
+            type="button"
+            className="dm-btn-ghost dm-block"
+            onClick={() => connect("extension")}
+          >
+            Use MetaMask (buyer)
+          </button>
         </section>
       )}
 
       {signer && (
-        <p className="text-sm">
-          {role === "giver" ? "You are handing over" : "You are receiving"} ·{" "}
-          {signer.address.slice(0, 6)}…{signer.address.slice(-4)}
-        </p>
+        <span className="dm-badge" style={{ alignSelf: "flex-start" }}>
+          Wallet {signer.address.slice(0, 6)}…{signer.address.slice(-4)}
+        </span>
       )}
 
       {role === "receiver" && !scanned && state?.kind !== "error" && (
-        <section className="space-y-2">
-          <p>Point the webcam at the QR on the other screen.</p>
-          <QrScanner onScan={setScanned} />
+        <section className="bd-stack-10">
+          <div className="dm-scan">
+            <QrScanner onScan={setScanned} />
+          </div>
+          <ul className="dm-checks">
+            <li>Proves {giverName} is here with the goods</li>
+            <li>Works once and expires in minutes</li>
+            <li>Payment releases only after both of you sign</li>
+          </ul>
           {localDemo && (
-            <div className="flex gap-2">
-              <Input
-                placeholder="Demo: paste the QR text (patela:h1:…)"
+            <div className="bd-stack-8">
+              <label htmlFor="ho-paste" className="bd-small bd-muted">
+                Demo: paste the QR text instead
+              </label>
+              <input
+                id="ho-paste"
+                className="dm-in"
+                placeholder="patela:h1:…"
                 value={pasted}
                 onChange={(e) => setPasted(e.target.value)}
               />
-              <Button
+              <button
+                type="button"
+                className="dm-btn-ghost dm-block"
                 disabled={!pasted.startsWith("patela:")}
                 onClick={() => setScanned(pasted.trim())}
               >
                 Use pasted QR
-              </Button>
+              </button>
             </div>
           )}
         </section>
       )}
 
       {state?.kind === "showing-qr" && qrImage && (
-        <section className="space-y-2 text-center">
-          <img src={qrImage} alt="Handoff QR code" className="mx-auto" width={360} height={360} />
+        <section className="bd-stack-10">
+          <div className="dm-qr">
+            <img src={qrImage} alt="Handoff QR code" width={360} height={360} />
+          </div>
           <Countdown expiresAt={state.expiresAt} />
+          <span className="dm-badge dm-badge--wait" style={{ alignSelf: "center" }}>
+            Waiting for {receiverName} to scan…
+          </span>
           {localDemo && (
-            <Button variant="outline" onClick={() => void navigator.clipboard?.writeText(state.qr)}>
+            <button
+              type="button"
+              className="dm-btn-ghost dm-block"
+              onClick={() => void navigator.clipboard?.writeText(state.qr)}
+            >
               Demo: copy QR text for the other window
-            </Button>
+            </button>
           )}
-          <p className="text-sm opacity-70">Waiting for the receiver to scan…</p>
         </section>
       )}
 
       {state?.kind === "ready-to-sign" && (
-        <section className="space-y-2">
-          <p>The receiver scanned and signed. Both locations are recorded.</p>
-          <Button size="lg" onClick={() => confirmRef.current()}>
+        <section className="bd-stack-10">
+          <p className="dm-msg">
+            {receiverName[0].toUpperCase() + receiverName.slice(1)} scanned and signed. Both
+            locations are recorded.
+          </p>
+          <button type="button" className="bd-btn dm-block" onClick={() => confirmRef.current()}>
             Sign to release payment
-          </Button>
+          </button>
         </section>
       )}
 
       {state &&
         ["locating", "signing", "submitting", "confirming", "waiting-for-release"].includes(
           state.kind,
-        ) && <p aria-live="polite">{STATUS[state.kind as keyof typeof STATUS]}</p>}
+        ) && (
+          <p
+            aria-live="polite"
+            className="dm-badge dm-badge--wait"
+            style={{ alignSelf: "flex-start" }}
+          >
+            {STATUS[state.kind as keyof typeof STATUS]}
+          </p>
+        )}
 
       {state?.kind === "error" && (
-        <section role="alert" className="space-y-2">
-          <p className="text-red-500">{state.message}</p>
+        <section role="alert" className="bd-stack-8">
+          <p className="dm-msg dm-msg--err">{state.message}</p>
           {signer && (
-            <Button variant="outline" onClick={retry}>
+            <button type="button" className="dm-btn-ghost dm-block" onClick={retry}>
               Start again
-            </Button>
+            </button>
           )}
         </section>
       )}
-    </main>
+    </PhoneShell>
   );
 }
 
@@ -237,5 +297,10 @@ function Countdown({ expiresAt }: { expiresAt: number }) {
     const t = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000);
     return () => clearInterval(t);
   }, []);
-  return <p className="font-mono">Expires in {Math.max(0, expiresAt - now)} s</p>;
+  const left = Math.max(0, expiresAt - now);
+  return (
+    <p className="dm-center bd-nums" style={{ margin: 0 }}>
+      One-time code · expires in {Math.floor(left / 60)}:{String(left % 60).padStart(2, "0")}
+    </p>
+  );
 }

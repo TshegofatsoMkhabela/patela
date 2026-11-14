@@ -153,4 +153,10 @@ export const api = {
   verifyFunding: (orderId: string, txHash: string) =>
     request<OrderDetail>("POST", `/orders/${id(orderId)}/funding/verify`, { txHash }),
   getOrder: (orderId: string) => request<OrderDetail>("GET", `/orders/${id(orderId)}`),
+  /** Orders the signed-in user is part of, newest first (no agreement text: use getOrder). */
+  listOrders: () =>
+    request<{ orders: Array<{ id: string; chainOrderId?: string | null; status?: string }> }>(
+      "GET",
+      "/orders",
+    ).then((r) => r.orders),
 };

@@ -13,8 +13,8 @@ export function SiteFooter() {
       <div>
         <h4>Platform &amp; Operations</h4>
         <Link href="/how-it-works">How it works</Link>
-        <Link href="/html/orders.html">Orders &amp; RFQs</Link>
-        <Link href="/html/create-order.html">Create Order</Link>
+        <Link href="/buyer">Orders &amp; RFQs</Link>
+        <Link href="/orders/new">Create Order</Link>
         <Link href="/html/route-builder.html">Route Builder</Link>
         <Link href="/html/payment-builder.html">Payment Builder</Link>
         <Link href="/html/guest-handoff.html">Guest Mobile Handoff</Link>

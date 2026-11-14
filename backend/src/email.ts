@@ -23,6 +23,39 @@ export async function queueEmail(db: Queryable, to: string, template: EmailTempl
 
 const str = (value: unknown) => (typeof value === "string" ? value : "");
 
+type Invoice = {
+  number: string; issuedAt: string; buyerEmail: string; supplierEmail: string; total: string;
+  lines: { label: string; amount: string }[]; refundDeadline: string;
+};
+
+/** "48000" -> "R 48 000.00" (South African grouping). */
+const rand = (amount: string) => {
+  const [whole, frac = ""] = amount.split(".");
+  return `R ${whole.replace(/\B(?=(\d{3})+(?!\d))/g, " ")}.${(frac + "00").slice(0, 2)}`;
+};
+const day = (iso: string) => iso.slice(0, 10);
+
+/** Plain-text invoice block for the supplier invitation. */
+function renderInvoice(inv: Invoice, agreementText: string): string[] {
+  const row = (label: string, amount: string) => `${label.padEnd(28)}${rand(amount)}`;
+  return [
+    "----------------------------------------",
+    `INVOICE ${inv.number}`,
+    `Issued: ${day(inv.issuedAt)}`,
+    `Bill to: ${inv.buyerEmail}`,
+    `Supplier: ${inv.supplierEmail}`,
+    "",
+    `Goods: ${agreementText}`,
+    "",
+    "Payment schedule (released from escrow at each verified handoff):",
+    ...inv.lines.map(l => row(l.label, l.amount)),
+    row("Total held in escrow", inv.total),
+    "",
+    `Unpaid amounts can be refunded to the buyer after ${day(inv.refundDeadline)}.`,
+    "----------------------------------------",
+  ];
+}
+
 /** Plain-text bodies for every template the backend queues. */
 export function renderEmail(template: EmailTemplate, payload: Payload): { subject: string; text: string } {
   const link = str(payload.acceptUrl);
@@ -30,10 +63,14 @@ export function renderEmail(template: EmailTemplate, payload: Payload): { subjec
     case "order_supplier_invited":
     case "order_driver_invited": {
       const role = template === "order_supplier_invited" ? "supplier" : "driver";
+      const invoice = payload.invoice as Invoice | undefined;
       return {
-        subject: `Patela: you're invited as the ${role} on an order`,
+        subject: invoice
+          ? `Patela: invoice ${invoice.number} · you're invited as the ${role} on an order`
+          : `Patela: you're invited as the ${role} on an order`,
         text: [`You've been invited to a Patela order as the ${role}.`, "",
-          payload.agreementText ? `Agreement: ${str(payload.agreementText)}` : "",
+          ...(invoice ? [...renderInvoice(invoice, str(payload.agreementText)), ""] : []),
+          payload.agreementText && !invoice ? `Agreement: ${str(payload.agreementText)}` : "",
           "", `Open this link to review and accept (it works once):`, link, "",
           "Patela demo on Base Sepolia test tokens — no real money moves."].join("\n"),
       };

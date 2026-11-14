@@ -41,6 +41,7 @@ export function parseEnvFile(text) {
 export function planDemo(env, { dockerRunning }) {
   const webPort = Number(env.DEMO_WEB_PORT || 3001);
   const apiPort = Number(env.DEMO_API_PORT || 4000);
+  const chainPort = Number(env.DEMO_CHAIN_PORT || 8545);
   const chainId = Number(env.NEXT_PUBLIC_CHAIN_ID || 31337);
   const local = chainId === 31337;
   if (!local) {
@@ -53,7 +54,7 @@ export function planDemo(env, { dockerRunning }) {
       throw new Error(`Chain ${chainId} needs ${missing.join(", ")} in .env.demo`);
   }
   const database = env.DATABASE_URL ? "external" : dockerRunning ? "docker" : "pglite";
-  return { webPort, apiPort, chainId, local, database };
+  return { webPort, apiPort, chainPort, chainId, local, database };
 }
 
 function log(msg) {
@@ -141,7 +142,7 @@ async function main() {
   const webOrigin = `http://localhost:${plan.webPort}`;
   const apiOrigin = `http://localhost:${plan.apiPort}`;
 
-  const ports = [plan.webPort, plan.apiPort, ...(plan.local ? [8545] : [])];
+  const ports = [plan.webPort, plan.apiPort, ...(plan.local ? [plan.chainPort] : [])];
   for (const port of ports) {
     if (!(await portFree(port))) {
       throw new Error(
@@ -198,22 +199,30 @@ async function main() {
   // 2. Chain
   let chain;
   if (plan.local) {
-    startService("hardhat", [hardhatCli, "node"], CONTRACTS, {}, pids);
+    startService(
+      "hardhat",
+      [hardhatCli, "node", "--port", String(plan.chainPort)],
+      CONTRACTS,
+      { DEMO_CHAIN_PORT: String(plan.chainPort) },
+      pids,
+    );
+    const localRpcUrl = `http://127.0.0.1:${plan.chainPort}`;
     await waitFor(
       "Hardhat node",
-      async () => (await rpc("http://127.0.0.1:8545", "eth_chainId")).result === "0x7a69",
+      async () => (await rpc(localRpcUrl, "eth_chainId")).result === "0x7a69",
       90_000,
     );
     log("Deploying MockZARP, registry and escrow to the local chain");
     run(process.execPath, [hardhatCli, "run", "scripts/deploy.ts", "--network", "localhost"], {
       cwd: CONTRACTS,
+      env: { ...process.env, DEMO_CHAIN_PORT: String(plan.chainPort) },
     });
     const deployment = JSON.parse(
       readFileSync(path.join(CONTRACTS, "deployments", "localhost.json"), "utf8"),
     );
     chain = {
       chainId: 31337,
-      rpcUrl: "http://127.0.0.1:8545",
+      rpcUrl: localRpcUrl,
       escrow: deployment.contracts.PatellaEscrowAndLogistics.address,
       token: deployment.contracts.MockZARP.address,
     };
@@ -280,6 +289,7 @@ async function main() {
     "NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID",
     "NEXT_PUBLIC_GOOGLE_CLIENT_ID",
     "NEXT_PUBLIC_WEB3AUTH_CLIENT_ID",
+    "NEXT_PUBLIC_TOKEN_SYMBOL",
   ]) {
     if (env[key]) webEnv[key] = env[key];
   }

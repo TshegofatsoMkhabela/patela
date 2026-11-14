@@ -60,7 +60,7 @@ export function PostJobView() {
                 <span>5-Step Dashboard Wizard</span>
                 <span aria-hidden="true">↗</span>
               </Link>
-              <Link href="/html/client-dashboard.html" className="pt-btn ghost sm">
+              <Link href="/buyer" className="pt-btn ghost sm">
                 <span>Client Overview</span>
                 <span aria-hidden="true">→</span>
               </Link>

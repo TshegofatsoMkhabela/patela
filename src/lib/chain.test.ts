@@ -378,3 +378,18 @@ describe("signWalletLink", () => {
     expect(arg.primaryType).toBe("WalletLink");
   });
 });
+
+describe("resolveNetwork with test CZAR on Celo", () => {
+  it("labels Celo Sepolia + CZAR as mintable test Rand", () => {
+    const n = resolveNetwork(11142220, "CZAR");
+    expect(n.tokenSymbol).toBe("CZAR");
+    expect(n.mintable).toBe(true);
+    expect(n.label).toBe("Test CZAR on Celo · Celo Sepolia Testnet");
+  });
+
+  it("keeps real ZARm on Celo unmintable by default", () => {
+    const n = resolveNetwork(11142220);
+    expect(n.tokenSymbol).toBe("ZARm");
+    expect(n.mintable).toBe(false);
+  });
+});

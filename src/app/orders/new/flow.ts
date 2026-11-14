@@ -7,6 +7,7 @@ import type { CreateOrderInput, CreatedOrder } from "@/lib/api";
 import {
   contractErrorMessage,
   splitTotal,
+  type SplitPct,
   type FundResult,
   type FundStep,
   type OrderParams,
@@ -31,6 +32,8 @@ export type OrderForm = {
   totalZarp: string;
   refundAfterHours: number;
   agreementText: string;
+  /** Pickup percentages; delivery gets the rest. Defaults to 10/40/50. */
+  split?: SplitPct;
 };
 
 export type FlowProgress = {
@@ -94,7 +97,7 @@ export async function runOrderFlow(
   Required<Pick<FlowProgress, "orderId" | "chainOrderId" | "agreementHash" | "refundDeadline">>
 > {
   const total = parseTotal(form.totalZarp);
-  const split = splitTotal(total);
+  const split = splitTotal(total, form.split);
   const progress: FlowProgress = { ...initial };
   const steps = Object.fromEntries(KEYS.map((k) => [k, { status: "idle" }])) as Record<
     StepKey,

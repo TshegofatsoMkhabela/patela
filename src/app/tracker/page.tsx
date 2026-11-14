@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TrackerView } from "./tracker-view";
 
 export const metadata: Metadata = {
   title: "Route tracker demo — Patela",
@@ -7,11 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function TrackerPage() {
-  return (
-    <iframe
-      title="Simulated Cape Town to Beaufort West route tracker"
-      src="/tracker-demo/index.html"
-      style={{ display: "block", width: "100vw", height: "100dvh", border: 0 }}
-    />
-  );
+  return <TrackerView />;
 }

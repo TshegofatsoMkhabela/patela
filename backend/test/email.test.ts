@@ -112,3 +112,35 @@ test("a sign-in code older than ten minutes is never sent", async () => {
     assert.equal((await db.query("select status from email_outbox")).rows[0].status, "failed");
   } finally { await db.close(); }
 });
+
+test("the supplier invite carries an invoice with the total and payment schedule", () => {
+  const email = renderEmail("order_supplier_invited", {
+    acceptUrl: "https://demo.example/accept?token=abc",
+    agreementText: "40 office chairs to Durban by Friday",
+    invoice: {
+      number: "PAT-1A2B3C4D",
+      issuedAt: "2026-11-14T08:00:00.000Z",
+      buyerEmail: "buyer@demo.patela.local",
+      supplierEmail: "supplier@demo.patela.local",
+      total: "48000",
+      lines: [
+        { label: "Driver, at pickup", amount: "4800" },
+        { label: "Supplier, at pickup", amount: "19200" },
+        { label: "Supplier, at delivery", amount: "24000" },
+      ],
+      refundDeadline: "2026-11-17T08:00:00.000Z",
+    },
+  });
+  assert.match(email.subject, /invoice PAT-1A2B3C4D/i);
+  assert.match(email.text, /INVOICE PAT-1A2B3C4D/);
+  assert.match(email.text, /Bill to: buyer@demo\.patela\.local/);
+  assert.match(email.text, /40 office chairs to Durban by Friday/);
+  assert.match(email.text, /Supplier, at delivery\s+R 24 000\.00/);
+  assert.match(email.text, /Total held in escrow\s+R 48 000\.00/);
+  assert.match(email.text, /https:\/\/demo\.example\/accept\?token=abc/);
+});
+
+test("an invite without invoice details still renders the plain invitation", () => {
+  const email = renderEmail("order_driver_invited", { acceptUrl: "https://x/accept?token=t" });
+  assert.doesNotMatch(email.text, /INVOICE/);
+});

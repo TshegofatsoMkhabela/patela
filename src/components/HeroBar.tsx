@@ -71,21 +71,15 @@ export function HeroBar() {
           <Link href="/how-it-works" className={pathname === "/how-it-works" ? "on" : ""}>
             <span>How it works</span>
           </Link>
-          <Link href="/html/orders.html" className={pathname === "/html/orders.html" ? "on" : ""}>
+          <Link href="/buyer" className={pathname === "/buyer" ? "on" : ""}>
             <span>Orders &amp; Custody</span>
-          </Link>
-          <Link
-            href="/html/guest-handoff.html"
-            className={pathname === "/html/guest-handoff.html" ? "on" : ""}
-          >
-            <span>Guest Handoff</span>
           </Link>
           <SolutionsMenu />
         </nav>
         <Link className={`login ${pathname === "/signin" ? "on" : ""}`} href="/signin">
           <span>Sign In</span>
         </Link>
-        <Link className="login" href="/html/index.html">
+        <Link className="login" href="/buyer">
           <span>Workspace</span>
           <svg className="navarrow" viewBox="0 0 10 9" aria-hidden="true">
             <path d="M0 4.5 H9.1 M5.4 0.9 L9.2 4.5 L5.4 8.1" />

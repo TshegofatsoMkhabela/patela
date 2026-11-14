@@ -118,6 +118,27 @@ export function progressAt(s: Shipment, now: number): number {
   return Math.min(1, Math.max(0, (now - s.departedAt) / span));
 }
 
+export type ProgressUpdateState = "done" | "current" | "upcoming";
+export interface ProgressUpdate {
+  label: string;
+  meta: string;
+  state: ProgressUpdateState;
+}
+
+/** Three glanceable milestones used in the detail card and its map-only responsive overlay. */
+export function progressUpdates(s: Shipment, now: number): ProgressUpdate[] {
+  const percent = Math.round(progressAt(s, now) * 100);
+  return [
+    { label: `Left ${s.from}`, meta: "On the road", state: "done" },
+    {
+      label: `Near ${s.near} · ${s.road}`,
+      meta: `${percent}% of route complete`,
+      state: "current",
+    },
+    { label: `Arrive ${s.to}`, meta: "Next", state: "upcoming" },
+  ];
+}
+
 export type LngLat = [number, number];
 
 const toRad = (d: number) => (d * Math.PI) / 180;

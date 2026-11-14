@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
-import { SignUpView } from "./signup-view";
+import { BuyerOnboardingView } from "./buyer-onboarding-view";
 
 export const metadata: Metadata = {
-  title: "Sign Up & Progressive Onboarding — Patella",
-  description:
-    "Register for Patella B2B supply chain custody and escrow. Complete step-by-step role profile onboarding for buyers, carriers, suppliers, drivers, and auditors.",
+  title: "Buyer onboarding — Patella",
+  description: "Create and verify a Patella buyer profile in four short steps.",
   openGraph: {
-    title: "Sign Up & Progressive Onboarding — Patella",
-    description:
-      "Enterprise onboarding for South African multi-hop logistics: role-specific credentials, CIPC registration, and escrow configuration.",
+    title: "Buyer onboarding — Patella",
+    description: "Four-step buyer onboarding for the Patella demo.",
     type: "website",
   },
   twitter: {
@@ -17,5 +15,5 @@ export const metadata: Metadata = {
 };
 
 export default function SignUpPage() {
-  return <SignUpView />;
+  return <BuyerOnboardingView />;
 }

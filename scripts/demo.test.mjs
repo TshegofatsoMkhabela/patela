@@ -13,6 +13,7 @@ describe("npm run demo: plan", () => {
     expect(planDemo({}, { dockerRunning: true })).toEqual({
       webPort: 3001,
       apiPort: 4000,
+      chainPort: 8545,
       chainId: 31337,
       local: true,
       database: "docker",
@@ -50,5 +51,9 @@ describe("npm run demo: plan", () => {
 
   it("Given DEMO_WEB_PORT, Then the web app uses that port", () => {
     expect(planDemo({ DEMO_WEB_PORT: "3101" }, { dockerRunning: false }).webPort).toBe(3101);
+  });
+
+  it("Given DEMO_CHAIN_PORT, Then the local chain uses that port", () => {
+    expect(planDemo({ DEMO_CHAIN_PORT: "8546" }, { dockerRunning: false }).chainPort).toBe(8546);
   });
 });

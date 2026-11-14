@@ -4,8 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Address, Hex, TypedDataDefinition } from "viem";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DemoShell, PageHeader } from "@/components/demo/DemoShell";
 import { connectEmbeddedWallet, type WalletSigner } from "@/lib/embedded-wallet";
 import { demoSignerAvailable, demoWalletSigner } from "@/lib/demo-signer";
 import { contractErrorMessage } from "@/lib/handoff";
@@ -208,115 +207,177 @@ export default function AcceptPage() {
       setStep("done");
     });
 
+  const isDriver = invite?.role === "driver";
   return (
-    <main className="mx-auto max-w-2xl space-y-6 p-8">
-      <h1 className="text-2xl font-semibold">
-        {invite?.role === "driver" ? "Driver invitation" : "Order invitation"}
-      </h1>
-      <p className="text-sm opacity-70">
-        {localDemo
-          ? "Demo on a local Hardhat chain with test MockZARP. Your demo wallet is a Hardhat dev account."
-          : "Demo on Base Sepolia with test MockZARP. Gas is sponsored by Patela."}
-      </p>
+    <DemoShell
+      workspace={isDriver ? "Driver workspace" : "Supplier workspace"}
+      nav={[]}
+      account={
+        invite ? (
+          <>
+            <span className="bd-strong">{invite.email}</span>
+            <span className="bd-small bd-muted">
+              {signer
+                ? `Wallet ${signer.address.slice(0, 6)}…${signer.address.slice(-4)}`
+                : "No wallet yet"}
+            </span>
+          </>
+        ) : undefined
+      }
+    >
+      <PageHeader
+        eyebrow={isDriver ? "Driver invitation" : "Order invitation"}
+        title={isDriver ? "You're driving this order" : "Read it. Then sign it on-chain."}
+      >
+        <p className="dm-lead">
+          {localDemo
+            ? "Local demo chain with test MockZARP. Your demo wallet is a Hardhat dev account."
+            : "Base Sepolia with test MockZARP, so no real money moves. Gas is sponsored by Patella."}
+        </p>
+      </PageHeader>
 
       {invite && (
-        <section className="space-y-2">
-          <p>
-            Invited as <strong>{invite.role}</strong> · {invite.email}
-          </p>
-          <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded border p-3 text-sm">
-            {invite.agreementText}
-          </pre>
-          <p className="break-all font-mono text-xs opacity-70">
-            Agreement hash {invite.agreementHash}
-          </p>
+        <section className="dm-agreement" aria-labelledby="agreement-label">
+          <span id="agreement-label" className="bd-label">
+            The agreement
+          </span>
+          <p>{invite.agreementText}</p>
+          <div className="dm-agreement-hash">
+            <span className="bd-label">Fingerprint (agreement hash)</span>
+            <span className="dm-mono">{invite.agreementHash}</span>
+          </div>
         </section>
       )}
 
-      {step === "sign-in" && (
-        <Button onClick={requestCode} disabled={!!busy}>
-          Email me a sign-in code
-        </Button>
-      )}
-      {step === "code" && (
-        <div className="flex gap-2">
-          <Input
-            inputMode="numeric"
-            maxLength={6}
-            placeholder="6-digit code"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-          />
-          <Button onClick={verifyCode} disabled={!!busy || code.trim().length !== 6}>
-            Sign in
-          </Button>
-        </div>
-      )}
-      {step === "wallet" && (
-        <div className="space-y-1">
-          <Button onClick={createWallet} disabled={!!busy}>
-            {localDemo ? "Use my demo wallet" : "Create my wallet"}
-          </Button>
-          <p className="text-xs opacity-70">
-            {localDemo
-              ? "Demo: signs with a Hardhat dev account on the local chain."
-              : "MetaMask Embedded Wallet will email you a second code to unlock your wallet."}
-          </p>
-        </div>
-      )}
-      {step === "await-funding" && (
-        <p aria-live="polite">Waiting for the buyer to create and fund the escrow…</p>
-      )}
-      {step === "accept" && (
-        <Button onClick={acceptOrder} disabled={!!busy}>
-          Accept the order
-        </Button>
-      )}
-      {step === "invite-driver" && (
-        <div className="flex gap-2">
-          <Input
-            type="email"
-            placeholder="driver@example.com"
-            value={driverEmail}
-            onChange={(e) => setDriverEmail(e.target.value)}
-          />
-          <Button onClick={inviteDriver} disabled={!!busy || !driverEmail.includes("@")}>
-            Invite driver
-          </Button>
-        </div>
-      )}
-      {step === "await-driver" && (
-        <p aria-live="polite">Waiting for the driver to accept and create a wallet…</p>
-      )}
-      {step === "assign" && driver && (
-        <Button onClick={assignDriver} disabled={!!busy}>
-          Assign driver {driver.slice(0, 6)}…{driver.slice(-4)}
-        </Button>
-      )}
-      {step === "done" && invite && (
-        <section className="space-y-2">
-          <p>
-            {invite.role === "supplier"
-              ? "Driver assigned. Ready for pickup."
-              : "You're set up. Open the pickup when the supplier is ready."}
-          </p>
-          <Link
-            className="underline"
-            href={`/handoff/${encodeURIComponent(invite.orderId)}/pickup`}
-          >
-            Go to pickup handoff
-          </Link>
-        </section>
-      )}
+      <section className="dm-card" aria-live="polite" style={{ maxWidth: 720 }}>
+        <h2 className="bd-h2">
+          {step === "accept"
+            ? "Accept the order"
+            : step === "invite-driver" || step === "await-driver" || step === "assign"
+              ? "Your driver"
+              : step === "done"
+                ? "All set"
+                : "Get started"}
+        </h2>
 
-      {signer && <p className="font-mono text-xs opacity-70">Wallet {signer.address}</p>}
-      {demoNote && <p className="break-all rounded border border-dashed p-2 text-sm">{demoNote}</p>}
-      {busy && <p aria-live="polite">{busy}</p>}
-      {error && (
-        <p role="alert" className="text-red-500">
-          {error}
-        </p>
-      )}
-    </main>
+        {step === "loading" && <p className="bd-muted">Opening your invitation…</p>}
+        {step === "sign-in" && (
+          <button type="button" className="bd-btn" onClick={requestCode} disabled={!!busy}>
+            Email me a sign-in code
+          </button>
+        )}
+        {step === "code" && (
+          <div className="dm-btns">
+            <label htmlFor="acc-code" className="bd-small bd-muted" style={{ flexBasis: "100%" }}>
+              6-digit code from your email
+            </label>
+            <input
+              id="acc-code"
+              className="dm-in"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="000000"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+            />
+            <button
+              type="button"
+              className="bd-btn"
+              onClick={verifyCode}
+              disabled={!!busy || code.trim().length !== 6}
+            >
+              Sign in
+            </button>
+          </div>
+        )}
+        {step === "wallet" && (
+          <div className="bd-stack-8">
+            <button type="button" className="bd-btn" onClick={createWallet} disabled={!!busy}>
+              {localDemo ? "Use my demo wallet" : "Create my wallet"}
+            </button>
+            <small className="bd-muted">
+              {localDemo
+                ? "Demo: signs with a Hardhat dev account on the local chain."
+                : "MetaMask Embedded Wallet will email you a second code to unlock your wallet."}
+            </small>
+          </div>
+        )}
+        {step === "await-funding" && (
+          <span className="dm-badge dm-badge--wait" style={{ alignSelf: "flex-start" }}>
+            Waiting for the buyer to create and fund the escrow…
+          </span>
+        )}
+        {step === "accept" && (
+          <div className="bd-stack-8">
+            <span className="dm-badge dm-badge--ok" style={{ alignSelf: "flex-start" }}>
+              The buyer&apos;s money is locked in escrow
+            </span>
+            <button type="button" className="bd-btn" onClick={acceptOrder} disabled={!!busy}>
+              Accept on-chain
+            </button>
+            <small className="bd-muted">
+              This records the fingerprint above on the escrow contract.
+            </small>
+          </div>
+        )}
+        {step === "invite-driver" && (
+          <div className="dm-btns">
+            <label htmlFor="acc-driver" className="bd-small bd-muted" style={{ flexBasis: "100%" }}>
+              Driver email
+            </label>
+            <input
+              id="acc-driver"
+              className="dm-in"
+              type="email"
+              placeholder="driver@company.co.za"
+              value={driverEmail}
+              onChange={(e) => setDriverEmail(e.target.value)}
+            />
+            <button
+              type="button"
+              className="bd-btn"
+              onClick={inviteDriver}
+              disabled={!!busy || !driverEmail.includes("@")}
+            >
+              Invite driver
+            </button>
+          </div>
+        )}
+        {step === "await-driver" && (
+          <span className="dm-badge dm-badge--wait" style={{ alignSelf: "flex-start" }}>
+            Waiting for the driver to accept and create a wallet…
+          </span>
+        )}
+        {step === "assign" && driver && (
+          <button type="button" className="bd-btn" onClick={assignDriver} disabled={!!busy}>
+            Assign driver {driver.slice(0, 6)}…{driver.slice(-4)} on-chain
+          </button>
+        )}
+        {step === "done" && invite && (
+          <div className="bd-stack-8">
+            <p style={{ margin: 0 }}>
+              {invite.role === "supplier"
+                ? "Driver assigned. Ready for pickup."
+                : "You're set up. Open the pickup when the supplier is ready."}
+            </p>
+            <Link
+              className="bd-btn"
+              style={{ alignSelf: "flex-start" }}
+              href={`/handoff/${encodeURIComponent(invite.orderId)}/pickup`}
+            >
+              Go to pickup handoff
+            </Link>
+          </div>
+        )}
+
+        {demoNote && <p className="dm-note dm-mono">{demoNote}</p>}
+        {busy && <p className="dm-msg">{busy}</p>}
+        {error && (
+          <p role="alert" className="dm-msg dm-msg--err">
+            {error}
+          </p>
+        )}
+      </section>
+    </DemoShell>
   );
 }

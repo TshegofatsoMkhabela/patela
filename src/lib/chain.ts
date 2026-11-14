@@ -52,35 +52,54 @@ const CHAINS: Record<number, Chain> = {
 export type Network = {
   chain: Chain;
   name: string;
-  tokenSymbol: "MockZARP" | "ZARm";
+  tokenSymbol: "MockZARP" | "ZARm" | "CZAR";
   explorer: string;
-  /** MockZARP (local node or Base Sepolia) can be minted; real ZARm can't. */
+  /** MockZARP and the CZAR test faucet can be minted; real ZARm can't. */
   mintable: boolean;
   /** Local Hardhat chain: demo personas sign with Hardhat's dev accounts. */
   local: boolean;
   label: string;
 };
 
-export function resolveNetwork(chainId: number): Network {
+/** `token` "CZAR" (NEXT_PUBLIC_TOKEN_SYMBOL) picks the mintable test Rand on Celo. */
+export function resolveNetwork(chainId: number, token?: string): Network {
   const chain = CHAINS[chainId] ?? hardhat;
   const isCelo = chain.id === celo.id || chain.id === celoSepolia.id;
+  const czar = isCelo && token?.toUpperCase() === "CZAR";
   const local = chain.id === hardhat.id;
   return {
     chain,
     name: chain.name,
-    tokenSymbol: isCelo ? "ZARm" : "MockZARP",
+    tokenSymbol: czar ? "CZAR" : isCelo ? "ZARm" : "MockZARP",
     explorer: chain.blockExplorers?.default.url.replace(/\/+$/, "") ?? "",
-    mintable: !isCelo,
+    mintable: !isCelo || czar,
     local,
     label: local
       ? "Local demo · MockZARP on Hardhat"
-      : isCelo
-        ? `Real ZARm on Celo · ${chain.name}`
-        : `Demo · MockZARP on ${chain.name}`,
+      : czar
+        ? `Test CZAR on Celo · ${chain.name}`
+        : isCelo
+          ? `Real ZARm on Celo · ${chain.name}`
+          : `Demo · MockZARP on ${chain.name}`,
   };
 }
 
-export const NETWORK = resolveNetwork(CHAIN_ID);
+export const NETWORK = resolveNetwork(CHAIN_ID, process.env.NEXT_PUBLIC_TOKEN_SYMBOL);
+
+/** Ask MetaMask to show the payment token (one click; MetaMask confirms). Browser only. */
+export async function addTokenToWallet(): Promise<boolean> {
+  const eth = injectedProvider();
+  if (!eth || !ZARP_ADDRESS) return false;
+  return Boolean(
+    await eth.request({
+      method: "wallet_watchAsset",
+      params: {
+        type: "ERC20",
+        options: { address: ZARP_ADDRESS, symbol: NETWORK.tokenSymbol, decimals: ZARP_DECIMALS },
+      } as unknown as unknown[],
+    }),
+  );
+}
 const chain: Chain = NETWORK.chain;
 
 export const explorerTxUrl = (hash: string) =>
@@ -183,7 +202,8 @@ export async function connectMetaMask(): Promise<ChainClients> {
   const accounts = (await eth.request({ method: "eth_requestAccounts" })) as Address[];
   const account = accounts[0];
   if (!account) throw new Error("MetaMask returned no account.");
-  if (chain.id !== hardhat.id) await ensureChain(eth);
+  // Always move MetaMask to the app chain (a wallet left on Ethereum mainnet breaks linking).
+  await ensureChain(eth);
   const walletClient = createWalletClient({
     account,
     chain: activeChain(),
@@ -260,9 +280,13 @@ export async function getTestZarp(
 }
 
 /** 10% driver at pickup, 40% supplier at pickup, the remainder (≈50%) to the supplier at delivery. */
-export function splitTotal(total: bigint) {
-  const driverAtPickup = (total * 10n) / 100n;
-  const supplierAtPickup = (total * 40n) / 100n;
+export type SplitPct = { driverPct: number; supplierPickupPct: number };
+export const DEFAULT_SPLIT: SplitPct = { driverPct: 10, supplierPickupPct: 40 };
+
+/** Pickup pays the driver and supplier their percentages; delivery pays the supplier the rest. */
+export function splitTotal(total: bigint, pct: SplitPct = DEFAULT_SPLIT) {
+  const driverAtPickup = (total * BigInt(pct.driverPct)) / 100n;
+  const supplierAtPickup = (total * BigInt(pct.supplierPickupPct)) / 100n;
   return {
     driverAtPickup,
     supplierAtPickup,

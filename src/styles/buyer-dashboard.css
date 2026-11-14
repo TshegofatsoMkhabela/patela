@@ -216,6 +216,9 @@
   gap: 20px;
   align-items: stretch;
 }
+.bd-hero {
+  container-type: inline-size;
+}
 .bd-map,
 .bd-list {
   flex: 5 1 600px;
@@ -304,6 +307,21 @@
   border-radius: 21px;
 }
 
+.bd-map-progress {
+  display: none;
+  position: absolute;
+  top: 58px;
+  right: 16px;
+  z-index: 2;
+  width: min(240px, calc(100% - 32px));
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  background: rgba(1, 23, 45, 0.94);
+  box-shadow: 0 12px 32px rgba(1, 23, 45, 0.24);
+  backdrop-filter: blur(10px);
+}
+
 /* ---- focused shipment details ---- */
 .bd-detail {
   padding: 24px;
@@ -363,6 +381,83 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+.bd-progress-updates {
+  display: grid;
+  gap: 12px;
+}
+.bd-progress-updates--detail {
+  padding-top: 2px;
+}
+.bd-progress-updates ol {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bd-update {
+  position: relative;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 10px;
+  min-height: 52px;
+}
+.bd-update:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 14px;
+  bottom: 0;
+  left: 5px;
+  width: 2px;
+  background: var(--bd-line);
+}
+.bd-update--done:not(:last-child)::after,
+.bd-update--current:not(:last-child)::after {
+  background: rgba(255, 255, 255, 0.55);
+}
+.bd-update-dot {
+  position: relative;
+  z-index: 1;
+  width: 12px;
+  height: 12px;
+  margin-top: 2px;
+  border: 2px solid #6f8799;
+  border-radius: 50%;
+  background: var(--bd-card);
+}
+.bd-update--done .bd-update-dot {
+  border-color: var(--bd-cream);
+  background: var(--bd-cream);
+}
+.bd-update--current .bd-update-dot {
+  border-color: #fff;
+  background: var(--bd-red);
+  box-shadow: 0 0 0 4px rgba(247, 61, 45, 0.18);
+}
+.bd-update > span:last-child {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.bd-update strong {
+  color: var(--bd-cream);
+  font-size: 13px;
+  line-height: 1.25;
+}
+.bd-update small {
+  color: #9bb0bf;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+@container (max-width: 959px) {
+  .bd-progress-updates--detail {
+    display: none;
+  }
+  .bd-map-progress {
+    display: grid;
+  }
 }
 .bd-action {
   margin-top: auto;

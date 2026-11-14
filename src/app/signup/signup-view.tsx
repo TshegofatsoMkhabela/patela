@@ -47,7 +47,7 @@ const ROLES: RoleConfig[] = [
     title: "Commercial Buyer / Consignor",
     badge: "Buyer & Consignor",
     desc: "Procuring bulk commodities, funding escrow, managing multi-destination consignments.",
-    redirectUrl: "/html/client-dashboard.html",
+    redirectUrl: "/buyer",
     pill: "CLIENT",
     badgeClass: "badge badge-gold",
     steps: [

@@ -8,6 +8,7 @@ import {
   badgeFor,
   initialMapMode,
   progressAt,
+  progressUpdates,
   type MapMode,
   type Shipment,
 } from "@/lib/buyer-shipments";
@@ -19,6 +20,41 @@ import { Icon } from "./Icon";
 const ShipmentMap = dynamic(() => import("./ShipmentMap"), { ssr: false });
 
 const MODE_LABEL: Record<MapMode, string> = { "3d": "3D view", flat: "Flat map", none: "" };
+
+function ProgressUpdates({
+  shipment,
+  now,
+  overlay = false,
+}: {
+  shipment: Shipment;
+  now: number;
+  overlay?: boolean;
+}) {
+  const updates = progressUpdates(shipment, now);
+  return (
+    <section
+      className={
+        overlay
+          ? "bd-progress-updates bd-map-progress"
+          : "bd-progress-updates bd-progress-updates--detail"
+      }
+      aria-label="Journey progress updates"
+    >
+      <span className="bd-label">Progress updates</span>
+      <ol>
+        {updates.map((update) => (
+          <li key={update.label} className={`bd-update bd-update--${update.state}`}>
+            <span className="bd-update-dot" aria-hidden="true" />
+            <span>
+              <strong>{update.label}</strong>
+              <small>{update.meta}</small>
+            </span>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
 
 export function FocusedShipment({
   shipment,
@@ -62,6 +98,7 @@ export function FocusedShipment({
                 {shipment.near} · {shipment.road}
               </span>
             </div>
+            <ProgressUpdates shipment={shipment} now={now} overlay />
           </>
         )}
       </div>
@@ -113,6 +150,8 @@ export function FocusedShipment({
             <span className="bd-muted">– Driver</span>
           </span>
         </div>
+
+        <ProgressUpdates shipment={shipment} now={now} />
 
         {shipment.pendingAction ? (
           <div className="bd-action">

@@ -1,0 +1,112 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { QrScanner } from "@/components/QrScanner";
+import { isApprovedTrackerQr } from "@/lib/tracker-handoff";
+import "@/styles/tracker-handoff.css";
+
+type ScanState = "scanning" | "blocked" | "approved";
+
+export function TrackerView() {
+  const frame = useRef<HTMLIFrameElement>(null);
+  const [open, setOpen] = useState(false);
+  const [scanState, setScanState] = useState<ScanState>("scanning");
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.source !== frame.current?.contentWindow) return;
+      if (event.data?.type !== "patela:verify-handoff") return;
+      setScanState("scanning");
+      setAttempt((value) => value + 1);
+      setOpen(true);
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
+
+  function scan(text: string) {
+    if (!isApprovedTrackerQr(text, window.location.origin)) {
+      setScanState("blocked");
+      return;
+    }
+    setScanState("approved");
+    frame.current?.contentWindow?.postMessage(
+      { type: "patela:handoff-result", accepted: true },
+      window.location.origin,
+    );
+  }
+
+  function retry() {
+    setScanState("scanning");
+    setAttempt((value) => value + 1);
+  }
+
+  function close() {
+    frame.current?.contentWindow?.postMessage(
+      { type: "patela:handoff-result", accepted: false },
+      window.location.origin,
+    );
+    setOpen(false);
+  }
+
+  return (
+    <main className="tracker-page">
+      <iframe
+        ref={frame}
+        title="Simulated Cape Town to Beaufort West route tracker"
+        src="/tracker-demo/index.html"
+      />
+      {open ? (
+        <div className="tracker-scan-backdrop" role="presentation">
+          <section
+            className="tracker-scan-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="tracker-scan-title"
+          >
+            <div className="tracker-scan-head">
+              <div>
+                <span>Checkpoint verification</span>
+                <h1 id="tracker-scan-title">Scan the handoff QR</h1>
+              </div>
+              <button type="button" onClick={close} aria-label="Close QR scanner">
+                ×
+              </button>
+            </div>
+
+            {scanState === "scanning" ? (
+              <>
+                <p>Point this phone&apos;s camera at the Patella QR shown at the checkpoint.</p>
+                <div className="tracker-camera">
+                  <QrScanner key={attempt} onScan={scan} />
+                  <span className="tracker-scan-frame" aria-hidden="true" />
+                </div>
+              </>
+            ) : null}
+
+            {scanState === "blocked" ? (
+              <div className="tracker-scan-result tracker-scan-result--blocked" role="alert">
+                <strong>QR blocked</strong>
+                <p>This is not an approved Patella handoff code. Speak to your field supervisor.</p>
+                <button type="button" onClick={retry}>
+                  Scan another code
+                </button>
+              </div>
+            ) : null}
+
+            {scanState === "approved" ? (
+              <div className="tracker-scan-result tracker-scan-result--approved" role="status">
+                <strong>Handoff verified</strong>
+                <p>The checkpoint can continue.</p>
+                <button type="button" onClick={() => setOpen(false)}>
+                  Return to route
+                </button>
+              </div>
+            ) : null}
+          </section>
+        </div>
+      ) : null}
+    </main>
+  );
+}

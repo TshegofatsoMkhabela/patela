@@ -18,7 +18,7 @@ const config: HardhatUserConfig = {
       type: "http",
       chainType: "l1",
       chainId: 31337,
-      url: "http://127.0.0.1:8545",
+      url: `http://127.0.0.1:${process.env.DEMO_CHAIN_PORT || "8545"}`,
     },
     baseSepolia: {
       type: "http",

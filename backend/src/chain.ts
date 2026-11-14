@@ -1,7 +1,5 @@
-import {
-  createPublicClient, decodeEventLog, http, parseAbi, type Address, type Hex,
-} from "viem";
-import { base, baseSepolia, hardhat } from "viem/chains";
+import { createPublicClient, decodeEventLog, http, parseAbi, type Address, type Hex } from "viem";
+import { base, baseSepolia, celo, celoSepolia, hardhat } from "viem/chains";
 
 /** Frozen escrow events (specs/INTERFACES.md §2; the web app's copy is src/lib/contracts.ts). */
 export const escrowEventsAbi = parseAbi([
@@ -50,14 +48,24 @@ type RawLog = { address: Address; data: Hex; topics: Hex[]; logIndex: number | n
 type ReceiptMeta = { chainId: number; txHash: Hex; blockNumber: bigint; blockHash: Hex };
 
 /** Decodes the escrow's frozen events from a receipt's logs, skipping other contracts and unknown events. */
-export function decodeEscrowLogs(logs: readonly RawLog[], escrowAddress: Address, meta: ReceiptMeta): ChainEvent[] {
+export function decodeEscrowLogs(
+  logs: readonly RawLog[],
+  escrowAddress: Address,
+  meta: ReceiptMeta,
+): ChainEvent[] {
   const found: ChainEvent[] = [];
   for (const log of logs) {
     if (log.address.toLowerCase() !== escrowAddress.toLowerCase()) continue;
     let decoded;
     try {
-      decoded = decodeEventLog({ abi: escrowEventsAbi, data: log.data, topics: log.topics as [Hex, ...Hex[]] });
-    } catch { continue; }
+      decoded = decodeEventLog({
+        abi: escrowEventsAbi,
+        data: log.data,
+        topics: log.topics as [Hex, ...Hex[]],
+      });
+    } catch {
+      continue;
+    }
     const args = decoded.args as Record<string, unknown>;
     found.push({
       name: decoded.eventName,
@@ -72,7 +80,8 @@ export function decodeEscrowLogs(logs: readonly RawLog[], escrowAddress: Address
       recipient: args.recipient as Address | undefined,
       agreementHash: args.agreementHash as Hex | undefined,
       evidenceHash: args.evidenceHash as Hex | undefined,
-      ...meta, logIndex: log.logIndex ?? 0,
+      ...meta,
+      logIndex: log.logIndex ?? 0,
     });
   }
   return found;
@@ -87,32 +96,54 @@ export class BaseChainVerifier implements ChainVerifier {
     rpcUrl: string,
     private readonly escrowAddress: Address,
     private readonly confirmations: number,
-    private readonly chainId: 8453 | 84532 | 31337 = 8453,
+    private readonly chainId: 8453 | 84532 | 31337 | 11142220 | 42220 = 8453,
     private readonly tokenAddress?: Address,
   ) {
-    const chain = chainId === 8453 ? base : chainId === 84532 ? baseSepolia : hardhat;
+    const chain = {
+      8453: base,
+      84532: baseSepolia,
+      31337: hardhat,
+      11142220: celoSepolia,
+      42220: celo,
+    }[chainId];
     this.client = createPublicClient({ chain, transport: http(rpcUrl) });
   }
 
   async events(txHash: Hex): Promise<ChainEvent[]> {
-    this.chainChecked ??= this.client.getChainId().then(id => {
-      if (id !== this.chainId) throw new Error("RPC is connected to the wrong chain");
-    }).catch(error => { this.chainChecked = undefined; throw error; });
+    this.chainChecked ??= this.client
+      .getChainId()
+      .then((id) => {
+        if (id !== this.chainId) throw new Error("RPC is connected to the wrong chain");
+      })
+      .catch((error) => {
+        this.chainChecked = undefined;
+        throw error;
+      });
     // cacheTime 0: viem otherwise reuses a head up to 4 s old, older than a just-mined receipt.
-    const [, receipt, currentBlock] = await Promise.all([this.chainChecked,
-      this.client.getTransactionReceipt({ hash: txHash }), this.client.getBlockNumber({ cacheTime: 0 })]);
+    const [, receipt, currentBlock] = await Promise.all([
+      this.chainChecked,
+      this.client.getTransactionReceipt({ hash: txHash }),
+      this.client.getBlockNumber({ cacheTime: 0 }),
+    ]);
     if (receipt.status !== "success") throw new Error("Transaction reverted");
     if (currentBlock - receipt.blockNumber + 1n < BigInt(this.confirmations)) {
       throw new Error("Transaction is not sufficiently confirmed");
     }
     return decodeEscrowLogs(receipt.logs, this.escrowAddress, {
-      chainId: this.chainId, txHash, blockNumber: receipt.blockNumber, blockHash: receipt.blockHash,
+      chainId: this.chainId,
+      txHash,
+      blockNumber: receipt.blockNumber,
+      blockHash: receipt.blockHash,
     });
   }
 
   async balanceOf(wallet: Address): Promise<bigint> {
     if (!this.tokenAddress) throw new Error("Token address is not configured");
-    return this.client.readContract({ address: this.tokenAddress, abi: balanceAbi, functionName: "balanceOf",
-      args: [wallet] });
+    return this.client.readContract({
+      address: this.tokenAddress,
+      abi: balanceAbi,
+      functionName: "balanceOf",
+      args: [wallet],
+    });
   }
 }

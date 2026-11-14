@@ -53,7 +53,7 @@ export function InfoPage({
                 gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
               }}
             >
-              <Link href="/html/create-order.html" className="pt-cta-card">
+              <Link href="/orders/new" className="pt-cta-card">
                 <b>
                   Create Order & Route <span className="ar">→</span>
                 </b>

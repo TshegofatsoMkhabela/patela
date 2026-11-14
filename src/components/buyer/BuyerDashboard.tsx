@@ -44,7 +44,7 @@ export default function BuyerDashboard() {
         </div>
         <div className="bd-header-side">
           <span className="bd-small bd-muted">Updated just now</span>
-          <a className="bd-pill" href="/html/create-order.html">
+          <a className="bd-pill" href="/orders/new">
             New order
           </a>
         </div>
@@ -58,7 +58,7 @@ export default function BuyerDashboard() {
           <span className="bd-muted">
             When a supplier dispatches your order, you&apos;ll see where it is here, live.
           </span>
-          <a className="bd-btn" href="/html/create-order.html">
+          <a className="bd-btn" href="/orders/new">
             Create an order
           </a>
         </section>

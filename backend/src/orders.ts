@@ -1,5 +1,5 @@
 import { randomBytes, randomUUID } from "node:crypto";
-import { isHex, keccak256, parseUnits, toBytes, zeroAddress, type Address, type Hex } from "viem";
+import { formatUnits, isHex, keccak256, parseUnits, toBytes, zeroAddress, type Address, type Hex } from "viem";
 import type { ChainEvent, ChainVerifier } from "./chain.js";
 import type { Database, Queryable } from "./db.js";
 import { queueEmail } from "./email.js";
@@ -112,7 +112,7 @@ export class OrderService {
   }
 
   private async invite(db: Queryable, orderId: string, role: "supplier" | "driver", email: string,
-    invitedBy: string, agreementText?: string) {
+    invitedBy: string, agreementText?: string, invoice?: Record<string, unknown>) {
     const token = randomBytes(32).toString("base64url");
     await db.query(
       `insert into order_invitations (id,order_id,role,email,token_hash,invited_by,expires_at)
@@ -122,7 +122,8 @@ export class OrderService {
     const acceptUrl = new URL("/accept", this.publicOrigin);
     acceptUrl.searchParams.set("token", token);
     await queueEmail(db, email, role === "supplier" ? "order_supplier_invited" : "order_driver_invited",
-      { orderId, acceptUrl: acceptUrl.toString(), ...(agreementText ? { agreementText } : {}) });
+      { orderId, acceptUrl: acceptUrl.toString(), ...(agreementText ? { agreementText } : {}),
+        ...(invoice ? { invoice } : {}) });
     return acceptUrl.toString();
   }
 
@@ -162,7 +163,17 @@ export class OrderService {
           supplierAtDelivery.toString(), agreementText, agreementHash],
       );
       await db.query("insert into order_participants (order_id,user_id) values ($1,$2)", [id, userId]);
-      return this.invite(db, id, "supplier", supplierEmail, userId, agreementText);
+      const zar = (wei: bigint) => formatUnits(wei, this.tokenDecimals);
+      const invoice = {
+        number: `PAT-${id.slice(0, 8).toUpperCase()}`, issuedAt: new Date().toISOString(),
+        buyerEmail: String(buyer.email), supplierEmail, total: zar(total), refundDeadline,
+        lines: [
+          { label: "Driver, at pickup", amount: zar(driverAtPickup) },
+          { label: "Supplier, at pickup", amount: zar(supplierAtPickup) },
+          { label: "Supplier, at delivery", amount: zar(supplierAtDelivery) },
+        ],
+      };
+      return this.invite(db, id, "supplier", supplierEmail, userId, agreementText, invoice);
     });
     return { id, agreementHash, refundDeadline, ...this.demoLink(acceptUrl) };
   }

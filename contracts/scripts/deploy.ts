@@ -9,6 +9,7 @@ import { parseAbi, parseUnits, type Address } from "viem";
 // Usage: npx hardhat run scripts/deploy.ts --network localhost   (what "npm run demo" runs)
 //        npx hardhat run scripts/deploy.ts --network baseSepolia
 //        MAX_ORDER_ZARM=5000 npx hardhat run scripts/deploy.ts --network celoSepolia
+//        PAYMENT_TOKEN=czar npx hardhat run scripts/deploy.ts --network celoSepolia  (test CZAR faucet)
 
 const ZARM = {
   42220: "0x4c35853A3B4e647fD266f4de678dCc8fEC410BF6",
@@ -26,18 +27,23 @@ const connection = await network.connect();
 const { viem, networkName } = connection;
 const publicClient = await viem.getPublicClient();
 const chainId = await publicClient.getChainId();
-let tokenAddress = ZARM[chainId as keyof typeof ZARM] as Address | undefined;
+// PAYMENT_TOKEN=czar deploys the CZAR test-Rand faucet instead (fast Celo Sepolia demo).
+const useCzar = process.env.PAYMENT_TOKEN?.toLowerCase() === "czar";
+let tokenAddress = useCzar
+  ? undefined
+  : (ZARM[chainId as keyof typeof ZARM] as Address | undefined);
 // Real ZARm needs an explicit per-order cap; MockZARP deployments get a large demo cap.
 const maxOrderInput = process.env.MAX_ORDER_ZARM;
 if (maxOrderInput !== undefined && !/^\d+(\.\d{1,2})?$/.test(maxOrderInput)) {
   throw new Error("MAX_ORDER_ZARM must be a number with at most two decimals");
 }
-if (tokenAddress && !maxOrderInput) throw new Error("MAX_ORDER_ZARM is required for Celo deployments");
+if (tokenAddress && !maxOrderInput)
+  throw new Error("MAX_ORDER_ZARM is required for Celo deployments");
 const maxOrderAmount = parseUnits(maxOrderInput ?? "1000000000", 18);
 
 let mockZarpAddress: Address | undefined;
 if (!tokenAddress) {
-  const mockZarp = await viem.deployContract("MockZARP");
+  const mockZarp = await viem.deployContract(useCzar ? "CZAR" : "MockZARP");
   mockZarpAddress = mockZarp.address;
   tokenAddress = mockZarpAddress;
 } else {
@@ -47,7 +53,8 @@ if (!tokenAddress) {
     publicClient.readContract({ address: tokenAddress, abi: tokenAbi, functionName: "symbol" }),
     publicClient.readContract({ address: tokenAddress, abi: tokenAbi, functionName: "decimals" }),
   ]);
-  if (symbol !== "ZARm" || decimals !== 18) throw new Error(`Unexpected payment token ${symbol}/${decimals}`);
+  if (symbol !== "ZARm" || decimals !== 18)
+    throw new Error(`Unexpected payment token ${symbol}/${decimals}`);
 }
 const registry = await viem.deployContract("PatellaRegistry");
 const tenderTrail = await viem.deployContract("PatellaTenderTrail", [registry.address]);
@@ -67,14 +74,16 @@ const deployment = {
   chainId,
   deployedAt: new Date().toISOString(),
   paymentToken: {
-    symbol: mockZarpAddress ? "MockZARP" : "ZARm",
+    symbol: mockZarpAddress ? (useCzar ? "CZAR" : "MockZARP") : "ZARm",
     address: tokenAddress,
     decimals: 18,
   },
   maxOrderAmount: maxOrderAmount.toString(),
   contracts: {
     ...(mockZarpAddress
-      ? { MockZARP: await entry("MockZARP", mockZarpAddress) }
+      ? useCzar
+        ? { CZAR: await entry("CZAR", mockZarpAddress) }
+        : { MockZARP: await entry("MockZARP", mockZarpAddress) }
       : { ZARm: { address: tokenAddress, abi: tokenAbi } }),
     PatellaRegistry: await entry("PatellaRegistry", registry.address),
     PatellaTenderTrail: await entry("PatellaTenderTrail", tenderTrail.address),
@@ -96,5 +105,6 @@ if (chainId === 31337 && mockZarpAddress) {
 }
 
 console.log(`Deployed to ${networkName} (chain ${chainId}):`);
-for (const [name, c] of Object.entries(deployment.contracts)) console.log(`  ${name}: ${c.address}`);
+for (const [name, c] of Object.entries(deployment.contracts))
+  console.log(`  ${name}: ${c.address}`);
 console.log(`Wrote ${outFile}`);

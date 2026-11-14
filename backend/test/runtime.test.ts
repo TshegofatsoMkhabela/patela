@@ -46,3 +46,13 @@ test("runtime rejects unsafe or malformed browser authentication settings", () =
   assert.throws(() => createRuntime({ ...base, API_ORIGIN: "http://localhost:4000", COOKIE_SAME_SITE: "None" }),
     /HTTPS API_ORIGIN/);
 });
+
+test("Given the Celo demo, When the stack starts on Celo Sepolia with test CZAR, Then it starts", async () => {
+  await starts({ CHAIN_ID: "11142220", BASE_RPC_URL: "https://forno.celo-sepolia.celo-testnet.org",
+    ESCROW_ADDRESS: "0x1111111111111111111111111111111111111111",
+    TOKEN_ADDRESS: "0x2222222222222222222222222222222222222222", DEMO_MODE: "true" });
+});
+
+test("Given Celo Sepolia, When TOKEN_ADDRESS is missing, Then startup stops", () => {
+  assert.throws(() => createRuntime({ ...base, CHAIN_ID: "11142220" }), /TOKEN_ADDRESS/);
+});
