@@ -496,6 +496,7 @@ export async function renderToDOM(container) {
     plan: null,
     handoffPrompted: false,
     handoffVerified: false,
+    panFromHandoff: false,
     top: null,
     legFrom: 0,
     truckDist: 0,
@@ -527,6 +528,7 @@ export async function renderToDOM(container) {
   const startSwitch = () => {
     s.legFrom = s.truckDist;
     s.top = topView(s.leg, s.legFrom);
+    s.panFromHandoff = false;
     setPhase("rise");
   };
 
@@ -539,7 +541,15 @@ export async function renderToDOM(container) {
     stops[s.leg + 1].state = "verified";
     ui.refreshStops();
     s.handoffVerified = true;
-    setPhase("verified");
+    if (s.leg + 1 === last) {
+      setPhase("outro");
+    } else {
+      s.leg += 1;
+      s.legFrom = s.truckDist;
+      s.top = topView(s.leg, s.legFrom);
+      s.panFromHandoff = true;
+      setPhase("pan");
+    }
   };
   ui.onReplay = () => {
     stops.forEach((st) => (st.state = "pending"));
@@ -639,14 +649,19 @@ export async function renderToDOM(container) {
       }
       case "pan": {
         const t = clamp01(elapsed / panDuration(s.legFrom, s.leg));
-        const p = easeInOutCubic(t);
+        const p = s.panFromHandoff ? t : easeInOutCubic(t);
         const { a, b } = s.top;
         cam.center = toLatLng([lerp(a[0], b[0], p), lerp(a[1], b[1], p)]);
-        cam.zoom = s.top.zoom;
-        cam.heading = 0;
-        cam.tilt = 0;
+        const blend = s.panFromHandoff ? clamp01(p * 3) : 1;
+        cam.zoom = lerp(s.from.zoom, s.top.zoom, blend);
+        cam.heading = wrap360(s.from.heading + angleDelta(s.from.heading, 0) * blend);
+        cam.tilt = lerp(s.from.tilt, 0, blend);
+        if (s.panFromHandoff) s.truckOpacity = 1 - blend;
         s.truckDist = lerp(s.legFrom, handoffDist(s.leg), p); // route fills in behind the glide
-        if (t >= 1) setPhase(warmed[s.leg] ? "descend" : "hover");
+        if (t >= 1) {
+          s.panFromHandoff = false;
+          setPhase(warmed[s.leg] ? "descend" : "hover");
+        }
         break;
       }
       case "hover":
@@ -956,7 +971,7 @@ function createUI(stops, model, routeKm) {
     }
     button.dataset.state = "done";
     button.textContent = "Verified";
-    hideCard(TIMING.verifyHold);
+    hideCard(0);
     ui.onVerify();
   });
 
