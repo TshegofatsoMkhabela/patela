@@ -283,13 +283,16 @@ describe("readBalances", () => {
 
 describe("NETWORK", () => {
   // Hosted builds set NEXT_PUBLIC_CHAIN_ID, so the unset default can only be checked locally.
-  it.skipIf(Boolean(process.env.NEXT_PUBLIC_CHAIN_ID))("Given no NEXT_PUBLIC_CHAIN_ID, Then the app targets the local Hardhat demo chain with MockZARP", () => {
-    expect(NETWORK.chain.id).toBe(31337);
-    expect(NETWORK.tokenSymbol).toBe("MockZARP");
-    expect(NETWORK.local).toBe(true);
-    expect(NETWORK.mintable).toBe(true);
-    expect(NETWORK.label).toMatch(/^Local demo/);
-  });
+  it.skipIf(Boolean(process.env.NEXT_PUBLIC_CHAIN_ID))(
+    "Given no NEXT_PUBLIC_CHAIN_ID, Then the app targets the local Hardhat demo chain with MockZARP",
+    () => {
+      expect(NETWORK.chain.id).toBe(31337);
+      expect(NETWORK.tokenSymbol).toBe("MockZARP");
+      expect(NETWORK.local).toBe(true);
+      expect(NETWORK.mintable).toBe(true);
+      expect(NETWORK.label).toMatch(/^Local demo/);
+    },
+  );
 
   it("Given chain 84532, Then it is Base Sepolia with mintable MockZARP labelled Demo", () => {
     const n = resolveNetwork(84532);
