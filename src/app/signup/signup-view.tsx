@@ -6,6 +6,16 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { SiteNav } from "@/components/SiteNav";
 import { Reveal } from "@/components/Reveal";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
+import { useBackendTask } from "@/hooks/use-backend-task";
+import {
+  isEmail,
+  isOtpCode,
+  patelaApi,
+  saveAuthUser,
+  toAuthUser,
+  type Profile,
+} from "@/lib/patela-api";
 
 export type RoleType = "buyer" | "carrier" | "supplier" | "driver" | "auditor";
 
@@ -15,7 +25,8 @@ interface RoleConfig {
   badge: string;
   desc: string;
   redirectUrl: string;
-  icon: string;
+  pill: string;
+  badgeClass: string;
   steps: {
     title: string;
     subtitle: string;
@@ -36,8 +47,9 @@ const ROLES: RoleConfig[] = [
     title: "Commercial Buyer / Consignor",
     badge: "Buyer & Consignor",
     desc: "Procuring bulk commodities, funding escrow, managing multi-destination consignments.",
-    redirectUrl: "/html/orders.html",
-    icon: "🏢",
+    redirectUrl: "/buyer",
+    pill: "CLIENT",
+    badgeClass: "badge badge-gold",
     steps: [
       {
         title: "Company & CIPC Registration",
@@ -153,8 +165,9 @@ const ROLES: RoleConfig[] = [
     title: "Freight Logistics Carrier / Fleet Operator",
     badge: "Freight Carrier",
     desc: "Transporting cargo, bidding on freight corridors, managing drivers and vehicle assets.",
-    redirectUrl: "/html/tender-trail.html",
-    icon: "🚛",
+    redirectUrl: "/html/worker-dashboard.html",
+    pill: "WORKER",
+    badgeClass: "badge badge-blue",
     steps: [
       {
         title: "Fleet Capacity & Configuration",
@@ -272,8 +285,9 @@ const ROLES: RoleConfig[] = [
     title: "Supplier / Commodity Producer",
     badge: "Supplier / Producer",
     desc: "Supplying bulk commodities, confirming dispatch weighbridge slips, receiving milestone payouts.",
-    redirectUrl: "/html/order-detail.html",
-    icon: "🏭",
+    redirectUrl: "/html/worker-dashboard.html",
+    pill: "SUPPLIER",
+    badgeClass: "badge badge-blue",
     steps: [
       {
         title: "Commodity & Production Profile",
@@ -367,7 +381,8 @@ const ROLES: RoleConfig[] = [
     badge: "Frontline Logistics",
     desc: "Physical cargo handling, mobile guest handoffs without apps or wallets, tailgate signatures.",
     redirectUrl: "/html/guest-handoff.html",
-    icon: "🚚",
+    pill: "DRIVER",
+    badgeClass: "badge badge-gold",
     steps: [
       {
         title: "Driver Credentials & License",
@@ -434,7 +449,8 @@ const ROLES: RoleConfig[] = [
     badge: "Auditor & Inspector",
     desc: "Read-only custody inspection, SHA-256 byte proof verification, Base Sepolia block checks.",
     redirectUrl: "/html/auditor-trail.html",
-    icon: "🔍",
+    pill: "AUDITOR",
+    badgeClass: "badge badge-neutral",
     steps: [
       {
         title: "Auditing Firm & Accreditation",
@@ -497,8 +513,10 @@ export function SignUpView() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("+27 ");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
+  const [code, setCode] = useState("");
+  const [busy, runBackend] = useBackendTask("Sign-up failed. Try again.");
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<RoleType>("buyer");
 
   // Workflow stages: "register" -> "onboarding" -> "completed"
@@ -512,35 +530,63 @@ export function SignUpView() {
   const totalExtraSteps = activeRoleConfig.steps.length;
   const currentStep = activeRoleConfig.steps[currentStepIdx] || activeRoleConfig.steps[0];
 
-  function handleInitialSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function detailsAreValid(): boolean {
     if (!fullName.trim() || fullName.trim().length < 3) {
       toast.error("Please enter your full legal name (at least 3 characters).");
-      return;
+      return false;
     }
-    if (!email.trim() || !email.includes("@")) {
+    if (!isEmail(email.trim())) {
       toast.error("Please enter a valid business email address.");
-      return;
+      return false;
     }
     if (!phone.trim() || phone.trim().length < 8) {
       toast.error("Please enter a valid South African mobile number (+27).");
-      return;
+      return false;
     }
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters.");
-      return;
-    }
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match.");
-      return;
-    }
+    return true;
+  }
 
-    // Finished signing up first!
+  // The account exists once the email is verified (the session cookie is set);
+  // save the name on it, then onboard.
+  async function accountCreated() {
+    const named = await patelaApi.updateName(fullName.trim());
+    setProfile(named);
+    saveAuthUser({ ...toAuthUser(named), phone });
     toast.success(
-      `Account created for ${fullName}. Let's complete your ${activeRoleConfig.badge} profile.`,
+      `Account created for ${named.full_name ?? fullName}. Let's complete your ${activeRoleConfig.badge} profile.`,
     );
     setStage("onboarding");
     setCurrentStepIdx(0);
+  }
+
+  function handleInitialSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!detailsAreValid()) return;
+    const address = email.trim();
+    if (!codeSent) {
+      runBackend(async () => {
+        await patelaApi.requestOtp(address);
+        setCodeSent(true);
+        toast.info("Code requested. Enter the 6-digit code to create your account.");
+      });
+      return;
+    }
+    if (!isOtpCode(code)) {
+      toast.error("Enter the 6-digit code.");
+      return;
+    }
+    runBackend(async () => {
+      await patelaApi.verifyOtp(address, code);
+      await accountCreated();
+    });
+  }
+
+  function handleGoogle(credential: string) {
+    if (!detailsAreValid()) return;
+    runBackend(async () => {
+      await patelaApi.googleSignIn(credential);
+      await accountCreated();
+    });
   }
 
   function handleFieldChange(fieldId: string, value: string) {
@@ -575,20 +621,27 @@ export function SignUpView() {
       setCurrentStepIdx((idx) => idx + 1);
     } else {
       // Finished all extra questions one by one!
+      const appRole = role === "buyer" ? "client" : role === "auditor" ? "auditor" : "worker";
+      // Demo: the backend cannot store marketplace roles or onboarding answers
+      // yet, so they stay in this browser next to the real account's details.
       const userProfile = {
-        fullName,
-        email,
+        ...(profile ? toAuthUser(profile) : {}),
+        fullName: profile?.full_name ?? fullName,
+        email: profile?.email ?? email,
         phone,
-        role,
+        role: appRole,
+        rawRole: role,
         roleTitle: activeRoleConfig.title,
         extraData,
+        extraDataStoredLocally: true,
         registeredAt: new Date().toISOString(),
         verified: true,
       };
+      saveAuthUser(userProfile);
       try {
-        localStorage.setItem("patela_auth_user", JSON.stringify(userProfile));
+        localStorage.setItem("patela_current_role", appRole);
       } catch {
-        /* storage safe */
+        /* storage unavailable: the role stays in memory only */
       }
       setStage("completed");
       toast.success("All profile details verified!");
@@ -618,6 +671,25 @@ export function SignUpView() {
               <p className="pt-lead" style={{ margin: "0 auto", maxWidth: "56ch" }}>
                 Select your role in the supply chain corridor. After signing up, we will configure
                 your profile with step-by-step role information.
+              </p>
+              <p
+                className="pt-card"
+                style={{
+                  margin: "18px auto 0",
+                  maxWidth: "60ch",
+                  padding: "14px 18px",
+                  fontSize: "0.9rem",
+                }}
+              >
+                Buying in the escrow demo?{" "}
+                <Link
+                  href="/signin?next=/orders/new"
+                  style={{ color: "#ffe2b2", fontWeight: 600, textDecoration: "underline" }}
+                >
+                  Sign in with an email code
+                </Link>{" "}
+                — your Patela account is created on first sign-in. The profile questions below are a
+                demo preview stored in this browser only.
               </p>
             </div>
 
@@ -658,7 +730,16 @@ export function SignUpView() {
                         <div
                           style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}
                         >
-                          <span style={{ fontSize: "1.3rem" }}>{r.icon}</span>
+                          <span
+                            className={r.badgeClass}
+                            style={{
+                              fontSize: "0.68rem",
+                              padding: "2px 7px",
+                              letterSpacing: "0.04em",
+                            }}
+                          >
+                            {r.pill}
+                          </span>
                           <span
                             style={{
                               fontWeight: 600,
@@ -711,7 +792,11 @@ export function SignUpView() {
                     className="pt-in"
                     placeholder="alex@resources.co.za"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setCodeSent(false);
+                      setCode("");
+                    }}
                     required
                   />
                 </div>
@@ -739,30 +824,41 @@ export function SignUpView() {
                   </small>
                 </div>
                 <div className="pt-field">
-                  <label htmlFor="pw">Password</label>
-                  <input
-                    id="pw"
-                    type="password"
-                    className="pt-in"
-                    placeholder="At least 6 characters"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
+                  <label htmlFor="otp">Email verification code</label>
+                  {codeSent ? (
+                    <>
+                      <input
+                        id="otp"
+                        className="pt-in"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={6}
+                        placeholder="6-digit code"
+                        value={code}
+                        onChange={(e) => setCode(e.target.value)}
+                        required
+                      />
+                      <small>Valid for 10 minutes. Change the email above to start again.</small>
+                    </>
+                  ) : (
+                    <small>
+                      No password needed: we&apos;ll send a 6-digit code to your email. Preview:
+                      code emails are queued in the server&apos;s outbox and not delivered yet.
+                    </small>
+                  )}
                 </div>
               </div>
 
               <div className="pt-field">
-                <label htmlFor="cpw">Confirm Password</label>
-                <input
-                  id="cpw"
-                  type="password"
-                  className="pt-in"
-                  placeholder="Repeat your password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
+                <GoogleSignInButton
+                  onCredential={handleGoogle}
+                  className="pt-btn ghost"
+                  fallback={<span>Sign up with Google</span>}
                 />
+                <small>
+                  Your role and onboarding answers are kept in this browser only (demo) until the
+                  Patela server can store them.
+                </small>
               </div>
 
               <div
@@ -784,9 +880,16 @@ export function SignUpView() {
                 <button
                   type="submit"
                   className="pt-btn"
+                  disabled={busy}
                   style={{ padding: "12px 28px", fontSize: "0.95rem" }}
                 >
-                  <span>Create Account &amp; Proceed to {activeRoleConfig.badge} Profile</span>
+                  <span>
+                    {busy
+                      ? "Please wait…"
+                      : codeSent
+                        ? `Verify & Proceed to ${activeRoleConfig.badge} Profile`
+                        : "Send Verification Code"}
+                  </span>
                   <span aria-hidden="true">→</span>
                 </button>
               </div>
@@ -807,7 +910,7 @@ export function SignUpView() {
                 }}
               >
                 <span className="pt-eyebrow" style={{ margin: 0 }}>
-                  {activeRoleConfig.icon} {activeRoleConfig.title} Onboarding
+                  {activeRoleConfig.title} Onboarding
                 </span>
                 <span
                   className="pt-badge"
@@ -925,11 +1028,23 @@ export function SignUpView() {
                                     placeItems: "center",
                                     background: isChecked ? "#ffe2b2" : "transparent",
                                     color: "#02060f",
-                                    fontWeight: "bold",
-                                    fontSize: "0.75rem",
                                   }}
                                 >
-                                  {isChecked ? "✓" : ""}
+                                  {isChecked ? (
+                                    <svg
+                                      viewBox="0 0 16 16"
+                                      width="11"
+                                      height="11"
+                                      stroke="#02060f"
+                                      strokeWidth="2.5"
+                                      fill="none"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      aria-hidden="true"
+                                    >
+                                      <path d="M3 8.5 L6.5 12 L13 4" />
+                                    </svg>
+                                  ) : null}
                                 </span>
                                 <span style={{ fontSize: "0.9rem" }}>{opt}</span>
                               </div>
@@ -962,7 +1077,7 @@ export function SignUpView() {
                 <button type="submit" className="pt-btn" style={{ padding: "12px 28px" }}>
                   <span>
                     {currentStepIdx === totalExtraSteps - 1
-                      ? "Complete Verification & Finish Setup ✓"
+                      ? "Complete Verification & Finish Setup →"
                       : "Save & Next Step →"}
                   </span>
                 </button>
@@ -985,11 +1100,22 @@ export function SignUpView() {
                   border: "1px solid rgba(255, 228, 182, 0.6)",
                   display: "grid",
                   placeItems: "center",
-                  fontSize: "2rem",
                   margin: "0 auto 20px",
                 }}
               >
-                ✓
+                <svg
+                  viewBox="0 0 24 24"
+                  width="32"
+                  height="32"
+                  stroke="#ffe2b2"
+                  strokeWidth="2.2"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
               </div>
               <span className="pt-eyebrow">Onboarding Complete</span>
               <h1 className="pt-h2" style={{ margin: "8px 0 12px" }}>

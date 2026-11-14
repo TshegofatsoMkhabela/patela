@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 60" role="img" aria-label="Flag of Kenya">
+  <path fill="#000" d="M0 0h90v19H0z"/>
+  <path fill="#fff" d="M0 19h90v4H0z"/>
+  <path fill="#bb0000" d="M0 23h90v14H0z"/>
+  <path fill="#fff" d="M0 37h90v4H0z"/>
+  <path fill="#006600" d="M0 41h90v19H0z"/>
+  <path stroke="#fff" stroke-width="2" d="M32 12 58 48M58 12 32 48"/>
+  <path fill="#bb0000" stroke="#fff" stroke-width="2" d="M45 11c7 6 11 12 11 19s-4 13-11 19c-7-6-11-12-11-19s4-13 11-19Z"/>
+  <path fill="#000" d="M45 13c-6 6-9 11-9 17s3 11 9 17z"/>
+  <path fill="#fff" d="M43.5 14h3v32h-3z"/>
+  <path fill="#fff" d="m37 23 5 7-5 7 2-7zm16 0-5 7 5 7-2-7z"/>
+</svg>
+
+

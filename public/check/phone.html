@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Patela phone check</title>
+<style>
+  :root { color-scheme: light dark; --bg:#f6f7f9; --fg:#14181f; --muted:#5b6472; --line:#d9dee5; --ok:#1f7a4d; --bad:#b42318; --warn:#8a5a00; --card:#fff; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f131a; --fg:#e8ecf2; --muted:#9aa4b3; --line:#283141; --ok:#5fcf94; --bad:#f97066; --warn:#f2c25c; --card:#161c26; } }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:16px; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width:560px; margin:0 auto; display:flex; flex-direction:column; gap:14px; }
+  h1 { font-size:22px; margin:0; }
+  p { margin:0; color:var(--muted); }
+  .step { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; display:flex; flex-direction:column; gap:8px; }
+  .step h2 { font-size:16px; margin:0; display:flex; justify-content:space-between; gap:8px; }
+  .st { font:600 12px ui-monospace, monospace; text-transform:uppercase; }
+  .st.ok { color:var(--ok); } .st.bad { color:var(--bad); } .st.warn { color:var(--warn); } .st.wait { color:var(--muted); }
+  button { font:inherit; padding:10px 14px; border-radius:8px; border:1px solid var(--line); background:var(--fg); color:var(--bg); cursor:pointer; }
+  button:disabled { opacity:.5; }
+  .out { font:13px/1.4 ui-monospace, monospace; color:var(--muted); word-break:break-all; white-space:pre-wrap; }
+  video { width:100%; border-radius:8px; background:#000; display:none; }
+  textarea { width:100%; min-height:150px; font:12px ui-monospace, monospace; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--fg); padding:8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Patela phone check</h1>
+  <p>Test page only. Nothing here moves money. Open it inside <b>MetaMask Mobile's browser</b> (MetaMask → Browser tab), tap each button in order, then copy the summary at the bottom.</p>
+
+  <section class="step" id="s-wallet">
+    <h2>1. Wallet in this browser <span class="st wait">waiting</span></h2>
+    <div class="out"></div>
+  </section>
+
+  <section class="step" id="s-accounts">
+    <h2>2. Connect wallet <span class="st wait">waiting</span></h2>
+    <button id="b-accounts">Connect</button>
+    <div class="out"></div>
+  </section>
+
+  <section class="step" id="s-chain">
+    <h2>3. Switch to Base Sepolia <span class="st wait">waiting</span></h2>
+    <button id="b-chain">Switch network</button>
+    <div class="out"></div>
+  </section>
+
+  <section class="step" id="s-sign">
+    <h2>4. Sign a handoff message (EIP-712) <span class="st wait">waiting</span></h2>
+    <p>Free: signing costs no gas and sends nothing.</p>
+    <button id="b-sign">Sign test message</button>
+    <div class="out"></div>
+  </section>
+
+  <section class="step" id="s-camera">
+    <h2>5. Camera + QR reading <span class="st wait">waiting</span></h2>
+    <p>Point the camera at any QR code for a few seconds.</p>
+    <button id="b-camera">Start camera</button>
+    <video id="v" playsinline muted></video>
+    <div class="out"></div>
+  </section>
+
+  <section class="step">
+    <h2>Summary</h2>
+    <p>Copy this and paste it back in the chat.</p>
+    <textarea id="summary" readonly></textarea>
+    <button id="b-copy">Copy summary</button>
+  </section>
+</main>
+<script>
+(function () {
+  var BASE_SEPOLIA = { chainId: "0x14a34", chainName: "Base Sepolia", nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 }, rpcUrls: ["https://sepolia.base.org"], blockExplorerUrls: ["https://sepolia.basescan.org"] };
+  var results = {};
+  var account = null;
+  var eth = window.ethereum;
+
+  function set(id, state, text) {
+    var el = document.getElementById(id);
+    var st = el.querySelector(".st");
+    st.className = "st " + state;
+    st.textContent = state === "ok" ? "works" : state === "bad" ? "failed" : state === "warn" ? "partly" : "waiting";
+    if (text !== undefined) el.querySelector(".out").textContent = text;
+    results[id.slice(2)] = state + (text ? " | " + String(text).split("\n")[0] : "");
+    summary();
+  }
+  function summary() {
+    var ua = navigator.userAgent;
+    var lines = ["Patela phone check", "URL: " + location.href, "Secure context (HTTPS): " + window.isSecureContext, "User agent: " + ua];
+    ["wallet", "accounts", "chain", "sign", "camera"].forEach(function (k) { lines.push(k + ": " + (results[k] || "not run")); });
+    document.getElementById("summary").value = lines.join("\n");
+  }
+  function err(e) { return (e && (e.code !== undefined ? "code " + e.code + ": " : "") + (e.message || String(e))) || "unknown error"; }
+
+  // 1. Wallet presence
+  if (eth) {
+    set("s-wallet", "ok", "window.ethereum found" + (eth.isMetaMask ? " (MetaMask)" : " (not MetaMask)"));
+  } else {
+    set("s-wallet", "bad", "No wallet in this browser. Open this page from MetaMask's Browser tab.");
+    ["b-accounts", "b-chain", "b-sign"].forEach(function (id) { document.getElementById(id).disabled = true; });
+  }
+
+  // 2. Accounts
+  document.getElementById("b-accounts").onclick = function () {
+    eth.request({ method: "eth_requestAccounts" }).then(function (a) {
+      account = a && a[0];
+      set("s-accounts", account ? "ok" : "bad", account ? "Connected " + account : "No account returned");
+    }).catch(function (e) { set("s-accounts", "bad", err(e)); });
+  };
+
+  // 3. Chain
+  document.getElementById("b-chain").onclick = function () {
+    eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: BASE_SEPOLIA.chainId }] })
+      .catch(function (e) {
+        if (e && e.code === 4902) return eth.request({ method: "wallet_addEthereumChain", params: [BASE_SEPOLIA] });
+        throw e;
+      })
+      .then(function () { return eth.request({ method: "eth_chainId" }); })
+      .then(function (id) { set("s-chain", id === BASE_SEPOLIA.chainId ? "ok" : "warn", "Current chain " + id + (id === BASE_SEPOLIA.chainId ? " (Base Sepolia)" : " (expected 0x14a34)")); })
+      .catch(function (e) { set("s-chain", "bad", err(e)); });
+  };
+
+  // 4. EIP-712 sign
+  document.getElementById("b-sign").onclick = function () {
+    if (!account) { set("s-sign", "bad", "Connect the wallet first (step 2)."); return; }
+    eth.request({ method: "eth_chainId" }).then(function (chainHex) {
+      var typed = {
+        types: {
+          EIP712Domain: [{ name: "name", type: "string" }, { name: "version", type: "string" }, { name: "chainId", type: "uint256" }, { name: "verifyingContract", type: "address" }],
+          Handoff: [{ name: "orderId", type: "uint256" }, { name: "stage", type: "uint8" }, { name: "giver", type: "address" }, { name: "receiver", type: "address" }, { name: "nonce", type: "bytes32" }, { name: "expiresAt", type: "uint256" }]
+        },
+        primaryType: "Handoff",
+        domain: { name: "Patela Phone Check", version: "1", chainId: parseInt(chainHex, 16), verifyingContract: "0x0000000000000000000000000000000000000001" },
+        message: { orderId: "1", stage: 1, giver: account, receiver: account, nonce: "0x" + "ab".repeat(32), expiresAt: String(Math.floor(Date.now() / 1000) + 120) }
+      };
+      return eth.request({ method: "eth_signTypedData_v4", params: [account, JSON.stringify(typed)] });
+    }).then(function (sig) {
+      set("s-sign", sig && sig.length === 132 ? "ok" : "warn", "Signature " + (sig ? sig.slice(0, 18) + "… (" + sig.length + " chars)" : "empty"));
+    }).catch(function (e) { set("s-sign", "bad", err(e)); });
+  };
+
+  // 5. Camera + QR
+  document.getElementById("b-camera").onclick = function () {
+    var v = document.getElementById("v");
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { set("s-camera", "bad", "Camera API not available in this browser (secure context: " + window.isSecureContext + ")"); return; }
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false }).then(function (stream) {
+      v.srcObject = stream; v.style.display = "block"; return v.play().then(function () { return stream; });
+    }).then(function (stream) {
+      var hasDetector = "BarcodeDetector" in window;
+      if (!hasDetector) { set("s-camera", "warn", "Camera works. No built-in QR reader (BarcodeDetector), so the app will need a QR library."); return; }
+      set("s-camera", "warn", "Camera works. Built-in QR reader present, looking for a code…");
+      var det = new window.BarcodeDetector({ formats: ["qr_code"] });
+      var tries = 0;
+      var timer = setInterval(function () {
+        tries++;
+        det.detect(v).then(function (codes) {
+          if (codes.length) { clearInterval(timer); stream.getTracks().forEach(function (t) { t.stop(); }); set("s-camera", "ok", "Camera works and read a QR code: " + codes[0].rawValue.slice(0, 40)); }
+          else if (tries > 40) { clearInterval(timer); set("s-camera", "warn", "Camera works and a QR reader exists, but no code was read in 20 s."); }
+        }).catch(function (e) { clearInterval(timer); set("s-camera", "warn", "Camera works; QR reader errored: " + err(e)); });
+      }, 500);
+    }).catch(function (e) { set("s-camera", "bad", err(e)); });
+  };
+
+  document.getElementById("b-copy").onclick = function () {
+    var t = document.getElementById("summary");
+    t.select();
+    if (navigator.clipboard) navigator.clipboard.writeText(t.value).catch(function () { document.execCommand("copy"); });
+    else document.execCommand("copy");
+  };
+  summary();
+})();
+</script>
+</body>
+</html>

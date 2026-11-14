@@ -1,0 +1,318 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Patela API on Lambda with private RDS PostgreSQL (development-sized stack).
+
+Parameters:
+  CodeBucket:
+    Type: String
+    Description: S3 bucket containing the built backend ZIP.
+  CodeKey:
+    Type: String
+    Description: S3 key for the built backend ZIP.
+  PublicOrigin:
+    Type: String
+    Default: ''
+    Description: Exact HTTPS web origin, or blank for an API-only OAuth test.
+  AllowedOrigins:
+    Type: String
+    Default: ''
+    Description: Optional comma-separated additional exact HTTPS web origins.
+  CookieDomain:
+    Type: String
+    Default: ''
+    Description: Optional shared parent domain for browser session cookies; blank keeps them host-only.
+  CookieSameSite:
+    Type: String
+    Default: Lax
+    AllowedValues: [Lax, None, Strict]
+  GoogleClientId:
+    Type: String
+    Description: Google OAuth Web application client ID.
+  GoogleClientSecretArn:
+    Type: String
+    Default: ''
+    Description: Optional ARN of a Secrets Manager secret for authorization-code sign-in.
+  EnableAuthSmokePage:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Serve the API-only Google sign-in test page during development.
+  ChainId:
+    Type: String
+    Default: '11142220'
+    AllowedValues: ['42220', '11142220']
+    Description: 42220 = Celo mainnet, 11142220 = Celo Sepolia.
+  RpcUrl:
+    Type: String
+    Default: ''
+    Description: HTTPS RPC for the chain above (Celo Sepolia https://forno.celo-sepolia.celo-testnet.org). Set together with EscrowAddress; the API refuses to start with only one. Both blank disables on-chain verification (orders stop at awaiting_chain).
+  EscrowAddress:
+    Type: String
+    Default: ''
+    AllowedPattern: '^$|^0x[0-9a-fA-F]{40}$'
+    Description: Deployed PatellaEscrowAndLogistics address (contracts/deployments/<network>.json).
+  TokenAddress:
+    Type: String
+    Default: ''
+    AllowedPattern: '^$|^0x[0-9a-fA-F]{40}$'
+    Description: Optional ZARm override. Blank selects the canonical Mento ZARm for the configured Celo chain.
+  ChainConfirmations:
+    Type: Number
+    Default: 3
+    MinValue: 1
+    MaxValue: 64
+    Description: Blocks a transaction must have before the API trusts its events.
+  SmtpSecretArn:
+    Type: String
+    Default: ''
+    Description: >-
+      Optional ARN of a Secrets Manager secret {"user":"<gmail>","appPassword":"<app password>"}.
+      Blank keeps emails queued in email_outbox and never sends them.
+  DemoMode:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: DEMO only. Also return one-time accept links in API responses as a fallback for slow email.
+  DemoHosted:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: DEMO only. Reserved @demo.patela.local personas receive OTP codes and automatic trading approval when SMTP is disabled.
+
+Conditions:
+  HasGoogleClientSecret: !Not [!Equals [!Ref GoogleClientSecretArn, '']]
+  HasTokenAddress: !Not [!Equals [!Ref TokenAddress, '']]
+  HasSmtpSecret: !Not [!Equals [!Ref SmtpSecretArn, '']]
+
+Resources:
+  Network:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.80.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags: [{Key: Name, Value: patela-api}]
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+  GatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: {VpcId: !Ref Network, InternetGatewayId: !Ref InternetGateway}
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Network
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: 10.80.0.0/24
+      MapPublicIpOnLaunch: true
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Network
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: 10.80.1.0/24
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Network
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: 10.80.2.0/24
+  PublicRoutes:
+    Type: AWS::EC2::RouteTable
+    Properties: {VpcId: !Ref Network}
+  PublicInternetRoute:
+    Type: AWS::EC2::Route
+    DependsOn: GatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRoutes
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+  PublicRouteAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: {SubnetId: !Ref PublicSubnet, RouteTableId: !Ref PublicRoutes}
+  NatAddress:
+    Type: AWS::EC2::EIP
+    DependsOn: GatewayAttachment
+    Properties: {Domain: vpc}
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties: {SubnetId: !Ref PublicSubnet, AllocationId: !GetAtt NatAddress.AllocationId}
+  PrivateRoutes:
+    Type: AWS::EC2::RouteTable
+    Properties: {VpcId: !Ref Network}
+  PrivateInternetRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRoutes
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+  PrivateAssociationA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: {SubnetId: !Ref PrivateSubnetA, RouteTableId: !Ref PrivateRoutes}
+  PrivateAssociationB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: {SubnetId: !Ref PrivateSubnetB, RouteTableId: !Ref PrivateRoutes}
+  ApiSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Patela Lambda outbound access
+      VpcId: !Ref Network
+  DatabaseSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: PostgreSQL from Patela Lambda only
+      VpcId: !Ref Network
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref ApiSecurityGroup
+  DatabaseSubnets:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Private Patela database subnets
+      SubnetIds: [!Ref PrivateSubnetA, !Ref PrivateSubnetB]
+  DatabaseSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: Patela PostgreSQL master credentials
+      GenerateSecretString:
+        SecretStringTemplate: '{"username":"patela"}'
+        GenerateStringKey: password
+        PasswordLength: 32
+        ExcludePunctuation: true
+  Database:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      Engine: postgres
+      DBInstanceClass: db.t4g.micro
+      AllocatedStorage: '20'
+      StorageEncrypted: true
+      DBName: patela
+      MasterUsername: patela
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${DatabaseSecret}:SecretString:password}}'
+      DBSubnetGroupName: !Ref DatabaseSubnets
+      VPCSecurityGroups: [!Ref DatabaseSecurityGroup]
+      PubliclyAccessible: false
+      BackupRetentionPeriod: 7
+      DeletionProtection: true
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: lambda.amazonaws.com}
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      Policies:
+        - !If
+          - HasSmtpSecret
+          - PolicyName: read-smtp-secret
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action: secretsmanager:GetSecretValue
+                  # The trailing * also matches a partial ARN given without Secrets Manager's random suffix.
+                  Resource: !Sub '${SmtpSecretArn}*'
+          - !Ref AWS::NoValue
+  ApiFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: nodejs22.x
+      Handler: dist/lambda.handler
+      Role: !GetAtt LambdaRole.Arn
+      Code: {S3Bucket: !Ref CodeBucket, S3Key: !Ref CodeKey}
+      MemorySize: 512
+      Timeout: 30
+      VpcConfig:
+        SubnetIds: [!Ref PrivateSubnetA, !Ref PrivateSubnetB]
+        SecurityGroupIds: [!Ref ApiSecurityGroup]
+      Environment:
+        Variables:
+          DATABASE_URL: !Sub 'postgres://patela:{{resolve:secretsmanager:${DatabaseSecret}:SecretString:password}}@${Database.Endpoint.Address}:5432/patela'
+          DATABASE_SSL: 'true'
+          NODE_EXTRA_CA_CERTS: /var/runtime/ca-cert.pem
+          GOOGLE_OAUTH_CLIENT_ID: !Ref GoogleClientId
+          GOOGLE_OAUTH_CLIENT_SECRET: !If [HasGoogleClientSecret, !Sub '{{resolve:secretsmanager:${GoogleClientSecretArn}:SecretString}}', '']
+          ENABLE_AUTH_SMOKE_PAGE: !Ref EnableAuthSmokePage
+          PUBLIC_ORIGIN: !Ref PublicOrigin
+          ALLOWED_ORIGINS: !Ref AllowedOrigins
+          COOKIE_DOMAIN: !Ref CookieDomain
+          COOKIE_SAME_SITE: !Ref CookieSameSite
+          PG_POOL_MAX: '2'
+          CHAIN_ID: !Ref ChainId
+          CHAIN_CONFIRMATIONS: !Ref ChainConfirmations
+          RPC_URL: !Ref RpcUrl
+          ESCROW_ADDRESS: !Ref EscrowAddress
+          # Omitted when blank: runtime selects the canonical ZARm address for the chain.
+          TOKEN_ADDRESS: !If [HasTokenAddress, !Ref TokenAddress, !Ref AWS::NoValue]
+          SMTP_SECRET_ARN: !If [HasSmtpSecret, !Ref SmtpSecretArn, !Ref AWS::NoValue]
+          DEMO_MODE: !Ref DemoMode
+          DEMO_HOSTED: !Ref DemoHosted
+  MigrationFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: nodejs22.x
+      Handler: dist/migrate-lambda.handler
+      Role: !GetAtt LambdaRole.Arn
+      Code: {S3Bucket: !Ref CodeBucket, S3Key: !Ref CodeKey}
+      MemorySize: 256
+      Timeout: 120
+      VpcConfig:
+        SubnetIds: [!Ref PrivateSubnetA, !Ref PrivateSubnetB]
+        SecurityGroupIds: [!Ref ApiSecurityGroup]
+      Environment:
+        Variables:
+          DATABASE_URL: !Sub 'postgres://patela:{{resolve:secretsmanager:${DatabaseSecret}:SecretString:password}}@${Database.Endpoint.Address}:5432/patela'
+          DATABASE_SSL: 'true'
+          NODE_EXTRA_CA_CERTS: /var/runtime/ca-cert.pem
+          PG_POOL_MAX: '1'
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: patela-api
+      ProtocolType: HTTP
+  ApiIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt ApiFunction.Arn
+      PayloadFormatVersion: '2.0'
+  DefaultRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: $default
+      Target: !Sub 'integrations/${ApiIntegration}'
+  DefaultStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref HttpApi
+      StageName: $default
+      AutoDeploy: true
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 5
+        ThrottlingRateLimit: 2
+  InvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ApiFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*'
+
+Outputs:
+  ApiOrigin:
+    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+  DatabaseEndpoint:
+    Value: !GetAtt Database.Endpoint.Address
+  FunctionName:
+    Value: !Ref ApiFunction
+  MigrationFunctionName:
+    Value: !Ref MigrationFunction

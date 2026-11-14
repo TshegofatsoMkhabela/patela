@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { SiteNav, WalletButton } from "@/components/SiteNav";
+import { SiteNav, TestZarpButton, WalletButton } from "@/components/SiteNav";
 import { Reveal } from "@/components/Reveal";
 import { actions, usePatela, type Job, type Milestone } from "@/lib/patela-store";
 
@@ -98,15 +98,18 @@ export function JobView() {
             </div>
             {!job.funded &&
               (wallet ? (
-                <button
-                  className="pt-btn"
-                  onClick={() => {
-                    actions.fund(job.id);
-                    toast.success("Demo escrow funded on testnet.");
-                  }}
-                >
-                  Lock {job.budget.toLocaleString()} {job.coins[0]} (testnet demo)
-                </button>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <TestZarpButton />
+                  <button
+                    className="pt-btn"
+                    onClick={() => {
+                      actions.fund(job.id);
+                      toast.success("Demo escrow funded on testnet.");
+                    }}
+                  >
+                    Lock {job.budget.toLocaleString()} {job.coins[0]} (testnet demo)
+                  </button>
+                </div>
               ) : (
                 <WalletButton className="pt-btn" />
               ))}

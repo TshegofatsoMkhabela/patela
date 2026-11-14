@@ -1,0 +1,19 @@
+/* Patela brand faces, shared by the landing page (freezpak-patela.css) and the buyer dashboard. */
+@font-face {
+  font-family: FP-Roobert;
+  src: url("/Roobert-Regular.woff") format("woff");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: FP-Roobert;
+  src: url("/Roobert-Medium.woff") format("woff");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: FP-Mona;
+  src: url("/MonaSansCondensed-ExtraBold.woff2") format("woff2");
+  font-weight: 800;
+  font-display: swap;
+}

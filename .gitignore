@@ -5,6 +5,7 @@
 # Production
 /build
 /dist
+/infra/artifacts/
 
 # Node
 /node_modules
@@ -17,6 +18,10 @@ lerna-debug.log*
 # Environment
 .env*.local
 .env
+
+# Hardhat
+cache/
+artifacts/
 
 # Editor
 .vscode/
@@ -31,3 +36,7 @@ lerna-debug.log*
 # Next.js types
 next-env.d.ts
 *.tsbuildinfo
+
+# Local demo (npm run demo): state, logs and your optional keys
+/.demo/
+.env.demo

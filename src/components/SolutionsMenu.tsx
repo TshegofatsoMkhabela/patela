@@ -16,7 +16,7 @@ export const SOLUTIONS = [
     d: "Guaranteed locked funds before dispatch; zero-app mobile handoffs.",
   },
   {
-    to: "/html/orders.html",
+    to: "/buyer",
     t: "Orders & Agreements",
     d: "Dual-signed canonical agreements, split parcels, and tender bidding.",
   },

@@ -37,7 +37,7 @@
           <a href="orders.html">Orders &amp; RFQ</a>
           <a href="shipment-overview.html">Custody Route</a>
           <a href="payment-builder.html">Payment Plan</a>
-          <a href="guest-handoff.html" style="color:#ffe2b2;">Guest Handoff ⚡</a>
+          <a href="guest-handoff.html" style="color:#ffe2b2;">Guest Handoff</a>
           <a href="dispute-centre.html">Disputes</a>
           <a href="auditor-trail.html">Auditor</a>
         </nav>
@@ -78,7 +78,7 @@
           </svg>
         </a>
         <a href="guest-handoff.html" class="cta-secondary" style="border-color:rgba(255,228,182,0.5);color:#ffe2b2;">
-          <span>Guest Mobile Handoff ⚡</span>
+          <span>Guest Mobile Handoff</span>
         </a>
       </div>
 
@@ -123,7 +123,12 @@
   <div class="entry-shell" style="max-width:1380px;margin:20px auto 80px;padding:0 20px;position:relative;z-index:2;">
     <!-- Trust Boundary & Honest Truth Callout (Section 1.1) -->
     <div class="trust-boundary-card frosted-glass-card" style="margin-bottom:32px;">
-      <div style="color:var(--gold);font-size:1.5rem;line-height:1;">🛡️</div>
+      <div style="color:var(--gold);line-height:1;display:flex;align-items:center;">
+        <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+      </div>
       <div>
         <div style="font-size:0.9rem;font-weight:600;color:var(--gold-light);margin-bottom:4px;">
           The Honest Trust Boundary (Technical Architecture v0.3 &amp; Blueprint v1.0)
@@ -204,111 +209,103 @@
       </div>
     </section>
 
-    <!-- 5 Main User Workspaces (Section 1.2) -->
+    <!-- Primary User Workspaces (Specific to User Type) -->
     <div class="section-label" style="margin-bottom:14px;color:var(--text-secondary);text-transform:uppercase;">
       CHOOSE OPERATING WORKSPACE
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:18px;margin-bottom:44px;">
-      <!-- 1. Buyer Workspace -->
-      <div class="card frosted-glass-card" style="display:flex;flex-direction:column;justify-content:space-between;">
-        <div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <span class="badge badge-gold">Buyer Workspace</span>
-            <span class="meta-text">ZAR 485k Escrow</span>
-          </div>
-          <h3 style="font-size:1.15rem;font-weight:600;margin-bottom:6px;color:#fff;">Anglo-Bavarian Mineral Trade</h3>
-          <p style="font-size:0.8125rem;color:var(--text-secondary);margin-bottom:16px;">
-            Publish RFQs, agree canonical terms, fund escrow via licensed South African bank partner, and monitor custody.
-          </p>
-          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
-            <a href="orders.html" class="topbar-site-pill">Orders &amp; Agreements (APP-02, ORD-02)</a>
-            <a href="route-builder.html" class="topbar-site-pill">Route Plan Builder (ROUTE-01)</a>
-            <a href="payment-builder.html" class="topbar-site-pill">Payment Plan Builder (PAY-01)</a>
-            <a href="escrow-funding.html" class="topbar-site-pill">Escrow Funding (PAY-02)</a>
-          </div>
-        </div>
-        <a href="client-dashboard.html" class="btn btn-primary" style="width:100%;justify-content:center;">Enter Buyer Workspace →</a>
-      </div>
-
-      <!-- 2. Supplier Workspace -->
-      <div class="card frosted-glass-card" style="display:flex;flex-direction:column;justify-content:space-between;">
-        <div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <span class="badge badge-blue">Supplier Workspace</span>
-            <span class="meta-text">ZAR 145.5k Releasable</span>
-          </div>
-          <h3 style="font-size:1.15rem;font-weight:600;margin-bottom:6px;color:#fff;">Highveld Logistics &amp; Mining</h3>
-          <p style="font-size:0.8125rem;color:var(--text-secondary);margin-bottom:16px;">
-            Submit sealed tender bids, sign versioned agreements, coordinate dispatches, and receive verified rand payouts.
-          </p>
-          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
-            <a href="tender-trail.html" class="topbar-site-pill">Tender Trail &amp; Sealed Bids (TEN-01)</a>
-            <a href="order-detail.html" class="topbar-site-pill">Sign Canonical Agreement (ORD-02)</a>
-            <a href="shipment-timeline.html" class="topbar-site-pill">Signed Shipment Timeline (TIM-01)</a>
-            <a href="payments.html" class="topbar-site-pill">Wallet &amp; Double-Entry Ledger (PAY-03)</a>
-          </div>
-        </div>
-        <a href="worker-dashboard.html" class="btn btn-secondary" style="width:100%;justify-content:center;">Enter Supplier Workspace →</a>
-      </div>
-
-      <!-- 3. Logistics & Guest Handoff Portal -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:20px;margin-bottom:24px;">
+      <!-- 1. Client Workspace (Commercial Buyer & Consignor) -->
       <div class="card frosted-glass-card" style="display:flex;flex-direction:column;justify-content:space-between;border-color:var(--border-gold);">
         <div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <span class="badge badge-gold">Carrier &amp; Driver Portal</span>
-            <span class="meta-text">No App / No Wallet</span>
+            <span class="badge badge-gold">Client Workspace</span>
+            <span class="meta-text">ZAR 485,000 in Escrow</span>
           </div>
-          <h3 style="font-size:1.15rem;font-weight:600;margin-bottom:6px;color:#fff;">Driver &amp; Warehouse Handoffs</h3>
-          <p style="font-size:0.8125rem;color:var(--text-secondary);margin-bottom:16px;">
-            Drivers and depot staff confirm handoffs via short-lived one-time mobile links. Two distinct cryptographic signatures required.
+          <h3 style="font-size:1.25rem;font-weight:600;margin-bottom:6px;color:#fff;">Alex Morgan · Anglo-Bavarian Mineral Trade</h3>
+          <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:16px;line-height:1.5;">
+            Commercial buyer and cargo owner workspace. Post RFQs, negotiate terms, fund ring-fenced bank escrow, review custody proofs, and release payments upon verified delivery.
           </p>
-          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
-            <a href="guest-handoff.html" class="topbar-site-pill">Mobile Guest Handoff (GST-01, GST-02)</a>
-            <a href="partner-directory.html" class="topbar-site-pill">Vetted Partner Directory (PART-01)</a>
-            <a href="shipment-overview.html" class="topbar-site-pill">Live Custody &amp; Parcels (SHIP-01)</a>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;">
+            <a href="orders.html" class="topbar-site-pill">Orders &amp; Agreements</a>
+            <a href="create-order.html" class="topbar-site-pill">Create Order / RFQ</a>
+            <a href="payment-builder.html" class="topbar-site-pill">Payment Plan Builder</a>
+            <a href="escrow-funding.html" class="topbar-site-pill">Escrow Funding</a>
+            <a href="route-builder.html" class="topbar-site-pill">Route Plan Builder</a>
+            <a href="analytics.html" class="topbar-site-pill">Analytics</a>
           </div>
         </div>
-        <a href="guest-handoff.html" class="btn btn-primary" style="width:100%;justify-content:center;">Open Driver Guest Handoff →</a>
+        <a href="client-dashboard.html" class="btn btn-primary btn-lg" style="width:100%;justify-content:center;">Enter Client Dashboard →</a>
       </div>
 
-      <!-- 4. Operations Console -->
+      <!-- 2. Worker Workspace (Logistics Partner & Supplier) -->
+      <div class="card frosted-glass-card" style="display:flex;flex-direction:column;justify-content:space-between;border-color:var(--border-blue);">
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <span class="badge badge-blue">Worker Workspace</span>
+            <span class="meta-text">ZAR 145,500 Releasable</span>
+          </div>
+          <h3 style="font-size:1.25rem;font-weight:600;margin-bottom:6px;color:#fff;">Jordan Blake · Highveld Logistics Ltd</h3>
+          <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:16px;line-height:1.5;">
+            Carrier, freight operator and supplier workspace. Discover open tenders, submit sealed bids, dispatch trucks, execute mobile handoffs, and receive guaranteed on-chain payouts.
+          </p>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;">
+            <a href="tender-trail.html" class="topbar-site-pill">Tender Trail &amp; RFQs</a>
+            <a href="shipment-overview.html" class="topbar-site-pill">Shipment Custody</a>
+            <a href="order-detail.html" class="topbar-site-pill">Signed Agreement</a>
+            <a href="shipment-timeline.html" class="topbar-site-pill">Shipment Timeline</a>
+            <a href="payments.html" class="topbar-site-pill">Double-Entry Payouts</a>
+            <a href="marketplace.html" class="topbar-site-pill">Find Work</a>
+          </div>
+        </div>
+        <a href="worker-dashboard.html" class="btn btn-secondary btn-lg" style="width:100%;justify-content:center;">Enter Worker Dashboard →</a>
+      </div>
+    </div>
+
+    <!-- Supporting Specialized Portals -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:18px;margin-bottom:44px;">
+      <!-- Driver & Warehouse Portal -->
       <div class="card frosted-glass-card" style="display:flex;flex-direction:column;justify-content:space-between;">
         <div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <span class="badge badge-neutral">Operations Console</span>
-            <span class="meta-text">KYB, Disputes, Ledger</span>
+            <span class="badge badge-gold">Driver &amp; Depot Portal</span>
+            <span class="meta-text">No App / No Wallet</span>
           </div>
-          <h3 style="font-size:1.15rem;font-weight:600;margin-bottom:6px;color:#fff;">Patela Operations &amp; Review</h3>
-          <p style="font-size:0.8125rem;color:var(--text-secondary);margin-bottom:16px;">
-            Review KYB onboarding, arbitrate isolated parcel disputes, manage contract pause keys, and reconcile ledger vs vault.
+          <h4 style="font-size:1.05rem;font-weight:600;margin-bottom:6px;color:#fff;">Frontline Mobile Handoff</h4>
+          <p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:14px;">
+            Drivers and clerks confirm custody transfers via single-use mobile links with zero app install and two-party cryptographic signatures.
           </p>
-          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
-            <a href="operations-console.html" class="topbar-site-pill">Operations Queue &amp; Health (OPS-01)</a>
-            <a href="operations-console.html#disputes" class="topbar-site-pill">Dispute Resolution Console (OPS-02)</a>
-            <a href="business-verification.html" class="topbar-site-pill">Business KYB Verification (AUTH-03)</a>
-          </div>
         </div>
-        <a href="operations-console.html" class="btn btn-secondary" style="width:100%;justify-content:center;">Open Operations Console →</a>
+        <a href="guest-handoff.html" class="btn btn-secondary btn-sm" style="width:100%;justify-content:center;">Open Driver Handoff →</a>
       </div>
 
-      <!-- 5. Forensic Auditor View -->
+      <!-- Operations Console -->
+      <div class="card frosted-glass-card" style="display:flex;flex-direction:column;justify-content:space-between;">
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <span class="badge badge-neutral">Operations &amp; Admin</span>
+            <span class="meta-text">KYB, Disputes, Ledger</span>
+          </div>
+          <h4 style="font-size:1.05rem;font-weight:600;margin-bottom:6px;color:#fff;">Operations Console</h4>
+          <p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:14px;">
+            Review business KYB, arbitrate isolated disputes, manage contract security pause keys, and reconcile client trust accounts.
+          </p>
+        </div>
+        <a href="operations-console.html" class="btn btn-secondary btn-sm" style="width:100%;justify-content:center;">Open Operations Console →</a>
+      </div>
+
+      <!-- Forensic Auditor View -->
       <div class="card frosted-glass-card" style="display:flex;flex-direction:column;justify-content:space-between;">
         <div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
             <span class="badge badge-neutral">Auditor View</span>
             <span class="meta-text">Read-Only Forensic</span>
           </div>
-          <h3 style="font-size:1.15rem;font-weight:600;margin-bottom:6px;color:#fff;">Auditor Trail &amp; Hash Verifier</h3>
-          <p style="font-size:0.8125rem;color:var(--text-secondary);margin-bottom:16px;">
-            Independent chronological proof of versions, signatures, anchor batches on Base Sepolia, and live byte hash verifier.
+          <h4 style="font-size:1.05rem;font-weight:600;margin-bottom:6px;color:#fff;">Auditor Trail &amp; Verifier</h4>
+          <p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:14px;">
+            Independent chronological audit trail, Base Sepolia block anchor verifier, and client-side drag-and-drop byte hash checker.
           </p>
-          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
-            <a href="auditor-trail.html" class="topbar-site-pill">Forensic Event Trail (AUD-01)</a>
-            <a href="auditor-trail.html#verifier" class="topbar-site-pill">Drag &amp; Drop Byte Verifier (AUD-02)</a>
-            <a href="documents-evidence.html" class="topbar-site-pill">Documents &amp; Evidence Vault (DOC-01)</a>
-          </div>
         </div>
-        <a href="auditor-trail.html" class="btn btn-secondary" style="width:100%;justify-content:center;">Open Auditor Trail →</a>
+        <a href="auditor-trail.html" class="btn btn-secondary btn-sm" style="width:100%;justify-content:center;">Open Auditor Trail →</a>
       </div>
     </div>
 

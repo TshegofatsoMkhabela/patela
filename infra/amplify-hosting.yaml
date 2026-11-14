@@ -1,0 +1,163 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Patela web app on AWS Amplify Hosting (Next.js SSR). Creates the Amplify app
+  connected to GitHub, a main branch that redeploys on every push, and a frozen
+  demo branch that only changes when it is released on purpose.
+
+Parameters:
+  RepositoryUrl:
+    Type: String
+    Default: https://github.com/TshegofatsoMkhabela/patela
+    Description: GitHub repository Amplify builds from.
+  BranchName:
+    Type: String
+    Default: main
+    Description: Development branch; every push to it is built and deployed.
+  DemoBranchName:
+    Type: String
+    Default: demo
+    Description: >
+      Branch shown on stage. Auto-build is off, so pushes to it are not
+      deployed until someone runs a release (aws amplify start-job).
+  GitHubTokenSecretName:
+    Type: String
+    Default: patela/github-token
+    Description: >
+      Secrets Manager secret holding a GitHub token (plain string) with repo
+      access. Amplify uses it once to add the deploy webhook to the repo.
+
+  EscrowAddress:
+    Type: String
+    Default: ""
+    Description: PatellaEscrowAndLogistics address on Celo Sepolia (set after the contract is deployed there).
+  ZarpAddress:
+    Type: String
+    # Mento ZARm (South African rand, 18 decimals) on Celo Sepolia, per docs.mento.org deployment addresses.
+    # Celo mainnet ZARm is 0x4c35853A3B4e647fD266f4de678dCc8fEC410BF6 (real money; not used yet).
+    Default: "0x10CCfB235b0E1Ed394bACE4560C3ed016697687e"
+    Description: ZARm token address on the web app's chain.
+  ApiOrigin:
+    Type: String
+    # Development backend stack (infra/README.md). Its PublicOrigin must list the Amplify URL for CORS.
+    Default: https://g629knqcjc.execute-api.us-east-1.amazonaws.com
+    Description: Backend API origin the web app calls, e.g. https://api.example.com (no trailing slash).
+  Web3AuthClientId:
+    Type: String
+    Default: ""
+    Description: MetaMask Embedded Wallets (Web3Auth) client ID; public, used by the browser.
+  RpcUrl:
+    Type: String
+    Default: https://forno.celo-sepolia.celo-testnet.org
+    Description: Celo Sepolia JSON-RPC URL the browser reads balances and simulates transactions with.
+
+Resources:
+  PatelaApp:
+    Type: AWS::Amplify::App
+    Properties:
+      Name: patela
+      Description: Patela - money follows proof
+      Repository: !Ref RepositoryUrl
+      # Read at deploy time; never stored in this file or in the stack outputs.
+      AccessToken: !Sub "{{resolve:secretsmanager:${GitHubTokenSecretName}}}"
+      # WEB_COMPUTE is required for Next.js server-side rendering (Next 12+).
+      Platform: WEB_COMPUTE
+      EnableBranchAutoDeletion: false
+      # A failing test or build stops the deploy; the last good version stays live.
+      BuildSpec: |
+        version: 1
+        frontend:
+          phases:
+            preBuild:
+              commands:
+                - nvm use 20
+                - npm ci
+            build:
+              commands:
+                - npm test
+                - npm run build
+          artifacts:
+            baseDirectory: .next
+            files:
+              - '**/*'
+          cache:
+            paths:
+              - node_modules/**/*
+              - .next/cache/**/*
+      Tags:
+        - Key: project
+          Value: patela
+
+  MainBranch:
+    Type: AWS::Amplify::Branch
+    Properties:
+      AppId: !GetAtt PatelaApp.AppId
+      BranchName: !Ref BranchName
+      Framework: Next.js - SSR
+      Stage: DEVELOPMENT
+      EnableAutoBuild: true
+      # Set on the branch, not the app: the URL only exists once the app does.
+      EnvironmentVariables:
+        - Name: NEXT_PUBLIC_SITE_URL
+          Value: !Sub "https://${BranchName}.${PatelaApp.DefaultDomain}"
+        # Celo Sepolia chain settings (specs/INTERFACES.md §6, network changed to Celo). Public values: they ship to the browser.
+        - Name: NEXT_PUBLIC_CHAIN_ID
+          Value: "11142220"
+        - Name: NEXT_PUBLIC_ESCROW_ADDRESS
+          Value: !Ref EscrowAddress
+        - Name: NEXT_PUBLIC_ZARP_ADDRESS
+          Value: !Ref ZarpAddress
+        - Name: NEXT_PUBLIC_API_ORIGIN
+          Value: !Ref ApiOrigin
+        # Same backend for the sign-in client (src/lib/patela-api.ts), so the session cookie is shared.
+        - Name: NEXT_PUBLIC_API_BASE_URL
+          Value: !Ref ApiOrigin
+        - Name: NEXT_PUBLIC_WEB3AUTH_CLIENT_ID
+          Value: !Ref Web3AuthClientId
+        - Name: NEXT_PUBLIC_RPC_URL
+          Value: !Ref RpcUrl
+      Tags:
+        - Key: project
+          Value: patela
+
+  DemoBranch:
+    Type: AWS::Amplify::Branch
+    Properties:
+      AppId: !GetAtt PatelaApp.AppId
+      BranchName: !Ref DemoBranchName
+      Framework: Next.js - SSR
+      Stage: PRODUCTION
+      # Frozen: a push to the demo branch never changes what's on stage by itself.
+      EnableAutoBuild: false
+      EnvironmentVariables:
+        - Name: NEXT_PUBLIC_SITE_URL
+          Value: !Sub "https://${DemoBranchName}.${PatelaApp.DefaultDomain}"
+        # Celo Sepolia chain settings (specs/INTERFACES.md §6, network changed to Celo). Public values: they ship to the browser.
+        - Name: NEXT_PUBLIC_CHAIN_ID
+          Value: "11142220"
+        - Name: NEXT_PUBLIC_ESCROW_ADDRESS
+          Value: !Ref EscrowAddress
+        - Name: NEXT_PUBLIC_ZARP_ADDRESS
+          Value: !Ref ZarpAddress
+        - Name: NEXT_PUBLIC_API_ORIGIN
+          Value: !Ref ApiOrigin
+        # Same backend for the sign-in client (src/lib/patela-api.ts), so the session cookie is shared.
+        - Name: NEXT_PUBLIC_API_BASE_URL
+          Value: !Ref ApiOrigin
+        - Name: NEXT_PUBLIC_WEB3AUTH_CLIENT_ID
+          Value: !Ref Web3AuthClientId
+        - Name: NEXT_PUBLIC_RPC_URL
+          Value: !Ref RpcUrl
+      Tags:
+        - Key: project
+          Value: patela
+
+Outputs:
+  AppId:
+    Description: Amplify app ID, used by the aws amplify CLI commands.
+    Value: !GetAtt PatelaApp.AppId
+  SiteUrl:
+    Description: Development URL; updates on every push to the main branch.
+    Value: !Sub "https://${BranchName}.${PatelaApp.DefaultDomain}"
+  DemoUrl:
+    Description: Stage URL; changes only when the demo branch is released.
+    Value: !Sub "https://${DemoBranchName}.${PatelaApp.DefaultDomain}"

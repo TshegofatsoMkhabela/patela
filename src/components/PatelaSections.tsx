@@ -85,7 +85,7 @@ export function PatelaSections() {
               </ul>
             </div>
             <div style={{ marginTop: 24 }}>
-              <Link href="/html/orders.html" className="pt-btn sm">
+              <Link href="/buyer" className="pt-btn sm">
                 <span>Open Order Tracking</span>
                 <span aria-hidden="true">→</span>
               </Link>
@@ -187,7 +187,7 @@ export function PatelaSections() {
             className="pt-cta-cards"
             style={{ maxWidth: 1020, gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}
           >
-            <Link href="/html/create-order.html" className="pt-cta-card">
+            <Link href="/orders/new" className="pt-cta-card">
               <b>
                 Create Order & Route <span className="ar">→</span>
               </b>

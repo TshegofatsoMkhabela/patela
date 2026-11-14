@@ -1,0 +1,353 @@
+.ob-page {
+  --ob-navy: #01172d;
+  --ob-ink: #102b43;
+  --ob-cream: #f5f1e8;
+  --ob-paper: #fffdf8;
+  --ob-red: #f33d2d;
+  --ob-line: #d8d2c7;
+  min-height: 100vh;
+  background: var(--ob-cream);
+  color: var(--ob-ink);
+}
+
+.ob-page .pt-bgv,
+.ob-page .pt-frost {
+  display: none;
+}
+
+.ob-main {
+  width: min(100% - 32px, 760px);
+  margin: 0 auto;
+  padding: 42px 0 80px;
+}
+
+.ob-intro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+
+.ob-intro span,
+.ob-top,
+.ob-card > .ob-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.ob-intro span {
+  color: var(--ob-red);
+}
+
+.ob-intro p {
+  max-width: 340px;
+  margin: 0;
+  color: #536779;
+  font-size: 14px;
+  text-align: right;
+}
+
+.ob-card {
+  overflow: hidden;
+  border: 1px solid var(--ob-line);
+  border-radius: 22px;
+  background: var(--ob-paper);
+  box-shadow: 0 26px 70px rgba(1, 23, 45, 0.1);
+}
+
+.ob-top {
+  display: flex;
+  justify-content: space-between;
+  padding: 18px 26px;
+  color: #607282;
+  border-bottom: 1px solid var(--ob-line);
+}
+
+.ob-track {
+  height: 4px;
+  background: #e6e0d6;
+}
+
+.ob-track span {
+  display: block;
+  height: 100%;
+  background: var(--ob-red);
+  transition: width 240ms ease;
+}
+
+.ob-card > h1,
+.ob-card > .ob-lead,
+.ob-card > .ob-options,
+.ob-card > .ob-fields,
+.ob-card > .ob-legal {
+  margin-right: 38px;
+  margin-left: 38px;
+}
+
+.ob-card h1 {
+  max-width: 620px;
+  margin-top: 34px;
+  margin-bottom: 8px;
+  color: var(--ob-navy);
+  font-family: var(--pt-display, sans-serif);
+  font-size: clamp(32px, 5vw, 52px);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+}
+
+.ob-lead {
+  margin-top: 0;
+  margin-bottom: 26px;
+  color: #536779;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.ob-options {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.ob-option {
+  width: 100%;
+  min-height: 74px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border: 1px solid var(--ob-line);
+  border-radius: 13px;
+  background: #fff;
+  color: var(--ob-ink);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.ob-option:hover {
+  border-color: #9ca9b3;
+  box-shadow: 0 8px 22px rgba(1, 23, 45, 0.07);
+}
+
+.ob-option:focus-visible,
+.ob-back:focus-visible,
+.ob-continue:focus-visible,
+.ob-fields input:focus-visible {
+  outline: 3px solid rgba(243, 61, 45, 0.3);
+  outline-offset: 2px;
+}
+
+.ob-option.ob-selected {
+  border-color: var(--ob-navy);
+  background: #f1f5f6;
+  box-shadow: inset 4px 0 var(--ob-red);
+}
+
+.ob-icon {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #edf1f2;
+  color: var(--ob-navy);
+}
+
+.ob-option-text {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.ob-option-text strong {
+  color: var(--ob-navy);
+  font-size: 15px;
+}
+
+.ob-option-text small {
+  color: #607282;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.ob-choice {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #a9b3bb;
+  border-radius: 50%;
+  color: #fff;
+}
+
+.ob-selected .ob-choice {
+  border-color: var(--ob-red);
+  background: var(--ob-red);
+}
+
+.ob-fields {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.ob-fields label {
+  margin-top: 8px;
+  color: var(--ob-navy);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.ob-fields input {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 14px;
+  border: 1px solid var(--ob-line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ob-navy);
+  font: inherit;
+}
+
+.ob-fields input:disabled {
+  background: #f0ede6;
+  color: #607282;
+}
+
+.ob-wallet-field {
+  margin-top: -10px;
+}
+
+.ob-legal {
+  margin-top: 0;
+  margin-bottom: 26px;
+  color: #607282;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ob-legal a {
+  color: var(--ob-navy);
+  font-weight: 700;
+}
+
+.ob-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 78px;
+  padding: 14px 26px;
+  border-top: 1px solid var(--ob-line);
+  background: #f9f6ef;
+}
+
+.ob-dots {
+  display: flex;
+  gap: 7px;
+}
+
+.ob-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #c7c2b8;
+}
+
+.ob-dots span.active {
+  width: 22px;
+  border-radius: 999px;
+  background: var(--ob-red);
+}
+
+.ob-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.ob-back,
+.ob-continue {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 18px;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.ob-back {
+  border: 1px solid var(--ob-line);
+  background: transparent;
+  color: var(--ob-navy);
+}
+
+.ob-continue {
+  border: 1px solid var(--ob-navy);
+  background: var(--ob-navy);
+  color: #fff;
+}
+
+.ob-continue:disabled {
+  cursor: progress;
+  opacity: 0.65;
+}
+
+@media (max-width: 600px) {
+  .ob-main {
+    width: min(100% - 20px, 760px);
+    padding: 24px 0 44px;
+  }
+  .ob-intro {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .ob-intro p {
+    text-align: left;
+  }
+  .ob-card > h1,
+  .ob-card > .ob-lead,
+  .ob-card > .ob-options,
+  .ob-card > .ob-fields,
+  .ob-card > .ob-legal {
+    margin-right: 20px;
+    margin-left: 20px;
+  }
+  .ob-top,
+  .ob-bottom {
+    padding-right: 18px;
+    padding-left: 18px;
+  }
+  .ob-card h1 {
+    margin-top: 26px;
+  }
+  .ob-bottom {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .ob-actions {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ob-page * {
+    transition: none !important;
+  }
+}
